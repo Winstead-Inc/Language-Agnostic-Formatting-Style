@@ -1,0 +1,122 @@
+
+No target files specified. Format all files in current directory and subdirectories? [y/N]: \n
+LAFS Container Formatter (Language-Agnostic Formatting Style)
+Usage:
+  lafs [OPTIONS] <FILES... | DIRECTORIES...>
+  lafs format [OPTIONS] <FILES... | DIRECTORIES...>
+  lafs format failed [OPTIONS]       (Reformat all files listed in failed.txt)
+  lafs apply [OPTIONS] <FILES... | DIRECTORIES...>
+  lafs check [OPTIONS] <FILES... | DIRECTORIES...>
+  lafs [OPTIONS] -                   (Read from stdin, output to stdout)
+
+Batch & Directory Options:
+  -a, --all                   Format all files in current directory and all subdirectories
+  -e, --ext <EXTENSIONS>      Only format files with specific extension(s) (e.g. -e c,h or -e sh)
+      --all-types             Format all text files regardless of extension (excludes binary and docs)
+  -x, --exclude <PATTERN>     Exclude files or folders (e.g. -x target -x vendor -x "*.min.js")
+  -y, --yes                   Automatic yes to confirmation prompts
+  -j, --threads <COUNT>       Number of parallel worker threads (default: CPU cores)
+      --verbose               Show details for unchanged clean files
+
+Formatting Options:
+  -w, --write                 Save and overwrite formatted files in-place (default)
+      --stdout                Output formatted code to stdout instead of saving files
+      --check                 Check if files are formatted (exit code 1 if unformatted)
+  -of, --output-failed <FILE> Output failed and unformatted paths to a specific log file
+      --no-log                Disable automatic log file generation
+  -c, --canvas-width <WIDTH>  Set maximum canvas width before expansion (default: 160)
+  -i, --indent <SIZE>         Set indentation width in spaces (default: 4)
+  -t, --tabs                  Use tabs instead of spaces for indentation
+  -l, --language <LANG>       Force source language: 'c', 'cpp', 'csharp', 'js', 'ts', 'sh'
+      --max-statements <NUM>  Max statements in a monolith block (default: 4)
+      --stdin-filepath <PATH> Virtual filepath when formatting stdin
+  -h, --help                  Show this help message
+  -v, --version               Show version information
+PS B:\PlayGTA5> .\lafs.exe -a
+Found 33 files in '.'. Apply LAFS formatting and save in-place? [y/N]: y
+Formatted & Saved: .\loader.js
+
+Error formatting .\build_portable_zip.py: Safety Gate Failed: Token #503 mismatch! (Expected '':
+    main()
+', Got '':
+    main()
+}
+'). Output aborted to prevent code corruption.
+Error formatting .\inspect_assets.py: Safety Gate Failed: Token #388 mismatch! (Expected '':
+    main()
+', Got '':
+    main()
+})
+'). Output aborted to prevent code corruption.
+Formatted & Saved: .\snapshot\discovery-progress.json
+Error formatting .\serve_local.py: Safety Gate Failed: Token #377 mismatch! (Expected '' % address, flush=True)
+    if options.open:
+        webbrowser.open(address)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+', Got '' % address, flush=True)
+    if options.open:
+        webbrowser.open(address)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+)
+'). Output aborted to prevent code corruption.
+Error formatting .\bundle_runtime.py: Safety Gate Failed: Token #198 mismatch! (Expected '')
+', Got '')
+)
+'). Output aborted to prevent code corruption.
+Error formatting .\engine_static_evidence.py: Safety Gate Failed: Token #882 mismatch! (Expected '':hits[:30]},indent=2))
+', Got '':hits[:30]},indent=2))
+        })
+    )
+]
+'). Output aborted to prevent code corruption.
+Error formatting .\mirror_site.py: Safety Gate Failed: Token #969 mismatch! (Expected '')
+    raise SystemExit(main())
+', Got '')
+    raise SystemExit(main())
+            )
+        ]
+    ]
+]
+'). Output aborted to prevent code corruption.
+Formatted & Saved: .\snapshot\failures.json
+Formatted & Saved: .\snapshot\discovery-added.json
+Formatted & Saved: .\io_worker.js
+Formatted & Saved: .\append_investigation.py
+Formatted & Saved: .\snapshot\domain-rdap.json
+Error formatting .\public_discovery.py: Safety Gate Failed: Significant token count mismatch! (Original: 1497, Formatted: 1499). Output aborted to prevent code corruption.Formatted & Saved: .\snapshot\discovery-followup.json
+
+Formatted & Saved: .\snapshot\investigation-manifest.json
+Formatted & Saved: .\snapshot\source-consistency.json
+Formatted & Saved: .\snapshot\status.json
+Error formatting .\verify_snapshot.py: Safety Gate Failed: Token #485 mismatch! (Expected '':
+    main()
+', Got '':
+    main()
+    }
+]
+'). Output aborted to prevent code corruption.
+Formatted & Saved: .\snapshot\discovery-report.json
+Formatted & Saved: .\snapshot\engine-evidence.json
+Formatted & Saved: .\game.js
+Formatted & Saved: .\snapshot\asset-evidence.json
+Formatted & Saved: .\data-manifest.json
+Formatted & Saved: .\snapshot\download-plan.json
+Formatted & Saved: .\snapshot\live-data-manifest.json
+Formatted & Saved: .\snapshot\verification.json
+Formatted & Saved: .\snapshot\runtime-manifest.json
+Formatted & Saved: .\shader-index.json
+Formatted & Saved: .\wgpu_worker.js
+Formatted & Saved: .\snapshot\package-manifest.json
+Formatted & Saved: .\snapshot\manifest-sha256.json
+memory allocation of 6979321856 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

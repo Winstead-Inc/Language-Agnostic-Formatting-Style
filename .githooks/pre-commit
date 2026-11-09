@@ -1,0 +1,7 @@
+#!/bin/sh
+echo "[LAFS] Formatting staged files before commit..."
+
+lafs -a -y -w
+
+git update-index --again
+

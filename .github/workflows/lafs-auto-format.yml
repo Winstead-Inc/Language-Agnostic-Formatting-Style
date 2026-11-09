@@ -1,0 +1,39 @@
+name: LAFS Auto-Format Automation
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+permissions:
+  contents: write
+
+jobs:
+  auto-format:
+    name: Enforce LAFS Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build LAFS Formatter Engine
+        run: cargo build --release
+
+      - name: Format Repository In-Place
+        run: ./target/release/lafs -a -y -w
+
+      - name: Commit and Push Reformatted Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(style): enforce strict LAFS formatting [skip ci]"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
+          commit_author: "LAFS Bot <actions@github.com>"
+
