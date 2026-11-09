@@ -5,7 +5,7 @@
 All code submitted to this repository **MUST STRICTLY be formatted in Language-Agnostic Formatting Style (LAFS)**.
 
 > [!IMPORTANT]
-> **This repository is NOT a cesspool of ugly, improperly formatted K&R slop.**
+> **This repository is NOT a Cesspool of ugly, improperly formatted K&R Slop.**
 > Trailing delimiter/container attachments (`fn() {`, `if (Condition) {`), asymmetrical diagonal vector tracking, and compressed scope exit clusters (`}}});`) are strictly banned across all languages, files, templates, scripts, and documentation. Delimiters are load-bearing architectural columns, not sentence punctuation.
 
 ### Core Geometric Rules
