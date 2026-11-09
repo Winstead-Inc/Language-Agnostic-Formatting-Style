@@ -6,7 +6,7 @@ pub struct Shell_Formatter;
 
 impl Shell_Formatter
 {
-    pub fn Format(Source: & str, Config: & Config_Settings)->Result<String, String>
+    pub fn Format(Source: & str, Config: & Config_Settings) -> Result<String, String>
     {
         let mut Lexer = Shell_Lexer::New(Source);
         let Tokens = Lexer.TokenizeAll();
@@ -18,31 +18,26 @@ impl Shell_Formatter
         let Formatted = Emitter.Emit( & Nodes);
         // Safety gate verification
         if let Err(VerifyErr) = VerifyShellTokenEquivalence(Source, & Formatted)
-        {
-            return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr));
-        }
+        { return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr)); }
 
         Ok(Formatted)
     }
 
-    pub fn IsFormatted(Source: & str, Config: & Config_Settings)-> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
+    pub fn IsFormatted(Source: & str, Config: & Config_Settings) -> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
 }
 
 pub struct Shell_Lexer<'a> { Source: & 'a str, Chars: Vec<char>, Index: usize, Line: usize, Column: usize, }
 
 impl <'a> Shell_Lexer<'a>
 {
-    pub fn New(Source: & 'a str)->Self { Shell_Lexer { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, } }
+    pub fn New(Source: & 'a str) -> Self { Shell_Lexer { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, } }
 
-    fn Peek( & self)->Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
+    fn Peek( & self) -> Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
 
-    fn PeekAhead( & self, Offset: usize)->Option<char>
-    {
-        let Target = self.Index + Offset;
-        if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None }
-    }
+    fn PeekAhead( & self, Offset: usize) -> Option<char>
+    { let Target = self.Index + Offset; if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None } }
 
-    fn Advance( & mut self)->Option<char>
+    fn Advance( & mut self) -> Option<char>
     {
         if self.Index >= self.Chars.len() { return None; }
         let Ch = self.Chars[self.Index];
@@ -51,7 +46,7 @@ impl <'a> Shell_Lexer<'a>
         Some(Ch)
     }
 
-    pub fn TokenizeAll( & mut self)->Vec<Token_Info>
+    pub fn TokenizeAll( & mut self) -> Vec<Token_Info>
     {
         let mut RawTokens: Vec < Token_Info > = Vec:: new ();
         let mut PrecedingNewlines: usize = 0;
@@ -80,19 +75,10 @@ impl <'a> Shell_Lexer<'a>
             }
             // Horizontal whitespace
             if Ch == ' ' || Ch == '\t' || Ch == '\r'
-            {
-                let WS = self.Advance().unwrap();
-                if AtLineStart && (WS == ' ' || WS == '\t') { CurrentLeadingWhitespace.push(WS); }
-                continue;
-            }
+            { let WS = self.Advance().unwrap(); if AtLineStart && (WS == ' ' || WS == '\t') { CurrentLeadingWhitespace.push(WS); } continue ; }
 
             let TokenIndent = if AtLineStart
-            {
-                AtLineStart = false;
-                let Indent = CurrentLeadingWhitespace.clone();
-                CurrentLeadingWhitespace.clear();
-                Indent
-            }
+            { AtLineStart = false; let Indent = CurrentLeadingWhitespace.clone(); CurrentLeadingWhitespace.clear(); Indent }
             else { String::new () };
             // Comments
             if Ch == '#'
@@ -156,10 +142,7 @@ impl <'a> Shell_Lexer<'a>
                 if let Some(NextCh) = self.Peek()
                 {
                     if ! NextCh.is_whitespace() && NextCh != ';' && NextCh != '&' && NextCh != '|' && NextCh != ')' && NextCh != '('
-                    {
-                        let RestWord = self.ScanWord();
-                        StrText.push_str( & RestWord);
-                    }
+                    { let RestWord = self.ScanWord(); StrText.push_str( & RestWord); }
                 }
                 RawTokens.push(Token_Info::NewWithIndent(Token_Kind::String_Lit(StrText.clone()), StrText, StartLine, StartCol, PrecedingNewlines, TokenIndent,));
                 PrecedingNewlines = 0;
@@ -172,10 +155,7 @@ impl <'a> Shell_Lexer<'a>
                 if let Some(NextCh) = self.Peek()
                 {
                     if ! NextCh.is_whitespace() && NextCh != ';' && NextCh != '&' && NextCh != '|' && NextCh != ')' && NextCh != '('
-                    {
-                        let RestWord = self.ScanWord();
-                        StrText.push_str( & RestWord);
-                    }
+                    { let RestWord = self.ScanWord(); StrText.push_str( & RestWord); }
                 }
                 RawTokens.push(Token_Info::NewWithIndent(Token_Kind::String_Lit(StrText.clone()), StrText, StartLine, StartCol, PrecedingNewlines, TokenIndent,));
                 PrecedingNewlines = 0;
@@ -309,14 +289,14 @@ impl <'a> Shell_Lexer<'a>
         RawTokens
     }
 
-    fn ScanLineComment( & mut self)->String
+    fn ScanLineComment( & mut self) -> String
     {
         let mut Result = String:: new ();
         while let Some(Ch) = self.Peek() { if Ch == '\n' { break ; } Result.push(self.Advance().unwrap()); }
         Result
     }
 
-    fn ScanSingleQuotedString( & mut self)->String
+    fn ScanSingleQuotedString( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -325,7 +305,7 @@ impl <'a> Shell_Lexer<'a>
         Result
     }
 
-    fn ScanDoubleQuotedString( & mut self)->String
+    fn ScanDoubleQuotedString( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -333,11 +313,7 @@ impl <'a> Shell_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '\\'
-            {
-                Result.push(self.Advance().unwrap());
-                if self.Peek().is_some() { Result.push(self.Advance().unwrap()); }
-                continue;
-            }
+            { Result.push(self.Advance().unwrap()); if self.Peek().is_some() { Result.push(self.Advance().unwrap()); } continue ; }
             if Ch == '$' && self.PeekAhead(1) == Some('(')
             {
                 Result.push(self.Advance().unwrap());
@@ -365,7 +341,7 @@ impl <'a> Shell_Lexer<'a>
         Result
     }
 
-    fn ScanHeredocDelimiterTag( & mut self)->String
+    fn ScanHeredocDelimiterTag( & mut self) -> String
     {
         let mut Result = String:: new ();
         while let Some(Ch) = self.Peek()
@@ -376,7 +352,7 @@ impl <'a> Shell_Lexer<'a>
         Result
     }
 
-    fn ScanHeredocBody( & mut self, CleanDelimiter: & str)->String
+    fn ScanHeredocBody( & mut self, CleanDelimiter: & str) -> String
     {
         let mut Result = String:: new ();
         let mut CurrentLine = String:: new ();
@@ -400,7 +376,7 @@ impl <'a> Shell_Lexer<'a>
         Result
     }
 
-    fn ScanShellOperator( & mut self)->String
+    fn ScanShellOperator( & mut self) -> String
     {
         let mut Result = String:: new ();
         if let Some(Ch) = self.Peek() { if Ch.is_ascii_digit() { Result.push(self.Advance().unwrap()); } }
@@ -410,9 +386,12 @@ impl <'a> Shell_Lexer<'a>
         let Next = self.Peek();
         match (First, Next)
         {
-            ('|', Some('|')) | ('&', Some('&')) | ('>', Some('>')) | ('<', Some('<')) => { Result.push(self.Advance().unwrap()); }
-            ('|', Some('&')) => { Result.push(self.Advance().unwrap()); }
-            ('>', Some('&')) =>
+            ('|', Some('|'))
+            | ('&', Some('&')) | ('>', Some('>')) | ('<', Some('<')) => { Result.push(self.Advance().unwrap()); }
+            ('|', Some('&'))
+            => { Result.push(self.Advance().unwrap()); }
+            ('>', Some('&'))
+            =>
             {
                 Result.push(self.Advance().unwrap());
                 if let Some(Digit) = self.Peek() { if Digit.is_ascii_digit() { Result.push(self.Advance().unwrap()); } }
@@ -423,7 +402,7 @@ impl <'a> Shell_Lexer<'a>
         Result
     }
 
-    fn ScanParameterExpansion( & mut self)->String
+    fn ScanParameterExpansion( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -435,35 +414,24 @@ impl <'a> Shell_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '\\'
-            {
-                Result.push(self.Advance().unwrap());
-                if self.Peek().is_some() { Result.push(self.Advance().unwrap()); }
-                continue;
-            }
+            { Result.push(self.Advance().unwrap()); if self.Peek().is_some() { Result.push(self.Advance().unwrap()); } continue ; }
             if Ch == '\'' { let Str = self.ScanSingleQuotedString(); Result.push_str( & Str); continue ; }
             if Ch == '"' { let Str = self.ScanDoubleQuotedString(); Result.push_str( & Str); continue ; }
             if Ch == '$' && self.PeekAhead(1) == Some('{')
-            {
-                Result.push(self.Advance().unwrap());
-                Result.push(self.Advance().unwrap());
-                Depth += 1;
-                continue;
-            }
+            { Result.push(self.Advance().unwrap()); Result.push(self.Advance().unwrap()); Depth += 1; continue ; }
             if Ch == '}' { Result.push(self.Advance().unwrap()); Depth -= 1; if Depth == 0 { break ; } continue ; }
             Result.push(self.Advance().unwrap());
         }
         Result
     }
 
-    fn ScanWord( & mut self)->String
+    fn ScanWord( & mut self) -> String
     {
         let mut Result = String:: new ();
         while let Some(Ch) = self.Peek()
         {
             if Ch == ' ' || Ch == '\t' || Ch == '\r' || Ch == '\n' || Ch == ';' || Ch == '|' || Ch == '&' || Ch == '(' || Ch == ')' || Ch == '<' || Ch == '>'
-            {
-                break;
-            }
+            { break ; }
             // Comment marker # only breaks at start of word (allowing $#, C#, foo#bar)
             if Ch == '#' && Result.is_empty() { break ; }
             // Standalone braces { and } (command grouping and function bodies)
@@ -487,11 +455,7 @@ impl <'a> Shell_Lexer<'a>
             if Ch == '"' { let Str = self.ScanDoubleQuotedString(); Result.push_str( & Str); continue ; }
 
             if Ch == '\\'
-            {
-                Result.push(self.Advance().unwrap());
-                if self.Peek().is_some() { Result.push(self.Advance().unwrap()); }
-                continue;
-            }
+            { Result.push(self.Advance().unwrap()); if self.Peek().is_some() { Result.push(self.Advance().unwrap()); } continue ; }
 
             Result.push(self.Advance().unwrap());
         }
@@ -499,7 +463,7 @@ impl <'a> Shell_Lexer<'a>
     }
 }
 
-fn IsShellKeyword(Word: & str)-> bool
+fn IsShellKeyword(Word: & str) -> bool
 {
     matches!(Word, "if" | "then" | "elif" | "else" | "fi" | "for" | "in" | "do" | "done" | "while" | "until" | "case" | "esac" | "function" | "select" | "time")
 }
@@ -516,7 +480,7 @@ pub struct Shell_Container
 
 impl Shell_Container
 {
-    pub fn New(Kind: Container_Kind, Open_Token: Token_Info)->Self
+    pub fn New(Kind: Container_Kind, Open_Token: Token_Info) -> Self
     {
         Shell_Container
         {
@@ -524,7 +488,7 @@ impl Shell_Container
         }
     }
 
-    pub fn IsSoleChildChain( & self)-> bool
+    pub fn IsSoleChildChain( & self) -> bool
     {
         let NonTrivia: Vec <& Shell_Syntax_Node > = self.Children.iter().filter( | Node | match Node { Shell_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Shell_Syntax_Node::Container(_) => true, })
         .collect();
@@ -532,7 +496,7 @@ impl Shell_Container
         if NonTrivia.len() == 1 { matches ! (NonTrivia[0], Shell_Syntax_Node::Container(_)) } else { false }
     }
 
-    pub fn GetSoleChildContainer( & self)->Option <& Shell_Container >
+    pub fn GetSoleChildContainer( & self) -> Option <& Shell_Container >
     {
         let NonTrivia: Vec <& Shell_Syntax_Node > = self.Children.iter().filter( | Node | match Node { Shell_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Shell_Syntax_Node::Container(_) => true, })
         .collect();
@@ -541,7 +505,7 @@ impl Shell_Container
         None
     }
 
-    pub fn CollectChain( & self)->Vec <& Shell_Container >
+    pub fn CollectChain( & self) -> Vec <& Shell_Container >
     {
         let mut Chain = vec![self];
         let mut Current = self;
@@ -549,7 +513,7 @@ impl Shell_Container
         Chain
     }
 
-    pub fn CalculateSingleLineSpan( & self)->usize
+    pub fn CalculateSingleLineSpan( & self) -> usize
     {
         if self.Has_Forced_Break { return usize::MAX; }
 
@@ -583,21 +547,18 @@ impl Shell_Container
         Total
     }
 
-    pub fn CalculateBlockDepth( & self)->usize
+    pub fn CalculateBlockDepth( & self) -> usize
     {
         let mut MaxChildDepth = 0;
         for Child in & self.Children
         {
             if let Shell_Syntax_Node::Container(Sub) = Child
-            {
-                let SubDepth = Sub.CalculateBlockDepth();
-                if SubDepth > MaxChildDepth { MaxChildDepth = SubDepth; }
-            }
+            { let SubDepth = Sub.CalculateBlockDepth(); if SubDepth > MaxChildDepth { MaxChildDepth = SubDepth; } }
         }
         1 + MaxChildDepth
     }
 
-    pub fn CountTotalContainers( & self)->usize
+    pub fn CountTotalContainers( & self) -> usize
     {
         let mut Count = 1;
         for Child in & self.Children { if let Shell_Syntax_Node::Container(Sub) = Child { Count += Sub.CountTotalContainers(); } }
@@ -609,21 +570,19 @@ pub struct Shell_Container_Builder { Tokens: Vec<Token_Info>, Index: usize, }
 
 impl Shell_Container_Builder
 {
-    pub fn New(Tokens: Vec<Token_Info>)->Self { Shell_Container_Builder { Tokens, Index: 0 } }
+    pub fn New(Tokens: Vec<Token_Info>) -> Self { Shell_Container_Builder { Tokens, Index: 0 } }
 
-    pub fn BuildTree( & mut self)->Vec<Shell_Syntax_Node>
+    pub fn BuildTree( & mut self) -> Vec<Shell_Syntax_Node>
     {
         let mut RootNodes = Vec:: new ();
         while self.Index < self.Tokens.len() { if let Some(Node) = self.ParseNextNode() { RootNodes.push(Node); } }
         RootNodes
     }
 
-    fn FindLineIndent( & self, TokenIdx: usize)->String
+    fn FindLineIndent( & self, TokenIdx: usize) -> String
     {
         if TokenIdx == 0 || TokenIdx >= self.Tokens.len()
-        {
-            return self.Tokens. get(TokenIdx).map( | T | T.Leading_Whitespace.clone()).unwrap_or_default();
-        }
+        { return self.Tokens.get (TokenIdx).map( | T | T.Leading_Whitespace.clone()).unwrap_or_default(); }
         // Case 1: Open delimiter is on the same line as declaration (e.g. `foo() {`)
         if self.Tokens[TokenIdx].Preceding_Newlines == 0
         {
@@ -648,7 +607,7 @@ impl Shell_Container_Builder
         self.Tokens[TokenIdx].Leading_Whitespace.clone()
     }
 
-    fn ParseNextNode( & mut self)->Option<Shell_Syntax_Node>
+    fn ParseNextNode( & mut self) -> Option<Shell_Syntax_Node>
     {
         if self.Index >= self.Tokens.len() { return None; }
         let TokenIdx = self.Index;
@@ -689,21 +648,14 @@ impl Shell_Container_Builder
                     {
                         let NextToken = & self.Tokens[self.Index];
                         if NextToken.Preceding_Newlines == 0 && (NextToken.Text == ";" || NextToken.Text == ";;")
-                        {
-                            Container.Tail_Glue.push(NextToken.clone());
-                            self.Index += 1;
-                        }
+                        { Container.Tail_Glue.push(NextToken.clone()); self.Index += 1; }
                         else { break ; }
                     }
                     break;
                 }
                 Token_Kind::Open_Delim(_) => { if let Some(ChildNode) = self.ParseNextNode() { Container.Children.push(ChildNode); } }
                 Token_Kind::Comment_Line(_) =>
-                {
-                    Container.Has_Forced_Break = true;
-                    Container.Children.push(Shell_Syntax_Node::Token(CurrentToken));
-                    self.Index += 1;
-                }
+                { Container.Has_Forced_Break = true; Container.Children.push(Shell_Syntax_Node::Token(CurrentToken)); self.Index += 1; }
                 _ =>
                 {
                     if CurrentToken.Text == ";" || CurrentToken.Preceding_Newlines > 0 { StatementCount += 1; }
@@ -721,9 +673,9 @@ pub struct Shell_Layout_Planner<'a> { Config: & 'a Config_Settings, }
 
 impl <'a> Shell_Layout_Planner<'a>
 {
-    pub fn New(Config: & 'a Config_Settings)->Self { Shell_Layout_Planner { Config } }
+    pub fn New(Config: & 'a Config_Settings) -> Self { Shell_Layout_Planner { Config } }
 
-    pub fn DecideLayout( & self, Container: & Shell_Container, CurrentIndentLevel: usize, CurrentColumn: usize,)->Layout_State
+    pub fn DecideLayout( & self, Container: & Shell_Container, CurrentIndentLevel: usize, CurrentColumn: usize,) -> Layout_State
     {
         // 1. Monolith First (Horizontal Density)
         if ! Container.Has_Forced_Break && Container.Statement_Count <= self.Config.Max_Statements_In_Monolith && Container.CalculateBlockDepth() <= self.Config.Max_Block_Depth && Container.CountTotalContainers()
@@ -739,10 +691,7 @@ impl <'a> Shell_Layout_Planner<'a>
         }
         // 2. Compound Delimiters (Sole-Child Chain)
         if self.Config.Allow_Brace_Grouping && Container.IsSoleChildChain()
-        {
-            let Chain = Container.CollectChain();
-            if Chain.len() >= 2 { return Layout_State::Grouped; }
-        }
+        { let Chain = Container.CollectChain(); if Chain.len() >= 2 { return Layout_State::Grouped; } }
         // 3. Expanded Symmetry (Hierarchical Architecture)
         Layout_State::Expanded
     }
@@ -752,14 +701,10 @@ pub struct Shell_Emitter<'a> { Config: & 'a Config_Settings, Planner: Shell_Layo
 
 impl <'a> Shell_Emitter<'a>
 {
-    pub fn New(Config: & 'a Config_Settings)->Self { Shell_Emitter { Config, Planner: Shell_Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, } }
+    pub fn New(Config: & 'a Config_Settings) -> Self { Shell_Emitter { Config, Planner: Shell_Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, } }
 
-    pub fn Emit(mut self, Nodes: & [Shell_Syntax_Node])->String
-    {
-        self.EmitNodeList(Nodes, 0);
-        if ! self.Output.ends_with('\n') { self.Output.push('\n'); }
-        self.Output
-    }
+    pub fn Emit(mut self, Nodes: & [Shell_Syntax_Node]) -> String
+    { self.EmitNodeList(Nodes, 0); if ! self.Output.ends_with('\n') { self.Output.push('\n'); } self.Output }
 
     fn WriteNewline( & mut self)
     {
@@ -787,10 +732,7 @@ impl <'a> Shell_Emitter<'a>
     fn EmitSpace( & mut self)
     {
         if self.Line_Has_Content && self.Current_Line_Len > 0 && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
-        {
-            self.Output.push(' ');
-            self.Current_Line_Len += 1;
-        }
+        { self.Output.push(' '); self.Current_Line_Len += 1; }
     }
 
     fn EmitNodeList( & mut self, Nodes: & [Shell_Syntax_Node], Level: usize)
@@ -893,11 +835,7 @@ impl <'a> Shell_Emitter<'a>
                     PrevNeedsSpace = true;
                 }
                 Shell_Syntax_Node::Container(Sub) =>
-                {
-                    if PrevNeedsSpace { self.EmitSpace(); }
-                    self.EmitMonolith(Sub, Level);
-                    PrevNeedsSpace = true;
-                }
+                { if PrevNeedsSpace { self.EmitSpace(); } self.EmitMonolith(Sub, Level); PrevNeedsSpace = true; }
             }
         }
 
@@ -968,7 +906,7 @@ impl <'a> Shell_Emitter<'a>
     }
 }
 
-pub fn VerifyShellTokenEquivalence(OriginalSource: & str, FormattedSource: & str,)->Result<(), String>
+pub fn VerifyShellTokenEquivalence(OriginalSource: & str, FormattedSource: & str,) -> Result<(), String>
 {
     let mut OriginalScanner = Shell_Lexer::New(OriginalSource);
     let OriginalTokens = OriginalScanner.TokenizeAll();

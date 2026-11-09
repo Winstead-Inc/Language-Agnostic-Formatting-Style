@@ -5,17 +5,14 @@ pub struct Lexer_Scanner<'a> { Source: & 'a str, Chars: Vec<char>, Index: usize,
 
 impl <'a> Lexer_Scanner<'a>
 {
-    pub fn New(Source: & 'a str, Language: Source_Language)->Self { Lexer_Scanner { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, Language, } }
+    pub fn New(Source: & 'a str, Language: Source_Language) -> Self { Lexer_Scanner { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, Language, } }
 
-    fn Peek( & self)->Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
+    fn Peek( & self) -> Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
 
-    fn PeekAhead( & self, Offset: usize)->Option<char>
-    {
-        let Target = self.Index + Offset;
-        if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None }
-    }
+    fn PeekAhead( & self, Offset: usize) -> Option<char>
+    { let Target = self.Index + Offset; if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None } }
 
-    fn Advance( & mut self)->Option<char>
+    fn Advance( & mut self) -> Option<char>
     {
         if self.Index >= self.Chars.len() { return None; }
         let Ch = self.Chars[self.Index];
@@ -24,7 +21,7 @@ impl <'a> Lexer_Scanner<'a>
         Some(Ch)
     }
 
-    pub fn TokenizeAll( & mut self)->Vec<Token_Info>
+    pub fn TokenizeAll( & mut self) -> Vec<Token_Info>
     {
         let mut RawTokens: Vec < Token_Info > = Vec:: new ();
         let mut PrecedingNewlines: usize = 0;
@@ -290,7 +287,7 @@ impl <'a> Lexer_Scanner<'a>
         RawTokens
     }
 
-    fn ScanPreprocessor( & mut self)->String
+    fn ScanPreprocessor( & mut self) -> String
     {
         let mut Result = String:: new ();
         while let Some(Ch) = self.Peek()
@@ -307,14 +304,14 @@ impl <'a> Lexer_Scanner<'a>
         Result
     }
 
-    fn ScanLineComment( & mut self)->String
+    fn ScanLineComment( & mut self) -> String
     {
         let mut Result = String:: new ();
         while let Some(Ch) = self.Peek() { if Ch == '\n' { break ; } Result.push(self.Advance().unwrap()); }
         Result
     }
 
-    fn ScanBlockComment( & mut self)->String
+    fn ScanBlockComment( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -325,17 +322,13 @@ impl <'a> Lexer_Scanner<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '*' && self.PeekAhead(1) == Some('/')
-            {
-                Result.push(self.Advance().unwrap());
-                Result.push(self.Advance().unwrap());
-                break;
-            }
+            { Result.push(self.Advance().unwrap()); Result.push(self.Advance().unwrap()); break ; }
             Result.push(self.Advance().unwrap());
         }
         Result
     }
 
-    fn ScanRawRustString( & mut self, HashCount: usize)->String
+    fn ScanRawRustString( & mut self, HashCount: usize) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -365,7 +358,7 @@ impl <'a> Lexer_Scanner<'a>
         Result
     }
 
-    fn ScanStandardString( & mut self)->String
+    fn ScanStandardString( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -381,7 +374,7 @@ impl <'a> Lexer_Scanner<'a>
         Result
     }
 
-    fn ScanRawBacktickString( & mut self)->String
+    fn ScanRawBacktickString( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -391,7 +384,7 @@ impl <'a> Lexer_Scanner<'a>
         Result
     }
 
-    fn ScanCharLiteral( & mut self)->String
+    fn ScanCharLiteral( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -407,23 +400,16 @@ impl <'a> Lexer_Scanner<'a>
         Result
     }
 
-    fn ScanCppRawString( & mut self)->String
+    fn ScanCppRawString( & mut self) -> String
     {
         let mut Result = String:: new ();
         // Consume prefix like R or u8R
         while let Some(Ch) = self.Peek()
-        {
-            if Ch == '"' { Result.push(self.Advance().unwrap()); break ; }
-            Result.push(self.Advance().unwrap());
-        }
+        { if Ch == '"' { Result.push(self.Advance().unwrap()); break ; } Result.push(self.Advance().unwrap()); }
         // Extract delimiter between " and (
         let mut Delim = String:: new ();
         while let Some(Ch) = self.Peek()
-        {
-            if Ch == '(' { Result.push(self.Advance().unwrap()); break ; }
-            Delim.push(Ch);
-            Result.push(self.Advance().unwrap());
-        }
+        { if Ch == '(' { Result.push(self.Advance().unwrap()); break ; } Delim.push(Ch); Result.push(self.Advance().unwrap()); }
 
         let TargetEnd = format!("){}\"", Delim);
         while self.Index < self.Chars.len()
@@ -434,7 +420,7 @@ impl <'a> Lexer_Scanner<'a>
         Result
     }
 
-    fn ScanCSharpVerbatimString( & mut self)->String
+    fn ScanCSharpVerbatimString( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -455,7 +441,7 @@ impl <'a> Lexer_Scanner<'a>
         Result
     }
 
-    fn ScanCSharpRawString( & mut self)->String
+    fn ScanCSharpRawString( & mut self) -> String
     {
         let mut Result = String:: new ();
         let mut QuoteCount = 0;
@@ -470,28 +456,31 @@ impl <'a> Lexer_Scanner<'a>
         Result
     }
 
-    fn ScanIdentifier( & mut self)->String
+    fn ScanIdentifier( & mut self) -> String
     {
         let mut Result = String:: new ();
         while let Some(Ch) = self.Peek()
         {
             if Ch.is_alphanumeric() || Ch == '_' || Ch == '$' || (self.Language == crate::types::Source_Language::Css && (Ch == '-' || Ch == '.'))
-            {
-                Result.push(self.Advance().unwrap());
-            }
+            { Result.push(self.Advance().unwrap()); }
             else { break ; }
         }
         Result
     }
 
-    fn ScanNumber( & mut self)->String
+    fn ScanNumber( & mut self) -> String
     {
         let mut Result = String:: new ();
-        while let Some(Ch) = self.Peek() { if Ch.is_ascii_alphanumeric() || Ch == '.' || Ch == '_' || Ch == '\'' { Result.push(self.Advance().unwrap()); } else { break ; } }
+        while let Some(Ch) = self.Peek()
+        {
+            if Ch == '.' && self.PeekAhead(1) == Some('.') { break ; }
+            if Ch.is_ascii_alphanumeric() || Ch == '.' || Ch == '_' || Ch == '\'' { Result.push(self.Advance().unwrap()); }
+            else { break ; }
+        }
         Result
     }
 
-    fn ScanOperator( & mut self)->String
+    fn ScanOperator( & mut self) -> String
     {
         let mut Result = String:: new ();
         let OpChars = "=+-*/%&|^!~<>:";
@@ -501,7 +490,7 @@ impl <'a> Lexer_Scanner<'a>
     }
 }
 
-fn IsKeyword(Text: & str)-> bool
+fn IsKeyword(Text: & str) -> bool
 {
     matches!
     (

@@ -9,7 +9,7 @@ pub struct Go_Formatter;
 
 impl Go_Formatter
 {
-    pub fn Format(Source: & str, Config: & Config_Settings)->Result<String, String>
+    pub fn Format(Source: & str, Config: & Config_Settings) -> Result<String, String>
     {
         let mut Scanner = Lexer_Scanner::New(Source, Config.Language);
         let Tokens = Scanner.TokenizeAll();
@@ -29,5 +29,5 @@ impl Go_Formatter
         Ok(Formatted)
     }
 
-    pub fn IsFormatted(Source: & str, Config: & Config_Settings)-> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
+    pub fn IsFormatted(Source: & str, Config: & Config_Settings) -> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
 }

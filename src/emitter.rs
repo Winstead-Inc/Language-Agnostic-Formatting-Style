@@ -2,20 +2,16 @@
 
 use crate::container_tree:: { Container_Node, Syntax_Node };
 use crate::planner::Layout_Planner;
-use crate::types:: { Config_Settings, Container_Kind, Layout_State, Token_Info, Token_Kind };
+use crate::types:: { Config_Settings, Container_Kind, Layout_State, Source_Language, Token_Info, Token_Kind };
 
 pub struct Code_Emitter<'a> { Config: & 'a Config_Settings, Planner: Layout_Planner<'a>, Output: String, Current_Line_Len: usize, Line_Has_Content: bool , }
 
 impl <'a> Code_Emitter<'a>
 {
-    pub fn New(Config: & 'a Config_Settings)->Self { Code_Emitter { Config, Planner: Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, } }
+    pub fn New(Config: & 'a Config_Settings) -> Self { Code_Emitter { Config, Planner: Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, } }
 
-    pub fn Emit(mut self, Nodes: & [Syntax_Node])->String
-    {
-        self.EmitNodeList(Nodes, 0);
-        if ! self.Output.ends_with('\n') { self.Output.push('\n'); }
-        self.Output
-    }
+    pub fn Emit(mut self, Nodes: & [Syntax_Node]) -> String
+    { self.EmitNodeList(Nodes, 0); if ! self.Output.ends_with('\n') { self.Output.push('\n'); } self.Output }
 
     fn WriteNewline( & mut self)
     {
@@ -58,10 +54,7 @@ impl <'a> Code_Emitter<'a>
     fn EmitSpace( & mut self)
     {
         if self.Line_Has_Content && self.Current_Line_Len > 0 && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
-        {
-            self.Output.push(' ');
-            self.Current_Line_Len += 1;
-        }
+        { self.Output.push(' '); self.Current_Line_Len += 1; }
     }
 
     fn EmitNodeList( & mut self, Nodes: & [Syntax_Node], Level: usize)
@@ -91,42 +84,24 @@ impl <'a> Code_Emitter<'a>
                             Syntax_Node::Token(PrevT) =>
                             {
                                 if matches!(PrevT.Kind, Token_Kind::String_Lit(_) | Token_Kind::Number(_) | Token_Kind::Char_Lit(_))
-                                {
-                                    false
-                                }
+                                { false }
                                 else if PrevT.Text == ";" || PrevT.Text == "," || PrevT.Text == "=" || PrevT.Text == ":"
-                                {
-                                    false
-                                }
+                                { false }
                                 else if Self::IsPrecededByAssignment(Nodes, Index - 1)
-                                {
-                                    false
-                                }
+                                { false }
                                 else if matches!(C.Kind, Container_Kind::Paren | Container_Kind::Bracket) && matches!(PrevT.Kind, Token_Kind::Identifier(_))
-                                {
-                                    ! Self::IsControlKeyword( & PrevT.Text)
-                                }
+                                { ! Self::IsControlKeyword( & PrevT.Text) }
                                 else
-                                {
-                                    false
-                                }
+                                { false }
                             }
                             Syntax_Node::Container(_) => false,
                         }
                     }
                     else
-                    {
-                        false
-                    };
+                    { false };
 
                     if C.Open_Token.Preceding_Newlines > 0 && ! ShouldAttachInline
-                    {
-                        self.EnsureNewline();
-                        if C.Open_Token.Preceding_Newlines >= 2
-                        {
-                            self.EnsureBlankLine();
-                        }
-                    }
+                    { self.EnsureNewline(); if C.Open_Token.Preceding_Newlines >= 2 { self.EnsureBlankLine(); } }
 
                     let StartedAtLineStart = ! self.Line_Has_Content;
                     let EffectiveCol = if self.Line_Has_Content { self.Current_Line_Len } else { Level * self.Config.Indent_Width };
@@ -173,9 +148,7 @@ impl <'a> Code_Emitter<'a>
                         {
                             if Self::IsDeclaration(Nodes, Index) && (Level == 0 || Level == 1) { self.EnsureBlankLine(); }
                             else if Level == 0 && Self::IsImportStatementEnding(Nodes, Index) && Self::HasMoreNonImportStatements(Nodes, Index + 1)
-                            {
-                                self.EnsureBlankLine();
-                            }
+                            { self.EnsureBlankLine(); }
                             else { self.EnsureNewline(); }
                         }
                         else { self.EnsureNewline(); }
@@ -184,9 +157,7 @@ impl <'a> Code_Emitter<'a>
                     {
                         let IsTrailingPunct = Index + 1 < Total && matches!( & Nodes[Index + 1], Syntax_Node::Token(T) if T.Text == ";" || T.Text == ",");
                         if ! IsTrailingPunct
-                        {
-                            self.EnsureNewline();
-                        }
+                        { self.EnsureNewline(); }
                     }
                 }
             }
@@ -195,16 +166,10 @@ impl <'a> Code_Emitter<'a>
         }
     }
 
-    fn IsControlKeyword(Text: & str)-> bool
-    {
-        matches!
-        (
-            Text,
-            "return" | "throw" | "break" | "continue" | "yield" | "await" | "assert" | "case" | "default" | "in" | "is" | "as"
-        )
-    }
+    fn IsControlKeyword(Text: & str) -> bool
+    { matches ! (Text, "return" | "throw" | "break" | "continue" | "yield" | "await" | "assert" | "case" | "default" | "in" | "is" | "as") }
 
-    fn IsPrecededByAssignment(Nodes: & [Syntax_Node], FromIdx: usize)-> bool
+    fn IsPrecededByAssignment(Nodes: & [Syntax_Node], FromIdx: usize) -> bool
     {
         let mut ScanIdx = FromIdx;
         loop
@@ -212,14 +177,9 @@ impl <'a> Code_Emitter<'a>
             match & Nodes[ScanIdx]
             {
                 Syntax_Node::Token(T) =>
-                {
-                    if T.Text == "=" { return true; }
-                    if T.Text == ";" || T.Text == "{" || T.Text == "}" || T.Preceding_Newlines > 0 { break ; }
-                }
+                { if T.Text == "=" { return true; } if T.Text == ";" || T.Text == "{" || T.Text == "}" || T.Preceding_Newlines > 0 { break ; } }
                 Syntax_Node::Container(C) =>
-                {
-                    if C.Kind == Container_Kind::Brace || C.Open_Token.Preceding_Newlines > 0 { break ; }
-                }
+                { if C.Kind == Container_Kind::Brace || C.Open_Token.Preceding_Newlines > 0 { break ; } }
             }
             if ScanIdx == 0 { break ; }
             ScanIdx -= 1;
@@ -227,7 +187,7 @@ impl <'a> Code_Emitter<'a>
         false
     }
 
-    fn IsImportStatement(Nodes: & [Syntax_Node], mut StartIdx: usize)-> bool
+    fn IsImportStatement(Nodes: & [Syntax_Node], mut StartIdx: usize) -> bool
     {
         if StartIdx >= Nodes.len() { return false; }
         if let Syntax_Node::Token(T) = & Nodes[StartIdx]
@@ -259,7 +219,7 @@ impl <'a> Code_Emitter<'a>
         }
     }
 
-    fn IsImportStatementEnding(Nodes: & [Syntax_Node], CurrentIdx: usize)-> bool
+    fn IsImportStatementEnding(Nodes: & [Syntax_Node], CurrentIdx: usize) -> bool
     {
         if CurrentIdx >= Nodes.len() { return false; }
         match & Nodes[CurrentIdx]
@@ -286,7 +246,7 @@ impl <'a> Code_Emitter<'a>
         Self::IsImportStatement(Nodes, StartIdx)
     }
 
-    fn HasMoreNonImportStatements(Nodes: & [Syntax_Node], FromIdx: usize)-> bool
+    fn HasMoreNonImportStatements(Nodes: & [Syntax_Node], FromIdx: usize) -> bool
     {
         let mut NextIdx = FromIdx;
         while NextIdx < Nodes.len()
@@ -304,7 +264,7 @@ impl <'a> Code_Emitter<'a>
         false
     }
 
-    fn IsDeclaration(Nodes: & [Syntax_Node], ContainerIdx: usize)-> bool
+    fn IsDeclaration(Nodes: & [Syntax_Node], ContainerIdx: usize) -> bool
     {
         if ContainerIdx == 0 { return false; }
         let mut ScanIdx = ContainerIdx;
@@ -323,16 +283,12 @@ impl <'a> Code_Emitter<'a>
                     if let Token_Kind::Keyword(ref K) = T.Kind
                     {
                         if matches!(K.as_str(),"if" | "else" | "while" | "for" | "loop" | "match" | "switch" | "catch" | "finally" | "do" | "try" | "with" | "synchronized" | "lock")
-                        {
-                            return false;
-                        }
+                        { return false; }
 
                         if matches!(K.as_str(),"use" | "using" | "import") { return false; }
 
                         if matches!(K.as_str(),"fn" | "func" | "function" | "def" | "struct" | "class" | "enum" | "trait" | "impl" | "interface" | "mod" | "namespace")
-                        {
-                            return true;
-                        }
+                        { return true; }
                     }
                 }
                 Syntax_Node::Container(C) => { if C.Kind == Container_Kind::Brace { break ; } if C.Kind == Container_Kind::Paren { HasParen = true; } }
@@ -349,12 +305,7 @@ impl <'a> Code_Emitter<'a>
 
         // 2. Preprocessor directives must always sit on their own line
         if let Token_Kind::Preprocessor(DirectiveText) = & Token.Kind
-        {
-            self.EnsureNewline();
-            self.EmitRaw(DirectiveText);
-            self.WriteNewline();
-            return ;
-        }
+        { self.EnsureNewline(); self.EmitRaw(DirectiveText); self.WriteNewline(); return ; }
 
         // 3. Line comment
         if let Token_Kind::Comment_Line(CommentText) = & Token.Kind
@@ -367,11 +318,7 @@ impl <'a> Code_Emitter<'a>
 
         // 4. Block comment
         if let Token_Kind::Comment_Block(CommentText) = & Token.Kind
-        {
-            if ! self.Line_Has_Content { self.EmitIndent(Level); } else { self.EmitSpace(); }
-            self.EmitRaw(CommentText);
-            return ;
-        }
+        { if ! self.Line_Has_Content { self.EmitIndent(Level); } else { self.EmitSpace(); } self.EmitRaw(CommentText); return ; }
 
         // 5. If line is empty, apply indentation
         if ! self.Line_Has_Content { self.EmitIndent(Level); }
@@ -389,29 +336,34 @@ impl <'a> Code_Emitter<'a>
             Token_Kind::Punctuation(':') =>
             {
                 if self.Output.ends_with("public ") || self.Output.ends_with("private ") || self.Output.ends_with("protected ") || self.Output.ends_with("default ")
-                {
-                    self.Output.pop();
-                    self.Current_Line_Len -= 1;
-                    self.EmitRaw(":");
-                    self.WriteNewline();
-                }
+                { self.Output.pop(); self.Current_Line_Len -= 1; self.EmitRaw(":"); self.WriteNewline(); }
                 else { self.EmitRaw(":"); self.EmitSpace(); }
             }
             Token_Kind::Punctuation('.') => { self.EmitRaw("."); }
             Token_Kind::Operator(Op) =>
             {
-                if Op == "::" || Op == "->" || Op == "?."
+                let IsArrowReturnType = Op == "->" &&
+                (
+                    self.Config.Language == Source_Language::Rust
+                    || self.Output.ends_with(')')
+                    || self.Output.ends_with(']')
+                    || self.Output.ends_with('|')
+                    || self.Output.ends_with('>')
+                );
+
+                if IsArrowReturnType
                 {
-                    if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
-                    self.EmitRaw(Op);
+                    if self.Line_Has_Content && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
+                    { self.EmitSpace(); }
+                    self.EmitRaw("->");
+                    self.EmitSpace();
                 }
+                else if Op == "::" || Op == "->" || Op == "?."
+                { if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } self.EmitRaw(Op); }
                 else if Op == "++" || Op == "--" || Op == "!" || Op == "~" || Op == ".." || Op == "..=" || Op == "..." || Op == "#"
                 {
                     if (Op == ".." || Op == "..=" || Op == "..." || Op == "#") && self.Output.ends_with(' ')
-                    {
-                        self.Output.pop();
-                        self.Current_Line_Len -= 1;
-                    }
+                    { self.Output.pop(); self.Current_Line_Len -= 1; }
                     self.EmitRaw(Op);
                 }
                 else { self.EmitSpace(); self.EmitRaw(Op); self.EmitSpace(); }
@@ -478,33 +430,38 @@ impl <'a> Code_Emitter<'a>
                     if T.Text == ";" { self.EmitRaw(";"); self.EmitSpace(); }
                     else if T.Text == "," { self.EmitRaw(","); self.EmitSpace(); }
                     else if T.Text == "."
-                    {
-                        if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
-                        self.EmitRaw(".");
-                    }
+                    { if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } self.EmitRaw("."); }
                     else if T.Text == ":"
                     {
                         if self.Output.ends_with("public ") || self.Output.ends_with("private ") || self.Output.ends_with("protected ") || self.Output.ends_with("default ")
-                        {
-                            self.Output.pop();
-                            self.Current_Line_Len -= 1;
-                            self.EmitRaw(":");
-                            self.EmitSpace();
-                        }
+                        { self.Output.pop(); self.Current_Line_Len -= 1; self.EmitRaw(":"); self.EmitSpace(); }
                         else { self.EmitRaw(":"); self.EmitSpace(); }
                     }
                     else if T.Text == "::" || T.Text == "->" || T.Text == "?."
                     {
-                        if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
-                        self.EmitRaw( & T.Text);
+                        let IsArrowReturnType = T.Text == "->" &&
+                        (
+                            self.Config.Language == Source_Language::Rust
+                            || self.Output.ends_with(')')
+                            || self.Output.ends_with(']')
+                            || self.Output.ends_with('|')
+                            || self.Output.ends_with('>')
+                        );
+
+                        if IsArrowReturnType
+                        {
+                            if self.Line_Has_Content && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
+                            { self.EmitSpace(); }
+                            self.EmitRaw("->");
+                            self.EmitSpace();
+                        }
+                        else
+                        { if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } self.EmitRaw( & T.Text); }
                     }
                     else if let Token_Kind::Operator(ref Op) = T.Kind
                     {
                         if Op == ".." || Op == "..=" || Op == "..." || Op == "#"
-                        {
-                            if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
-                            self.EmitRaw( & T.Text);
-                        }
+                        { if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } self.EmitRaw( & T.Text); }
                         else { self.EmitSpace(); self.EmitRaw( & T.Text); self.EmitSpace(); }
                     }
                     else
@@ -525,10 +482,7 @@ impl <'a> Code_Emitter<'a>
         if Container.Kind == Container_Kind::Brace && ! Container.Children.is_empty() && ! self.Output.ends_with(' ') { self.EmitRaw(" "); }
 
         if (Container.Kind == Container_Kind::Paren || Container.Kind == Container_Kind::Bracket || Container.Kind == Container_Kind::Angle) && self.Output.ends_with(' ')
-        {
-            self.Output.pop();
-            self.Current_Line_Len -= 1;
-        }
+        { self.Output.pop(); self.Current_Line_Len -= 1; }
 
         self.EmitRaw(Container.Kind.CloseGlyph());
 

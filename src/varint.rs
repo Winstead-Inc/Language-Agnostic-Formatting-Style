@@ -6,7 +6,7 @@
 ///
 /// The buffer must be NUL-terminated to ensure safety.
 #[no_mangle]
-pub unsafe extern "C" fn decode_varint(bufp: * mut * const u8)->u64
+pub unsafe extern "C" fn decode_varint(bufp: * mut * const u8) -> u64
 {
     let mut buf = * bufp;
     let mut c = * buf;
@@ -40,7 +40,7 @@ pub unsafe extern "C" fn decode_varint(bufp: * mut * const u8)->u64
 ///
 /// `buf` must either be null or point to at least 16 bytes of memory.
 #[no_mangle]
-pub unsafe extern "C" fn encode_varint(value: u64, buf: * mut u8)->u8
+pub unsafe extern "C" fn encode_varint(value: u64, buf: * mut u8) -> u8
 {
     let mut varint: [u8; 16] = [0; 16];
     let mut pos = varint.len() - 1;
@@ -51,7 +51,8 @@ pub unsafe extern "C" fn encode_varint(value: u64, buf: * mut u8)->u8
     while value != 0 { pos -= 1; value -= 1; varint[pos] = 128 | (value & 127) as u8; value >>= 7; }
 
     if ! buf.is_null() { std::ptr::copy_nonoverlapping(varint.as_ptr().add(pos), buf, varint.len() - pos); }
-    (varint.len() - pos) as u8
+    (varint.len() - pos)
+    as u8
 }
 
 #[cfg(test)]
@@ -59,7 +60,7 @@ mod tests
 {
     use super:: * ;
 
-    # [test] fn test_decode_varint()
+   #[test] fn test_decode_varint()
     {
         unsafe
         {
@@ -74,7 +75,7 @@ mod tests
         }
     }
 
-    # [test] fn test_encode_varint()
+   #[test] fn test_encode_varint()
     {
         unsafe
         {

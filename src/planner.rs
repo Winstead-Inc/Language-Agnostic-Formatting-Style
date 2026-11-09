@@ -6,9 +6,9 @@ pub struct Layout_Planner<'a> { Config: & 'a Config_Settings, }
 
 impl <'a> Layout_Planner<'a>
 {
-    pub fn New(Config: & 'a Config_Settings)->Self { Layout_Planner { Config } }
+    pub fn New(Config: & 'a Config_Settings) -> Self { Layout_Planner { Config } }
 
-    pub fn DecideLayout( & self, Container: & Container_Node, CurrentIndentLevel: usize, CurrentColumn: usize,)->Layout_State
+    pub fn DecideLayout( & self, Container: & Container_Node, CurrentIndentLevel: usize, CurrentColumn: usize,) -> Layout_State
     {
         // 1. Monolith First (Horizontal Density)
         // Check complexity budget: statements <= max_statements, block depth <= max_block_depth, total containers <= max_containers
@@ -18,7 +18,8 @@ impl <'a> Layout_Planner<'a>
             let SingleSpan = Container.CalculateSingleLineSpan();
             if SingleSpan != usize::MAX
             {
-                let BaseCol = if CurrentColumn > 0 && Container.Open_Token.Preceding_Newlines == 0 { CurrentColumn } else { CurrentIndentLevel * self.Config.Indent_Width };
+                let BaseCol = if CurrentColumn > 0 && Container.Open_Token.Preceding_Newlines == 0 { CurrentColumn }
+                else { CurrentIndentLevel * self.Config.Indent_Width };
                 let ProjectedCol = BaseCol + SingleSpan;
                 if ProjectedCol <= self.Config.Canvas_Width { return Layout_State::Monolith; }
 
@@ -28,10 +29,7 @@ impl <'a> Layout_Planner<'a>
         }
         // 2. Brace Grouping Second (Sole-Child Chain Compound Delimiters)
         if self.Config.Allow_Brace_Grouping && Container.IsSoleChildChain()
-        {
-            let Chain = Container.CollectChain();
-            if Chain.len() >= 2 { return Layout_State::Grouped; }
-        }
+        { let Chain = Container.CollectChain(); if Chain.len() >= 2 { return Layout_State::Grouped; } }
         // 3. Expanded Symmetry Last (Hierarchical Architecture)
         Layout_State::Expanded
     }

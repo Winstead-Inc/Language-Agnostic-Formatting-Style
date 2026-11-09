@@ -41,12 +41,73 @@ LAFS treats code containers (`()`, `{}`, `[]`, `<>`) as structural rooms whose b
 ## Build & Installation
 
 ```powershell
-cd b:\Go\LAFS
+cd "b:\Language-Agnostic Formatting Style"
 cargo build --release
 ```
 
 The compiled binary will be located at:
-`b:\Go\LAFS\target\release\lafs.exe`
+`b:\Language-Agnostic Formatting Style\target\release\LAFS.exe`
+
+---
+
+## LAFS-Compliant Cargo Toolchain (`stable-x86_64-pc-windows-msvc`)
+
+### Background & Architectural Problem
+Stock `cargo.exe` enforces standard TOML 1.0 ABNF grammar (`keyval-sep = ws %x3D ws`), where a newline immediately following an assignment operator (`=`) is treated as a hard lexer syntax error:
+```text
+error: key with no value, expected `=`
+ --> Cargo.toml:10:8
+```
+This constraint prevents developers from formatting TOML manifests and lockfiles according to pure Allman / LAFS symmetry (`dependencies =\n[\n ... \n]`).
+
+### The Native Compiler Solution
+A custom, LAFS-compliant release binary of `cargo.exe` has been compiled and integrated directly into your global Rustup toolchain (`stable-x86_64-pc-windows-msvc`). It eliminates the K&R delimiter restriction without fragile shims or on-the-fly file rewriting.
+
+#### Key Features:
+- **Pure Allman Manifest Support:** Natively parses `Cargo.toml` and `.cargo/config.toml` containing detached delimiter blocks:
+  ```toml
+  [dependencies]
+  proc-macro2 =
+  [
+      "1.0",
+  ]
+
+  quote =
+  {
+      version = "1.0",
+  }
+  ```
+- **Pure Allman Lockfile Generation:** Cargo's lockfile serializer (`emit_package` in `ops/lockfile.rs`) automatically writes `Cargo.lock` using pure vertical symmetry:
+  ```toml
+  [[package]]
+  name = "quote"
+  version = "1.0.47"
+  dependencies =
+  [
+      "proc-macro2",
+  ]
+  ```
+- **Global Operating System Integration:** Because the patch is installed at the binary level in the active toolchain:
+  - Works natively with **Antigravity IDE** and **VS Code**.
+  - Works seamlessly with **`rust-analyzer`** in background language server diagnostics.
+  - Works across all command shells (**PowerShell**, **CMD**, **Bash**, **Git Bash**).
+  - Survives subprocess calls, build scripts, and Git hooks.
+
+### Toolchain File Paths
+| Component | Path |
+| :--- | :--- |
+| **Active Toolchain Binary** | `C:\Users\0.USS-OPPENHEIMER\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\cargo.exe` |
+| **Stock Cargo Backup** | `C:\Users\0.USS-OPPENHEIMER\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\cargo.exe.bak` |
+| **Cargo Source Repository** | `b:\cargo\` |
+| **Compiled Release Binary** | `b:\cargo\target\release\cargo.exe` |
+
+### Rebuilding & Updating the Toolchain
+If you update or pull new Cargo features in `b:\cargo\`, recompile and re-deploy using:
+```powershell
+cd b:\cargo
+cargo build --release --bin cargo
+Copy-Item "target\release\cargo.exe" "$HOME\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\cargo.exe" -Force
+```
 
 ---
 
@@ -139,7 +200,7 @@ lafs --no-log -w .
 | `-f`, `--file <FILES>`         | Format only the specified file(s) (comma-separated or multiple) |
 | `--check`                      | Check if files are formatted (exit code 1 if unformatted)     |
 | `format failed`                | Reformat all files listed in `failed.txt`                     |
-| `-of`, `--output-failed <FILE>`| Log paths (with language) of files that failed or require formatting|
+| `-of`, `--output-failed <FILE>`| Log paths (with language and reason) of files that failed or require formatting|
 | `--no-log`                     | Disable automatic log file generation                         |
 | `-c`, `--canvas-width <WIDTH>` | Maximum column width before vertical expansion (default: 160) |
 | `-i`, `--indent <SIZE>`        | Indentation size in spaces (default: 4)                       |

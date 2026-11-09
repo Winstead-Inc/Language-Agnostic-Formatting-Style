@@ -6,7 +6,7 @@ pub struct JS_TS_Formatter;
 
 impl JS_TS_Formatter
 {
-    pub fn Format(Source: & str, Config: & Config_Settings)->Result<String, String>
+    pub fn Format(Source: & str, Config: & Config_Settings) -> Result<String, String>
     {
         let mut Lexer = JS_Lexer::New(Source, Config.Language);
         let Tokens = Lexer.TokenizeAll();
@@ -18,31 +18,26 @@ impl JS_TS_Formatter
         let Formatted = Emitter.Emit( & Nodes);
         // Safety gate verification
         if let Err(VerifyErr) = VerifyJSTokenEquivalence(Source, & Formatted, Config.Language)
-        {
-            return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr));
-        }
+        { return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr)); }
 
         Ok(Formatted)
     }
 
-    pub fn IsFormatted(Source: & str, Config: & Config_Settings)-> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
+    pub fn IsFormatted(Source: & str, Config: & Config_Settings) -> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
 }
 
 pub struct JS_Lexer<'a> { Source: & 'a str, Chars: Vec<char>, Index: usize, Line: usize, Column: usize, Language: Source_Language, Expects_Expression: bool , }
 
 impl <'a> JS_Lexer<'a>
 {
-    pub fn New(Source: & 'a str, Language: Source_Language)->Self { JS_Lexer { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, Language, Expects_Expression: true, } }
+    pub fn New(Source: & 'a str, Language: Source_Language) -> Self { JS_Lexer { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, Language, Expects_Expression: true, } }
 
-    fn Peek( & self)->Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
+    fn Peek( & self) -> Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
 
-    fn PeekAhead( & self, Offset: usize)->Option<char>
-    {
-        let Target = self.Index + Offset;
-        if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None }
-    }
+    fn PeekAhead( & self, Offset: usize) -> Option<char>
+    { let Target = self.Index + Offset; if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None } }
 
-    fn Advance( & mut self)->Option<char>
+    fn Advance( & mut self) -> Option<char>
     {
         if self.Index >= self.Chars.len() { return None; }
         let Ch = self.Chars[self.Index];
@@ -51,7 +46,7 @@ impl <'a> JS_Lexer<'a>
         Some(Ch)
     }
 
-    pub fn TokenizeAll( & mut self)->Vec<Token_Info>
+    pub fn TokenizeAll( & mut self) -> Vec<Token_Info>
     {
         let mut RawTokens: Vec < Token_Info > = Vec:: new ();
         let mut PrecedingNewlines: usize = 0;
@@ -244,14 +239,14 @@ impl <'a> JS_Lexer<'a>
         RawTokens
     }
 
-    fn ScanLineComment( & mut self)->String
+    fn ScanLineComment( & mut self) -> String
     {
         let mut Result = String:: new ();
         while let Some(Ch) = self.Peek() { if Ch == '\n' { break ; } Result.push(self.Advance().unwrap()); }
         Result
     }
 
-    fn ScanBlockComment( & mut self)->String
+    fn ScanBlockComment( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -262,17 +257,13 @@ impl <'a> JS_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '*' && self.PeekAhead(1) == Some('/')
-            {
-                Result.push(self.Advance().unwrap());
-                Result.push(self.Advance().unwrap());
-                break;
-            }
+            { Result.push(self.Advance().unwrap()); Result.push(self.Advance().unwrap()); break ; }
             Result.push(self.Advance().unwrap());
         }
         Result
     }
 
-    fn ScanQuotedString( & mut self, QuoteChar: char)->String
+    fn ScanQuotedString( & mut self, QuoteChar: char) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -281,11 +272,7 @@ impl <'a> JS_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '\\'
-            {
-                Result.push(self.Advance().unwrap());
-                if self.Peek().is_some() { Result.push(self.Advance().unwrap()); }
-                continue;
-            }
+            { Result.push(self.Advance().unwrap()); if self.Peek().is_some() { Result.push(self.Advance().unwrap()); } continue ; }
             if Ch == QuoteChar { Result.push(self.Advance().unwrap()); break ; }
             if Ch == '\n'
             {
@@ -297,7 +284,7 @@ impl <'a> JS_Lexer<'a>
         Result
     }
 
-    fn ScanTemplateLiteral( & mut self)->String
+    fn ScanTemplateLiteral( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -308,11 +295,7 @@ impl <'a> JS_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '\\'
-            {
-                Result.push(self.Advance().unwrap());
-                if self.Peek().is_some() { Result.push(self.Advance().unwrap()); }
-                continue;
-            }
+            { Result.push(self.Advance().unwrap()); if self.Peek().is_some() { Result.push(self.Advance().unwrap()); } continue ; }
 
             if Ch == '$' && self.PeekAhead(1) == Some('{')
             {
@@ -336,7 +319,7 @@ impl <'a> JS_Lexer<'a>
         Result
     }
 
-    fn ScanRegexLiteral( & mut self)->Option<String>
+    fn ScanRegexLiteral( & mut self) -> Option<String>
     {
         let mut TempIndex = self.Index;
         if TempIndex >= self.Chars.len() || self.Chars[TempIndex] != '/' { return None; }
@@ -377,7 +360,7 @@ impl <'a> JS_Lexer<'a>
         None
     }
 
-    fn ScanNumber( & mut self)->String
+    fn ScanNumber( & mut self) -> String
     {
         let mut Result = String:: new ();
         // Check for 0x, 0b, 0o
@@ -415,14 +398,14 @@ impl <'a> JS_Lexer<'a>
         Result
     }
 
-    fn ScanIdentifier( & mut self)->String
+    fn ScanIdentifier( & mut self) -> String
     {
         let mut Result = String:: new ();
         while let Some(Ch) = self.Peek() { if Ch.is_alphanumeric() || Ch == '_' || Ch == '$' { Result.push(self.Advance().unwrap()); } else { break ; } }
         Result
     }
 
-    fn ScanOperator( & mut self)->String
+    fn ScanOperator( & mut self) -> String
     {
         let mut Result = String:: new ();
         let First = self.Advance().unwrap();
@@ -431,45 +414,35 @@ impl <'a> JS_Lexer<'a>
         let Next = self.Peek();
         match (First, Next)
         {
-            ('=', Some('=')) =>
-            {
-                Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
-            }
-            ('!', Some('=')) =>
-            {
-                Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
-            }
-            ('=', Some('>')) => { Result.push(self.Advance().unwrap()); }
-            ('&', Some('&')) =>
-            {
-                Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
-            }
-            ('|', Some('|')) =>
-            {
-                Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
-            }
-            ('?', Some('?')) =>
-            {
-                Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
-            }
-            ('<', Some('<')) | ('>', Some('>')) =>
-            {
-                Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
-            }
-            ('<', Some('=')) | ('>', Some('=')) => { Result.push(self.Advance().unwrap()); }
-            ('+', Some('+')) | ('-', Some('-')) => { Result.push(self.Advance().unwrap()); }
-            ('*', Some('*')) =>
-            {
-                Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
-            }
-            ('+', Some('=')) | ('-', Some('=')) | ('*', Some('=')) | ('/', Some('=')) | ('%', Some('=')) | ('&', Some('=')) | ('|', Some('=')) | ('^', Some('='))
+            ('=', Some('='))
+            =>
+            { Result.push(self.Advance().unwrap()); if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); } }
+            ('!', Some('='))
+            =>
+            { Result.push(self.Advance().unwrap()); if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); } }
+            ('=', Some('>'))
+            => { Result.push(self.Advance().unwrap()); }
+            ('&', Some('&'))
+            =>
+            { Result.push(self.Advance().unwrap()); if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); } }
+            ('|', Some('|'))
+            =>
+            { Result.push(self.Advance().unwrap()); if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); } }
+            ('?', Some('?'))
+            =>
+            { Result.push(self.Advance().unwrap()); if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); } }
+            ('<', Some('<'))
+            | ('>', Some('>')) =>
+            { Result.push(self.Advance().unwrap()); if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); } }
+            ('<', Some('='))
+            | ('>', Some('=')) => { Result.push(self.Advance().unwrap()); }
+            ('+', Some('+'))
+            | ('-', Some('-')) => { Result.push(self.Advance().unwrap()); }
+            ('*', Some('*'))
+            =>
+            { Result.push(self.Advance().unwrap()); if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); } }
+            ('+', Some('='))
+            | ('-', Some('=')) | ('*', Some('=')) | ('/', Some('=')) | ('%', Some('=')) | ('&', Some('=')) | ('|', Some('=')) | ('^', Some('='))
             => { Result.push(self.Advance().unwrap()); }
             _ => {}
         }
@@ -478,7 +451,7 @@ impl <'a> JS_Lexer<'a>
     }
 }
 
-fn IsJSKeyword(Text: & str)-> bool
+fn IsJSKeyword(Text: & str) -> bool
 {
     matches!
     (
@@ -534,7 +507,7 @@ pub struct JS_Container
 
 impl JS_Container
 {
-    pub fn New(Kind: Container_Kind, Open_Token: Token_Info, Is_ASI_Hybrid: bool)->Self
+    pub fn New(Kind: Container_Kind, Open_Token: Token_Info, Is_ASI_Hybrid: bool) -> Self
     {
         JS_Container
         {
@@ -542,7 +515,7 @@ impl JS_Container
         }
     }
 
-    pub fn IsSoleChildChain( & self)-> bool
+    pub fn IsSoleChildChain( & self) -> bool
     {
         let NonCommentChildren: Vec <& JS_Syntax_Node > = self.Children.iter().filter( | Node | match Node { JS_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), JS_Syntax_Node::Container(_) => true, })
         .collect();
@@ -550,7 +523,7 @@ impl JS_Container
         if NonCommentChildren.len() == 1 { matches ! (NonCommentChildren[0], JS_Syntax_Node::Container(_)) } else { false }
     }
 
-    pub fn GetSoleChildContainer( & self)->Option <& JS_Container >
+    pub fn GetSoleChildContainer( & self) -> Option <& JS_Container >
     {
         let NonCommentChildren: Vec <& JS_Syntax_Node > = self.Children.iter().filter( | Node | match Node { JS_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), JS_Syntax_Node::Container(_) => true, })
         .collect();
@@ -559,20 +532,16 @@ impl JS_Container
         None
     }
 
-    pub fn CollectChain( & self)->Vec <& JS_Container >
+    pub fn CollectChain( & self) -> Vec <& JS_Container >
     {
         let mut Chain = vec![self];
         let mut Current = self;
         while let Some(Child) = Current.GetSoleChildContainer()
-        {
-            if Current.Kind == Container_Kind::Angle || Child.Kind == Container_Kind::Angle { break ; }
-            Chain.push(Child);
-            Current = Child;
-        }
+        { if Current.Kind == Container_Kind::Angle || Child.Kind == Container_Kind::Angle { break ; } Chain.push(Child); Current = Child; }
         Chain
     }
 
-    pub fn CalculateSingleLineSpan( & self)->usize
+    pub fn CalculateSingleLineSpan( & self) -> usize
     {
         if self.Has_Forced_Break { return usize::MAX; }
 
@@ -606,21 +575,18 @@ impl JS_Container
         Total
     }
 
-    pub fn CalculateBlockDepth( & self)->usize
+    pub fn CalculateBlockDepth( & self) -> usize
     {
         let mut MaxChildDepth = 0;
         for Child in & self.Children
         {
             if let JS_Syntax_Node::Container(Sub) = Child
-            {
-                let SubDepth = Sub.CalculateBlockDepth();
-                if SubDepth > MaxChildDepth { MaxChildDepth = SubDepth; }
-            }
+            { let SubDepth = Sub.CalculateBlockDepth(); if SubDepth > MaxChildDepth { MaxChildDepth = SubDepth; } }
         }
         1 + MaxChildDepth
     }
 
-    pub fn CountTotalContainers( & self)->usize
+    pub fn CountTotalContainers( & self) -> usize
     {
         let mut Count = 1;
         for Child in & self.Children { if let JS_Syntax_Node::Container(Sub) = Child { Count += Sub.CountTotalContainers(); } }
@@ -632,16 +598,16 @@ pub struct JS_Container_Builder { Tokens: Vec<Token_Info>, Index: usize, }
 
 impl JS_Container_Builder
 {
-    pub fn New(Tokens: Vec<Token_Info>)->Self { JS_Container_Builder { Tokens, Index: 0 } }
+    pub fn New(Tokens: Vec<Token_Info>) -> Self { JS_Container_Builder { Tokens, Index: 0 } }
 
-    pub fn BuildTree( & mut self)->Vec<JS_Syntax_Node>
+    pub fn BuildTree( & mut self) -> Vec<JS_Syntax_Node>
     {
         let mut RootNodes = Vec:: new ();
         while self.Index < self.Tokens.len() { if let Some(Node) = self.ParseNextNode(false) { RootNodes.push(Node); } }
         RootNodes
     }
 
-    fn ParseNextNode( & mut self, PrecededByReturn: bool)->Option<JS_Syntax_Node>
+    fn ParseNextNode( & mut self, PrecededByReturn: bool) -> Option<JS_Syntax_Node>
     {
         if self.Index >= self.Tokens.len() { return None; }
         let Token = self.Tokens[self.Index].clone();
@@ -681,10 +647,7 @@ impl JS_Container_Builder
                     {
                         let NextToken = & self.Tokens[self.Index];
                         if NextToken.Preceding_Newlines == 0 && (NextToken.Text == ";" || NextToken.Text == ",")
-                        {
-                            Container.Tail_Glue.push(NextToken.clone());
-                            self.Index += 1;
-                        }
+                        { Container.Tail_Glue.push(NextToken.clone()); self.Index += 1; }
                         else { break ; }
                     }
                     break;
@@ -706,9 +669,7 @@ impl JS_Container_Builder
                     if CurrentToken.Text == ";" { StatementCount += 1; }
 
                     if ! CurrentToken.IsTrivia() && ! CurrentToken.IsComment()
-                    {
-                        LastSignificantWasReturn = matches!(CurrentToken.Text.as_str(),"return" | "throw" | "yield");
-                    }
+                    { LastSignificantWasReturn = matches ! (CurrentToken.Text.as_str(),"return" | "throw" | "yield"); }
 
                     Container.Children.push(JS_Syntax_Node::Token(CurrentToken));
                     self.Index += 1;
@@ -724,9 +685,9 @@ pub struct JS_Layout_Planner<'a> { Config: & 'a Config_Settings, }
 
 impl <'a> JS_Layout_Planner<'a>
 {
-    pub fn New(Config: & 'a Config_Settings)->Self { JS_Layout_Planner { Config } }
+    pub fn New(Config: & 'a Config_Settings) -> Self { JS_Layout_Planner { Config } }
 
-    pub fn DecideLayout( & self, Container: & JS_Container, CurrentIndentLevel: usize, CurrentColumn: usize,)->Layout_State
+    pub fn DecideLayout( & self, Container: & JS_Container, CurrentIndentLevel: usize, CurrentColumn: usize,) -> Layout_State
     {
         // 1. Monolith First (Horizontal Density)
         if ! Container.Has_Forced_Break && Container.Statement_Count <= self.Config.Max_Statements_In_Monolith && Container.CalculateBlockDepth() <= self.Config.Max_Block_Depth && Container.CountTotalContainers()
@@ -742,10 +703,7 @@ impl <'a> JS_Layout_Planner<'a>
         }
         // 2. Brace Grouping Second (Sole-Child Chain Compound Delimiters)
         if self.Config.Allow_Brace_Grouping && Container.IsSoleChildChain()
-        {
-            let Chain = Container.CollectChain();
-            if Chain.len() >= 2 { return Layout_State::Grouped; }
-        }
+        { let Chain = Container.CollectChain(); if Chain.len() >= 2 { return Layout_State::Grouped; } }
         // 3. Expanded Symmetry Last (Hierarchical Architecture)
         Layout_State::Expanded
     }
@@ -755,14 +713,10 @@ pub struct JS_Emitter<'a> { Config: & 'a Config_Settings, Planner: JS_Layout_Pla
 
 impl <'a> JS_Emitter<'a>
 {
-    pub fn New(Config: & 'a Config_Settings)->Self { JS_Emitter { Config, Planner: JS_Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, } }
+    pub fn New(Config: & 'a Config_Settings) -> Self { JS_Emitter { Config, Planner: JS_Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, } }
 
-    pub fn Emit(mut self, Nodes: & [JS_Syntax_Node])->String
-    {
-        self.EmitNodeList(Nodes, 0);
-        if ! self.Output.ends_with('\n') { self.Output.push('\n'); }
-        self.Output
-    }
+    pub fn Emit(mut self, Nodes: & [JS_Syntax_Node]) -> String
+    { self.EmitNodeList(Nodes, 0); if ! self.Output.ends_with('\n') { self.Output.push('\n'); } self.Output }
 
     fn WriteNewline( & mut self)
     {
@@ -790,10 +744,7 @@ impl <'a> JS_Emitter<'a>
     fn EmitSpace( & mut self)
     {
         if self.Line_Has_Content && self.Current_Line_Len > 0 && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
-        {
-            self.Output.push(' ');
-            self.Current_Line_Len += 1;
-        }
+        { self.Output.push(' '); self.Current_Line_Len += 1; }
     }
 
     fn EmitNodeList( & mut self, Nodes: & [JS_Syntax_Node], Level: usize)
@@ -839,11 +790,7 @@ impl <'a> JS_Emitter<'a>
         }
 
         if let Token_Kind::Comment_Block(CommentText) = & Token.Kind
-        {
-            if ! self.Line_Has_Content { self.EmitIndent(Level); } else { self.EmitSpace(); }
-            self.EmitRaw(CommentText);
-            return ;
-        }
+        { if ! self.Line_Has_Content { self.EmitIndent(Level); } else { self.EmitSpace(); } self.EmitRaw(CommentText); return ; }
 
         if Token.IsTrivia() { return ; }
 
@@ -925,9 +872,7 @@ impl <'a> JS_Emitter<'a>
                     if T.IsTrivia() { continue ; }
                     let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || T.Text == ":" || T.Text == "?.";
                     if PrevNeedsSpace && ! IsPunct && ! self.Output.ends_with('.') && ! self.Output.ends_with("?.") && ! self.Output.ends_with('(') && ! self.Output.ends_with('[')
-                    {
-                        self.EmitSpace();
-                    }
+                    { self.EmitSpace(); }
                     self.EmitRaw( & T.Text);
                     PrevNeedsSpace = ! matches!(T.Text.as_str(),"." | "?." | "(" | "[" | "!" | "~");
                 }
@@ -1001,7 +946,7 @@ impl <'a> JS_Emitter<'a>
     }
 }
 
-pub fn VerifyJSTokenEquivalence(OriginalSource: & str, FormattedSource: & str, Language: Source_Language,)->Result<(), String>
+pub fn VerifyJSTokenEquivalence(OriginalSource: & str, FormattedSource: & str, Language: Source_Language,) -> Result<(), String>
 {
     let mut OriginalScanner = JS_Lexer::New(OriginalSource, Language);
     let OriginalTokens = OriginalScanner.TokenizeAll();

@@ -6,7 +6,7 @@ pub struct Safety_Verifier;
 
 impl Safety_Verifier
 {
-    pub fn VerifyTokenEquivalence(OriginalSource: & str, FormattedSource: & str, Language: Source_Language,)->Result<(), String>
+    pub fn VerifyTokenEquivalence(OriginalSource: & str, FormattedSource: & str, Language: Source_Language,) -> Result<(), String>
     {
         let mut OriginalScanner = Lexer_Scanner::New(OriginalSource, Language);
         let OriginalTokens = OriginalScanner.TokenizeAll();
@@ -26,10 +26,7 @@ impl Safety_Verifier
             for i in 0..diff_len
             {
                 if OrigSignificant[i] != FormSignificant[i]
-                {
-                    println!("Mismatch at index {}:\nOriginal: {:?}\nFormatted: {:?}", i, OrigSignificant[i], FormSignificant[i]);
-                    break;
-                }
+                { println ! ("Mismatch at index {}:\nOriginal: {:?}\nFormatted: {:?}", i, OrigSignificant[i], FormSignificant[i]); break ; }
             }
             return Err(format ! ("Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
         }
@@ -39,7 +36,7 @@ impl Safety_Verifier
         Ok(())
     }
 
-    pub fn VerifyIdempotence<F>(FormattedSource: & str, FormatFn: F)->Result<(), String> where F: Fn( & str)->String,
+    pub fn VerifyIdempotence<F>(FormattedSource: & str, FormatFn: F) -> Result<(), String> where F: Fn( & str) -> String,
     {
         let SecondPass = FormatFn(FormattedSource);
         if SecondPass != FormattedSource { return Err("Safety Gate Warning: Formatting is not idempotent on second pass!".to_string(),); }

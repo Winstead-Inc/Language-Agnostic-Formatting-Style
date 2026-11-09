@@ -6,7 +6,7 @@ pub struct Kotlin_Formatter;
 
 impl Kotlin_Formatter
 {
-    pub fn Format(Source: & str, Config: & Config_Settings)->Result<String, String>
+    pub fn Format(Source: & str, Config: & Config_Settings) -> Result<String, String>
     {
         let EffectiveStyle = if Config.Language == Source_Language::KotlinOfficial { Kotlin_Style::Official }
         else { Config.Kotlin_Style };
@@ -22,14 +22,12 @@ impl Kotlin_Formatter
 
         // Safety gate verification
         if let Err(VerifyErr) = VerifyKotlinTokenEquivalence(Source, & Formatted)
-        {
-            return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr));
-        }
+        { return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr)); }
 
         Ok(Formatted)
     }
 
-    pub fn IsFormatted(Source: & str, Config: & Config_Settings)-> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
+    pub fn IsFormatted(Source: & str, Config: & Config_Settings) -> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -84,7 +82,7 @@ pub struct Kotlin_Container
 
 impl Kotlin_Container
 {
-    pub fn New(Kind: Container_Kind, Role: Kotlin_Container_Role, Open_Token: Token_Info, Is_Preceded_By_Return_Or_Throw: bool ,)->Self
+    pub fn New(Kind: Container_Kind, Role: Kotlin_Container_Role, Open_Token: Token_Info, Is_Preceded_By_Return_Or_Throw: bool ,) -> Self
     {
         Kotlin_Container
         {
@@ -100,7 +98,7 @@ impl Kotlin_Container
         }
     }
 
-    pub fn ShouldHug( & self, Style: Kotlin_Style)-> bool
+    pub fn ShouldHug( & self, Style: Kotlin_Style) -> bool
     {
         match Style
         {
@@ -123,7 +121,7 @@ impl Kotlin_Container
         }
     }
 
-    pub fn IsSoleChildChain( & self)-> bool
+    pub fn IsSoleChildChain( & self) -> bool
     {
         let NonCommentChildren: Vec <& Kotlin_Syntax_Node > = self
         .Children
@@ -135,7 +133,7 @@ impl Kotlin_Container
         else { false }
     }
 
-    pub fn GetSoleChildContainer( & self)->Option <& Kotlin_Container >
+    pub fn GetSoleChildContainer( & self) -> Option <& Kotlin_Container >
     {
         let NonCommentChildren: Vec <& Kotlin_Syntax_Node > = self
         .Children
@@ -147,20 +145,16 @@ impl Kotlin_Container
         None
     }
 
-    pub fn CollectChain( & self)->Vec <& Kotlin_Container >
+    pub fn CollectChain( & self) -> Vec <& Kotlin_Container >
     {
         let mut Chain = vec![self];
         let mut Current = self;
         while let Some(Child) = Current.GetSoleChildContainer()
-        {
-            if Current.Kind == Container_Kind::Angle || Child.Kind == Container_Kind::Angle { break ; }
-            Chain.push(Child);
-            Current = Child;
-        }
+        { if Current.Kind == Container_Kind::Angle || Child.Kind == Container_Kind::Angle { break ; } Chain.push(Child); Current = Child; }
         Chain
     }
 
-    pub fn CalculateSingleLineSpan( & self)->usize
+    pub fn CalculateSingleLineSpan( & self) -> usize
     {
         if self.Has_Forced_Break { return usize::MAX; }
 
@@ -194,21 +188,18 @@ impl Kotlin_Container
         Total
     }
 
-    pub fn CalculateBlockDepth( & self)->usize
+    pub fn CalculateBlockDepth( & self) -> usize
     {
         let mut MaxChildDepth = 0;
         for Child in & self.Children
         {
             if let Kotlin_Syntax_Node::Container(Sub) = Child
-            {
-                let SubDepth = Sub.CalculateBlockDepth();
-                if SubDepth > MaxChildDepth { MaxChildDepth = SubDepth; }
-            }
+            { let SubDepth = Sub.CalculateBlockDepth(); if SubDepth > MaxChildDepth { MaxChildDepth = SubDepth; } }
         }
         1 + MaxChildDepth
     }
 
-    pub fn CountTotalContainers( & self)->usize
+    pub fn CountTotalContainers( & self) -> usize
     {
         let mut Count = 1;
         for Child in & self.Children { if let Kotlin_Syntax_Node::Container(Sub) = Child { Count += Sub.CountTotalContainers(); } }
@@ -220,17 +211,14 @@ pub struct Kotlin_Lexer<'a> { Source: & 'a str, Chars: Vec<char>, Index: usize, 
 
 impl <'a> Kotlin_Lexer<'a>
 {
-    pub fn New(Source: & 'a str)->Self { Kotlin_Lexer { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, } }
+    pub fn New(Source: & 'a str) -> Self { Kotlin_Lexer { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, } }
 
-    fn Peek( & self)->Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
+    fn Peek( & self) -> Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
 
-    fn PeekAhead( & self, Offset: usize)->Option<char>
-    {
-        let Target = self.Index + Offset;
-        if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None }
-    }
+    fn PeekAhead( & self, Offset: usize) -> Option<char>
+    { let Target = self.Index + Offset; if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None } }
 
-    fn Advance( & mut self)->Option<char>
+    fn Advance( & mut self) -> Option<char>
     {
         if self.Index >= self.Chars.len() { return None; }
         let Ch = self.Chars[self.Index];
@@ -240,7 +228,7 @@ impl <'a> Kotlin_Lexer<'a>
         Some(Ch)
     }
 
-    pub fn TokenizeAll( & mut self)->Vec<Token_Info>
+    pub fn TokenizeAll( & mut self) -> Vec<Token_Info>
     {
         let mut RawTokens: Vec < Token_Info > = Vec:: new ();
         let mut PrecedingNewlines: usize = 0;
@@ -556,14 +544,14 @@ impl <'a> Kotlin_Lexer<'a>
         RawTokens
     }
 
-    fn ScanLineComment( & mut self)->String
+    fn ScanLineComment( & mut self) -> String
     {
         let mut Result = String:: new ();
         while let Some(Ch) = self.Peek() { if Ch == '\n' { break ; } Result.push(self.Advance().unwrap()); }
         Result
     }
 
-    fn ScanBlockComment( & mut self)->String
+    fn ScanBlockComment( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -575,24 +563,15 @@ impl <'a> Kotlin_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '/' && self.PeekAhead(1) == Some('*')
-            {
-                Result.push(self.Advance().unwrap());
-                Result.push(self.Advance().unwrap());
-                Depth += 1;
-            }
+            { Result.push(self.Advance().unwrap()); Result.push(self.Advance().unwrap()); Depth += 1; }
             else if Ch == '*' && self.PeekAhead(1) == Some('/')
-            {
-                Result.push(self.Advance().unwrap());
-                Result.push(self.Advance().unwrap());
-                Depth -= 1;
-                if Depth == 0 { break ; }
-            }
+            { Result.push(self.Advance().unwrap()); Result.push(self.Advance().unwrap()); Depth -= 1; if Depth == 0 { break ; } }
             else { Result.push(self.Advance().unwrap()); }
         }
         Result
     }
 
-    fn ScanRawMultilineString( & mut self)->String
+    fn ScanRawMultilineString( & mut self) -> String
     {
         let mut Result = String:: new ();
         for _ in 0..3 { Result.push(self.Advance().unwrap()); }
@@ -610,7 +589,7 @@ impl <'a> Kotlin_Lexer<'a>
         Result
     }
 
-    fn ScanStandardString( & mut self)->String
+    fn ScanStandardString( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -619,17 +598,14 @@ impl <'a> Kotlin_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '\\'
-            {
-                Result.push(self.Advance().unwrap());
-                if let Some(_) = self.Peek() { Result.push(self.Advance().unwrap()); }
-            }
+            { Result.push(self.Advance().unwrap()); if let Some(_) = self.Peek() { Result.push(self.Advance().unwrap()); } }
             else if Ch == '"' { Result.push(self.Advance().unwrap()); break ; }
             else { Result.push(self.Advance().unwrap()); }
         }
         Result
     }
 
-    fn ScanBacktickIdentifier( & mut self)->String
+    fn ScanBacktickIdentifier( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -644,7 +620,7 @@ impl <'a> Kotlin_Lexer<'a>
         Result
     }
 
-    fn ScanCharLiteral( & mut self)->String
+    fn ScanCharLiteral( & mut self) -> String
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
@@ -653,10 +629,7 @@ impl <'a> Kotlin_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '\\'
-            {
-                Result.push(self.Advance().unwrap());
-                if let Some(_) = self.Peek() { Result.push(self.Advance().unwrap()); }
-            }
+            { Result.push(self.Advance().unwrap()); if let Some(_) = self.Peek() { Result.push(self.Advance().unwrap()); } }
             else if Ch == '\'' { Result.push(self.Advance().unwrap()); break ; }
             else if Ch == '\n' || Ch == '\r' { break ; }
             else { Result.push(self.Advance().unwrap()); }
@@ -664,14 +637,14 @@ impl <'a> Kotlin_Lexer<'a>
         Result
     }
 
-    fn ScanIdentifier( & mut self)->String
+    fn ScanIdentifier( & mut self) -> String
     {
         let mut Result = String:: new ();
         while let Some(Ch) = self.Peek() { if Ch.is_alphanumeric() || Ch == '_' || Ch == '$' { Result.push(self.Advance().unwrap()); } else { break ; } }
         Result
     }
 
-    fn ScanNumber( & mut self)->String
+    fn ScanNumber( & mut self) -> String
     {
         let mut Result = String:: new ();
         if self.Peek() == Some('0')
@@ -731,7 +704,7 @@ impl <'a> Kotlin_Lexer<'a>
     }
 }
 
-fn IsKotlinKeyword(Text: & str)-> bool
+fn IsKotlinKeyword(Text: & str) -> bool
 {
     matches!
     (
@@ -809,16 +782,16 @@ pub struct Kotlin_Container_Builder { Tokens: Vec<Token_Info>, Index: usize, }
 
 impl Kotlin_Container_Builder
 {
-    pub fn New(Tokens: Vec<Token_Info>)->Self { Kotlin_Container_Builder { Tokens, Index: 0 } }
+    pub fn New(Tokens: Vec<Token_Info>) -> Self { Kotlin_Container_Builder { Tokens, Index: 0 } }
 
-    pub fn BuildTree( & mut self)->Vec<Kotlin_Syntax_Node>
+    pub fn BuildTree( & mut self) -> Vec<Kotlin_Syntax_Node>
     {
         let mut RootNodes = Vec:: new ();
         while self.Index < self.Tokens.len() { if let Some(Node) = self.ParseNextNode() { RootNodes.push(Node); } }
         RootNodes
     }
 
-    fn ParseNextNode( & mut self)->Option<Kotlin_Syntax_Node>
+    fn ParseNextNode( & mut self) -> Option<Kotlin_Syntax_Node>
     {
         if self.Index >= self.Tokens.len() { return None; }
         let Token = self.Tokens[self.Index].clone();
@@ -861,21 +834,14 @@ impl Kotlin_Container_Builder
                     {
                         let NextToken = & self.Tokens[self.Index];
                         if NextToken.Preceding_Newlines == 0 && (NextToken.Text == ";" || NextToken.Text == ",")
-                        {
-                            Container.Tail_Glue.push(NextToken.clone());
-                            self.Index += 1;
-                        }
+                        { Container.Tail_Glue.push(NextToken.clone()); self.Index += 1; }
                         else { break ; }
                     }
                     break;
                 }
                 Token_Kind::Open_Delim(_) => { if let Some(ChildNode) = self.ParseNextNode() { Container.Children.push(ChildNode); } }
                 Token_Kind::Comment_Line(_) =>
-                {
-                    Container.Has_Forced_Break = true;
-                    Container.Children.push(Kotlin_Syntax_Node::Token(CurrentToken));
-                    self.Index += 1;
-                }
+                { Container.Has_Forced_Break = true; Container.Children.push(Kotlin_Syntax_Node::Token(CurrentToken)); self.Index += 1; }
                 _ =>
                 {
                     if CurrentToken.Text == ";" { StatementCount += 1; }
@@ -888,7 +854,7 @@ impl Kotlin_Container_Builder
         Container.Statement_Count = StatementCount;
     }
 
-    fn DetermineContainerRole( & self, Kind: Container_Kind)->Kotlin_Container_Role
+    fn DetermineContainerRole( & self, Kind: Container_Kind) -> Kotlin_Container_Role
     {
         let PrevTokens = self.GetPreviousSignificantTokens(10);
         let Prev1 = PrevTokens.first();
@@ -938,9 +904,7 @@ impl Kotlin_Container_Builder
                 if let Some(T) = Prev1
                 {
                     if matches!(T.Kind, Token_Kind::Identifier(_)) || T.Text == ")" || T.Text == "]" || T.Text == ">"
-                    {
-                        return Kotlin_Container_Role::Call_Arguments;
-                    }
+                    { return Kotlin_Container_Role::Call_Arguments; }
                 }
 
                 Kotlin_Container_Role::Parenthesized_Expression
@@ -962,14 +926,14 @@ impl Kotlin_Container_Builder
         }
     }
 
-    fn CheckPrecededByReturnOrThrow( & self)-> bool
+    fn CheckPrecededByReturnOrThrow( & self) -> bool
     {
         let PrevTokens = self.GetPreviousSignificantTokens(2);
         if let Some(T) = PrevTokens.first() { matches ! (T.Text.as_str(),"return" | "throw") }
         else { false }
     }
 
-    fn GetPreviousSignificantTokens( & self, MaxCount: usize)->Vec<Token_Info>
+    fn GetPreviousSignificantTokens( & self, MaxCount: usize) -> Vec<Token_Info>
     {
         let mut Result = Vec:: new ();
         let Start = if self.Index > 1 { self.Index - 2 } else { return Result; };
@@ -986,7 +950,7 @@ impl Kotlin_Container_Builder
         Result
     }
 
-    fn FindKeywordBeforeMatchingParen( & self)->Option<String>
+    fn FindKeywordBeforeMatchingParen( & self) -> Option<String>
     {
         if self.Index < 2 { return None; }
         let mut Scan = self.Index - 2;
@@ -1011,7 +975,7 @@ impl Kotlin_Container_Builder
         None
     }
 
-    fn IsPrecededByClassOrInterface( & self)-> bool
+    fn IsPrecededByClassOrInterface( & self) -> bool
     {
         let PrevTokens = self.GetPreviousSignificantTokens(15);
         for T in & PrevTokens
@@ -1022,14 +986,14 @@ impl Kotlin_Container_Builder
         false
     }
 
-    fn IsPrecededByClassDeclaration( & self)-> bool
+    fn IsPrecededByClassDeclaration( & self) -> bool
     {
         let PrevTokens = self.GetPreviousSignificantTokens(10);
         for T in & PrevTokens { if matches ! (T.Text.as_str(),"class" | "constructor") { return true; } if matches ! (T.Text.as_str(),";" | "{" | "}") { break ; } }
         false
     }
 
-    fn IsPrecededByFunDeclaration( & self)-> bool
+    fn IsPrecededByFunDeclaration( & self) -> bool
     {
         let PrevTokens = self.GetPreviousSignificantTokens(20);
         for T in & PrevTokens { if T.Text == "fun" { return true; } if matches ! (T.Text.as_str(),";" | "{" | "}") { break ; } }
@@ -1041,9 +1005,9 @@ pub struct Kotlin_Layout_Planner<'a> { Config: & 'a Config_Settings, }
 
 impl <'a> Kotlin_Layout_Planner<'a>
 {
-    pub fn New(Config: & 'a Config_Settings)->Self { Kotlin_Layout_Planner { Config } }
+    pub fn New(Config: & 'a Config_Settings) -> Self { Kotlin_Layout_Planner { Config } }
 
-    pub fn DecideLayout( & self, Container: & Kotlin_Container, CurrentIndentLevel: usize, CurrentColumn: usize,)->Layout_State
+    pub fn DecideLayout( & self, Container: & Kotlin_Container, CurrentIndentLevel: usize, CurrentColumn: usize,) -> Layout_State
     {
         // 1. Monolith First (Horizontal Density)
         if ! Container.Has_Forced_Break
@@ -1063,10 +1027,7 @@ impl <'a> Kotlin_Layout_Planner<'a>
 
         // 2. Container Grouping Architecture (Sole-Child Chain Compound Delimiters)
         if self.Config.Allow_Brace_Grouping && Container.IsSoleChildChain()
-        {
-            let Chain = Container.CollectChain();
-            if Chain.len() >= 2 { return Layout_State::Grouped; }
-        }
+        { let Chain = Container.CollectChain(); if Chain.len() >= 2 { return Layout_State::Grouped; } }
 
         // 3. Expanded Symmetry (Hierarchical Architecture)
         Layout_State::Expanded
@@ -1085,17 +1046,13 @@ pub struct Kotlin_Emitter<'a>
 
 impl <'a> Kotlin_Emitter<'a>
 {
-    pub fn New(Config: & 'a Config_Settings, Style: Kotlin_Style)->Self
+    pub fn New(Config: & 'a Config_Settings, Style: Kotlin_Style) -> Self
     {
         Kotlin_Emitter { Config, Planner: Kotlin_Layout_Planner::New(Config), Style, Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, }
     }
 
-    pub fn Emit(mut self, Nodes: & [Kotlin_Syntax_Node])->String
-    {
-        self.EmitNodeList(Nodes, 0);
-        if ! self.Output.ends_with('\n') { self.Output.push('\n'); }
-        self.Output
-    }
+    pub fn Emit(mut self, Nodes: & [Kotlin_Syntax_Node]) -> String
+    { self.EmitNodeList(Nodes, 0); if ! self.Output.ends_with('\n') { self.Output.push('\n'); } self.Output }
 
     fn WriteNewline( & mut self)
     {
@@ -1188,9 +1145,7 @@ impl <'a> Kotlin_Emitter<'a>
                         // Keep on same line for `:`, `.`, `?.`, `::`, `,`, `;` or hugging trailing lambda
                     }
                     else if C.Tail_Glue.iter().any( | G | G.Text == ";") || C.Kind == Container_Kind::Brace || C.Kind == Container_Kind::Paren
-                    {
-                        self.EnsureNewline();
-                    }
+                    { self.EnsureNewline(); }
                 }
             }
 
@@ -1210,12 +1165,7 @@ impl <'a> Kotlin_Emitter<'a>
         }
 
         if let Token_Kind::Comment_Block(CommentText) = & Token.Kind
-        {
-            if ! self.Line_Has_Content { self.EmitIndent(Level); }
-            else { self.EmitSpace(); }
-            self.EmitRaw(CommentText);
-            return ;
-        }
+        { if ! self.Line_Has_Content { self.EmitIndent(Level); } else { self.EmitSpace(); } self.EmitRaw(CommentText); return ; }
 
         if Token.IsTrivia() { return ; }
 
@@ -1250,9 +1200,7 @@ impl <'a> Kotlin_Emitter<'a>
         else if let Token_Kind::Operator(Op) = & Token.Kind
         {
             if matches!(Op.as_str(),"=" | "==" | "===" | "!=" | "!==" | "<=" | ">=" | "&&" | "||" | "+=" | "-=" | "*=" | "/=" | "%=" | "+" | "-" | "*" | "/" | "%" | "->" | "?:")
-            {
-                self.EmitSpace();
-            }
+            { self.EmitSpace(); }
         }
     }
 
@@ -1279,7 +1227,7 @@ impl <'a> Kotlin_Emitter<'a>
         self.EmitSpace();
     }
 
-    fn IsClassOrInterfaceInheritanceColon( & self)-> bool
+    fn IsClassOrInterfaceInheritanceColon( & self) -> bool
     {
         let CurrentLine = if let Some(Idx) = self.Output.rfind('\n') { & self.Output[Idx + 1..] }
         else { & self.Output };
@@ -1426,7 +1374,7 @@ impl <'a> Kotlin_Emitter<'a>
         if Container.Kind == Container_Kind::Brace { self.WriteNewline(); }
     }
 
-    fn IsImportStatementEnding(Nodes: & [Kotlin_Syntax_Node], CurrentIdx: usize)-> bool
+    fn IsImportStatementEnding(Nodes: & [Kotlin_Syntax_Node], CurrentIdx: usize) -> bool
     {
         if CurrentIdx >= Nodes.len() { return false; }
 
@@ -1448,7 +1396,7 @@ impl <'a> Kotlin_Emitter<'a>
         }
     }
 
-    fn HasMoreNonImportStatements(Nodes: & [Kotlin_Syntax_Node], NextIdx: usize)-> bool
+    fn HasMoreNonImportStatements(Nodes: & [Kotlin_Syntax_Node], NextIdx: usize) -> bool
     {
         let mut I = NextIdx;
         while I < Nodes.len()
@@ -1468,7 +1416,7 @@ impl <'a> Kotlin_Emitter<'a>
     }
 }
 
-pub fn VerifyKotlinTokenEquivalence(OriginalSource: & str, FormattedSource: & str)->Result<(), String>
+pub fn VerifyKotlinTokenEquivalence(OriginalSource: & str, FormattedSource: & str) -> Result<(), String>
 {
     let mut OriginalScanner = Kotlin_Lexer::New(OriginalSource);
     let OriginalTokens = OriginalScanner.TokenizeAll();

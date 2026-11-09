@@ -28,7 +28,7 @@ pub enum MapType { Reserved = 0, LooseObject = 1, Shallow = 2, Submodule = 3, }
 
 impl MapType
 {
-    pub fn from_u32(n: u32)->Option<MapType> { match n { 0 => Some(Self::Reserved), 1 => Some(Self::LooseObject), 2 => Some(Self::Shallow), 3 => Some(Self::Submodule), _ => None, } }
+    pub fn from_u32(n: u32) -> Option<MapType> { match n { 0 => Some(Self::Reserved), 1 => Some(Self::LooseObject), 2 => Some(Self::Shallow), 3 => Some(Self::Submodule), _ => None, } }
 }
 
 /// The value of an object stored in a `ObjectMemoryMap`.
@@ -45,12 +45,12 @@ impl ObjectMemoryMap
     ///
     /// The storage and compatibility `HashAlgorithm` instances are used to store the object IDs in
     /// the correct map.
-    fn new (storage: HashAlgorithm, compat: HashAlgorithm)->Self { Self { to_compat: BTreeMap::new (), to_storage: BTreeMap::new (), compat, storage, } }
+    fn new (storage: HashAlgorithm, compat: HashAlgorithm) -> Self { Self { to_compat: BTreeMap::new (), to_storage: BTreeMap::new (), compat, storage, } }
 
-    fn len( & self)->usize { self.to_compat.len() }
+    fn len( & self) -> usize { self.to_compat.len() }
 
     /// Write this map to an interface implementing `std::io::Write`.
-    fn write<W: Write>( & self, wrtr: W)->io::Result<()>
+    fn write<W: Write>( & self, wrtr: W) -> io::Result<()>
     {
         const VERSION_NUMBER: u32 = 1;
         const NUM_OBJECT_FORMATS: u32 = 2;
@@ -101,21 +101,22 @@ impl ObjectMemoryMap
         Ok(())
     }
 
-    fn required_nul_padding(nitems: usize, short_len: usize)->u64
+    fn required_nul_padding(nitems: usize, short_len: usize) -> u64
     {
         let shortened_table_len = nitems as u64 * short_len as u64;
         let misalignment = shortened_table_len & 3;
         // If the value is 0, return 0; otherwise, return the difference from 4.
-        (4 - misalignment) & 3
+        (4 - misalignment)
+        & 3
     }
 
-    fn last_matching_offset(a: & ObjectID, b: & ObjectID, algop: HashAlgorithm)->usize
+    fn last_matching_offset(a: & ObjectID, b: & ObjectID, algop: HashAlgorithm) -> usize
     {
         for i in 0.. = algop.raw_len() { if a.hash[i] != b.hash[i] { return i; } }
         algop.raw_len()
     }
 
-    fn find_short_name_len( & self, map: & BTreeMap<ObjectID, MappedObject>, algop: HashAlgorithm,)->usize
+    fn find_short_name_len( & self, map: & BTreeMap<ObjectID, MappedObject>, algop: HashAlgorithm,) -> usize
     {
         if map.len() <= 1 { return 1; }
         let mut len = 1;
@@ -134,7 +135,7 @@ impl <'a> Iterator for MmapedObjectMapIter<'a>
 {
     type Item = Vec<ObjectID>;
 
-    fn next( & mut self)->Option<Self::Item>
+    fn next( & mut self) -> Option<Self::Item>
     {
         if self.offset >= self.source.nitems { return None; }
         let offset = self.offset;
@@ -154,7 +155,7 @@ enum MmapedParseError { HeaderTooSmall, InvalidSignature, InvalidVersion, Unknow
 #[allow(dead_code)]
 impl <'a> MmapedObjectMap<'a>
 {
-    fn new (slice: & 'a[u8], hash_algo: HashAlgorithm,)->Result<MmapedObjectMap<'a>, MmapedParseError>
+    fn new (slice: & 'a[u8], hash_algo: HashAlgorithm,) -> Result<MmapedObjectMap<'a>, MmapedParseError>
     {
         let object_format_header_size = 4 + 4 + 8;
         let trailer_offset_size = 8;
@@ -211,7 +212,7 @@ impl <'a> MmapedObjectMap<'a>
         }
     }
 
-    fn iter( & self)->MmapedObjectMapIter<'_>
+    fn iter( & self) -> MmapedObjectMapIter<'_>
     {
         let mut algos = Vec::with_capacity(self.obj_formats.len());
         algos.push(self.main_algo);
@@ -232,7 +233,7 @@ impl <'a> MmapedObjectMap<'a>
     /// assert_eq!(MmapedObjectMap::binary_search_slice(sl, &[1, 2]), None);
     /// assert_eq!(MmapedObjectMap::binary_search_slice(sl, &[10, 20]), None);
     /// ```
-    fn binary_search_slice(sl: & [u8], wanted: & [u8])->Option<usize>
+    fn binary_search_slice(sl: & [u8], wanted: & [u8]) -> Option<usize>
     {
         let len = wanted.len();
         let res = sl.binary_search_by
@@ -257,7 +258,7 @@ impl <'a> MmapedObjectMap<'a>
     /// Look up `oid` in the map in order to convert it to `algo`.
     ///
     /// If this object is in the map, return the offset in the table for the main algorithm.
-    fn look_up_object( & self, oid: & ObjectID)->Option<usize>
+    fn look_up_object( & self, oid: & ObjectID) -> Option<usize>
     {
         let oid_algo = HashAlgorithm::from_u32(oid.algo)?;
         let params = self.obj_formats. get( & oid_algo)?;
@@ -285,22 +286,17 @@ impl <'a> MmapedObjectMap<'a>
         }
     }
 
-    # [allow(dead_code)] fn map_object( & self, oid: & ObjectID, algo: HashAlgorithm)->Option<MappedObject>
+   #[allow(dead_code)] fn map_object( & self, oid: & ObjectID, algo: HashAlgorithm) -> Option<MappedObject>
     {
         let main = self.look_up_object(oid)?;
         let meta = MapType::from_u32(Self::u32_at_offset(self.memory, self.meta_off + (main * 4)))?;
         Some(MappedObject { oid: self.oid_from_offset(main, algo)?, kind: meta, })
     }
 
-    fn map_oid( & self, oid: & ObjectID, algo: HashAlgorithm)->Option<ObjectID>
-    {
-        if algo as u32 == oid.algo { return Some(oid.clone()); }
+    fn map_oid( & self, oid: & ObjectID, algo: HashAlgorithm) -> Option<ObjectID>
+    { if algo as u32 == oid.algo { return Some(oid.clone()); } let main = self.look_up_object(oid)?; self.oid_from_offset(main, algo) }
 
-        let main = self.look_up_object(oid)?;
-        self.oid_from_offset(main, algo)
-    }
-
-    fn oid_from_offset( & self, offset: usize, algo: HashAlgorithm)->Option<ObjectID>
+    fn oid_from_offset( & self, offset: usize, algo: HashAlgorithm) -> Option<ObjectID>
     {
         let aparams = self.obj_formats. get( & algo)?;
 
@@ -311,13 +307,13 @@ impl <'a> MmapedObjectMap<'a>
         Some(ObjectID { hash, algo: algo as u32, })
     }
 
-    fn u32_at_offset(slice: & [u8], offset: usize)->u32 { u32::from_be_bytes(slice[offset..offset + 4].try_into().unwrap()) }
+    fn u32_at_offset(slice: & [u8], offset: usize) -> u32 { u32::from_be_bytes(slice[offset..offset + 4].try_into().unwrap()) }
 
-    fn u64_at_offset(slice: & [u8], offset: usize)->u64 { u64::from_be_bytes(slice[offset..offset + 8].try_into().unwrap()) }
+    fn u64_at_offset(slice: & [u8], offset: usize) -> u64 { u64::from_be_bytes(slice[offset..offset + 8].try_into().unwrap()) }
 
-    fn verify_aligned(offset: usize)->Result<(), MmapedParseError> { if (offset & 3) != 0 { return Err(MmapedParseError::UnalignedData); } Ok(()) }
+    fn verify_aligned(offset: usize) -> Result<(), MmapedParseError> { if (offset & 3) != 0 { return Err(MmapedParseError::UnalignedData); } Ok(()) }
 
-    fn verify_valid(slice: & [u8], offset: u64)->Result<(), MmapedParseError> { if offset >= slice.len() as u64 { return Err(MmapedParseError::OffsetTooLarge); } Ok(()) }
+    fn verify_valid(slice: & [u8], offset: u64) -> Result<(), MmapedParseError> { if offset >= slice.len() as u64 { return Err(MmapedParseError::OffsetTooLarge); } Ok(()) }
 }
 
 /// A map for loose and other non-packed object IDs that maps between a storage and compatibility
@@ -333,7 +329,7 @@ impl ObjectMap
     ///
     /// This initializes the memory map to automatically map the empty tree, empty blob, and null
     /// object ID.
-    pub fn new (storage: HashAlgorithm, compat: HashAlgorithm)->Self
+    pub fn new (storage: HashAlgorithm, compat: HashAlgorithm) -> Self
     {
         let mut map = ObjectMemoryMap:: new (storage, compat);
         for (main, compat) in & [(storage.empty_tree(), compat.empty_tree()),(storage.empty_blob(), compat.empty_blob()),(storage.null_oid(), compat.null_oid()),]
@@ -344,17 +340,17 @@ impl ObjectMap
         Self { mem: map, batch: None, }
     }
 
-    pub fn hash_algo( & self)->HashAlgorithm { self.mem.storage }
+    pub fn hash_algo( & self) -> HashAlgorithm { self.mem.storage }
 
     /// Start a batch for efficient writing.
     ///
     /// If there is already a batch started, this does nothing and the existing batch is retained.
     pub fn start_batch( & mut self) { if self.batch.is_none() { self.batch = Some(ObjectMemoryMap::new (self.mem.storage, self.mem.compat)); } }
 
-    pub fn batch_len( & self)->Option<usize> { self.batch.as_ref().map( | b | b.len()) }
+    pub fn batch_len( & self) -> Option<usize> { self.batch.as_ref().map( | b | b.len()) }
 
     /// If a batch exists, write it to the writer.
-    pub fn finish_batch<W: Write>( & mut self, w: W)->io::Result<()> { if let Some(txn) = self.batch.take() { txn.write(w)?; } Ok(()) }
+    pub fn finish_batch<W: Write>( & mut self, w: W) -> io::Result<()> { if let Some(txn) = self.batch.take() { txn.write(w)?; } Ok(()) }
 
     /// If a batch exists, write it to the writer.
     pub fn abort_batch( & mut self) { self.batch = None; }
@@ -363,7 +359,7 @@ impl ObjectMap
     ///
     /// If you just want a batch to exist and don't care whether one has already been started, you
     /// may simply call `start_batch` unconditionally.
-    pub fn has_batch( & self)-> bool { self.batch.is_some() }
+    pub fn has_batch( & self) -> bool { self.batch.is_some() }
 
     /// Insert an object into the map.
     ///
@@ -382,18 +378,11 @@ impl ObjectMap
         map.to_storage.insert(compat.clone(), MappedObject { oid: storage.clone(), kind, },);
     }
 
-    # [allow(dead_code)] fn map_object( & self, oid: & ObjectID, algo: HashAlgorithm)->Option <& MappedObject >
-    {
-        let map = if algo == self.mem.storage { & self.mem.to_storage } else { & self.mem.to_compat };
-        map. get(oid)
-    }
+   #[allow(dead_code)] fn map_object( & self, oid: & ObjectID, algo: HashAlgorithm) -> Option <& MappedObject >
+    { let map = if algo == self.mem.storage { & self.mem.to_storage } else { & self.mem.to_compat }; map.get (oid) }
 
-    # [allow(dead_code)] fn map_oid<'a, 'b: 'a>( & 'b self, oid: & 'a ObjectID, algo: HashAlgorithm,)->Option <& 'a ObjectID >
-    {
-        if algo as u32 == oid.algo { return Some(oid); }
-        let entry = self.map_object(oid, algo);
-        entry.map( | obj | & obj.oid)
-    }
+   #[allow(dead_code)] fn map_oid<'a, 'b: 'a>( & 'b self, oid: & 'a ObjectID, algo: HashAlgorithm,) -> Option <& 'a ObjectID >
+    { if algo as u32 == oid.algo { return Some(oid); } let entry = self.map_object(oid, algo); entry.map( | obj | & obj.oid) }
 }
 
 #[cfg(test)]
@@ -408,25 +397,25 @@ mod tests
 
     impl TrailingWriter
     {
-        fn new ()->Self { Self { curs: Cursor::new (Vec::new ()), hasher: CryptoHasher::new (HashAlgorithm::SHA256), } }
+        fn new () -> Self { Self { curs: Cursor::new (Vec::new ()), hasher: CryptoHasher::new (HashAlgorithm::SHA256), } }
 
-        fn finalize(mut self)->Vec<u8>
-        {
-            let _ = self.hasher.flush();
-            let mut v = self.curs.into_inner();
-            v.extend(self.hasher.into_vec());
-            v
-        }
+        fn finalize(mut self) -> Vec<u8>
+        { let _ = self.hasher.flush(); let mut v = self.curs.into_inner(); v.extend(self.hasher.into_vec()); v }
     }
 
     impl Write for TrailingWriter
     {
-        fn write( & mut self, data: & [u8])->io::Result<usize> { self.hasher.write_all(data)?; self.curs.write_all(data)?; Ok(data.len()) }
+        fn write( & mut self, data: & [u8]) -> io::Result<usize>
+        {
+            self.hasher.write_all(data)?;
+            self.curs.write_all(data)?;
+            Ok(data.len())
+        }
 
-        fn flush( & mut self)->io::Result<()> { self.hasher.flush()?; self.curs.flush()?; Ok(()) }
+        fn flush( & mut self) -> io::Result<()> { self.hasher.flush()?; self.curs.flush()?; Ok(()) }
     }
 
-    fn sha1_oid(b: & [u8])->ObjectID
+    fn sha1_oid(b: & [u8]) -> ObjectID
     {
         assert_eq!(b.len(), 20);
         let mut data = [0u8; 32];
@@ -434,13 +423,10 @@ mod tests
         ObjectID { hash: data, algo: HashAlgorithm::SHA1 as u32, }
     }
 
-    fn sha256_oid(b: & [u8])->ObjectID
-    {
-        assert_eq!(b.len(), 32);
-        ObjectID { hash: b.try_into().unwrap(), algo: HashAlgorithm::SHA256 as u32, }
-    }
+    fn sha256_oid(b: & [u8]) -> ObjectID
+    { assert_eq ! (b.len(), 32); ObjectID { hash: b.try_into().unwrap(), algo: HashAlgorithm::SHA256 as u32, } }
 
-    # [allow(clippy::type_complexity)] fn test_entries()-> & 'static[( & 'static str, & 'static[u8], & 'static[u8], MapType, bool)]
+   #[allow(clippy::type_complexity)] fn test_entries() -> & 'static[( & 'static str, & 'static[u8], & 'static[u8], MapType, bool)]
     {
         // These are all example blobs containing the content in the first argument.
         &
@@ -460,7 +446,7 @@ mod tests
         ]
     }
 
-    fn test_map(write_all: bool)->Box<ObjectMap>
+    fn test_map(write_all: bool) -> Box<ObjectMap>
     {
         let mut map = Box:: new (ObjectMap::new (HashAlgorithm::SHA256, HashAlgorithm::SHA1));
 
@@ -483,7 +469,7 @@ mod tests
         map
     }
 
-    # [test] fn can_read_and_write_format()
+   #[test] fn can_read_and_write_format()
     {
         for full in & [true, false]
         {
@@ -498,7 +484,7 @@ mod tests
         }
     }
 
-    # [test] fn looks_up_from_mmaped()
+   #[test] fn looks_up_from_mmaped()
     {
         let mut map = test_map(true);
         let mut wrtr = TrailingWriter:: new ();
@@ -551,19 +537,33 @@ mod tests
         }
     }
 
-    # [test] fn binary_searches_slices_correctly()
+   #[test] fn binary_searches_slices_correctly()
     {
         let sl = & [0, 1, 2, 15, 14, 13, 18, 10, 2, 20, 20, 20, 21, 21, 0, 21, 21, 1, 21, 21, 21, 21, 21, 22, 22, 23, 24,];
 
         let expected: & [( & [u8], Option<usize>)] = &
         [
-            ( & [0, 1, 2], Some(0)),( & [15, 14, 13], Some(1)),( & [18, 10, 2], Some(2)),( & [20, 20, 20], Some(3)),( & [21, 21, 0], Some(4)),( & [21, 21, 1], Some(5)),( & [21, 21, 21], Some(6)),( & [21, 21, 22], Some(7)),( & [22, 23, 24], Some(8)),( & [2, 15, 14], None),( & [0, 21, 21], None),( & [21, 21, 23], None),( & [22, 22, 23], None),( & [0xff, 0xff, 0xff], None),( & [0, 0, 0], None),
+            ( & [0, 1, 2], Some(0)),
+            ( & [15, 14, 13], Some(1)),
+            ( & [18, 10, 2], Some(2)),
+            ( & [20, 20, 20], Some(3)),
+            ( & [21, 21, 0], Some(4)),
+            ( & [21, 21, 1], Some(5)),
+            ( & [21, 21, 21], Some(6)),
+            ( & [21, 21, 22], Some(7)),
+            ( & [22, 23, 24], Some(8)),
+            ( & [2, 15, 14], None),
+            ( & [0, 21, 21], None),
+            ( & [21, 21, 23], None),
+            ( & [22, 22, 23], None),
+            ( & [0xff, 0xff, 0xff], None),
+            ( & [0, 0, 0], None),
         ];
 
         for (wanted, value) in expected { assert_eq ! (MmapedObjectMap::binary_search_slice(sl, wanted), * value); }
     }
 
-    # [test] fn looks_up_oid_correctly()
+   #[test] fn looks_up_oid_correctly()
     {
         let map = test_map(false);
         let entries = test_entries();
@@ -591,11 +591,11 @@ mod tests
         assert_eq!( * map.map_oid( & missing_oid, HashAlgorithm::SHA256).unwrap(), missing_oid);
     }
 
-    # [test] fn looks_up_known_oids_correctly()
+   #[test] fn looks_up_known_oids_correctly()
     {
         let map = test_map(false);
 
-        let funcs: & [ & dyn Fn(HashAlgorithm)-> & 'static ObjectID] = & [ &| h: HashAlgorithm | h.empty_tree(), &| h: HashAlgorithm | h.empty_blob(), &| h: HashAlgorithm | h.null_oid(),];
+        let funcs: & [ & dyn Fn(HashAlgorithm) -> & 'static ObjectID] = & [ &| h: HashAlgorithm | h.empty_tree(), &| h: HashAlgorithm | h.empty_blob(), &| h: HashAlgorithm | h.null_oid(),];
 
         for f in funcs
         {
@@ -616,7 +616,7 @@ mod tests
         }
     }
 
-    # [test] fn nul_padding()
+   #[test] fn nul_padding()
     {
         assert_eq!(ObjectMemoryMap::required_nul_padding(1, 1), 3);
         assert_eq!(ObjectMemoryMap::required_nul_padding(2, 1), 2);

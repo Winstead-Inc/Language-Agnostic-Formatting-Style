@@ -283,21 +283,21 @@ path = "src/main.rs"
 [dependencies]
 chrono = "0.4.45"
 "#;
-    let Config = Config_Settings::default();
+    let Config = Config_Settings:: default();
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
-    assert!(Formatted.contains("edition = \"2021\"\n\n[lib]"), "Monolith [lib] must not eat preceding blank line/newline, got: {}", Formatted);
-    assert!(Formatted.contains("path = \"src/lib.rs\"\n\n[[bin]]"), "Monolith [[bin]] must not eat preceding blank line/newline, got: {}", Formatted);
-    assert!(Formatted.contains("path = \"src/main.rs\"\n\n[dependencies]"), "Monolith [dependencies] must not eat preceding blank line/newline, got: {}", Formatted);
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!(Formatted.contains("edition = \"2021\"\n\n[lib]"),"Monolith [lib] must not eat preceding blank line/newline, got: {}", Formatted);
+    assert!(Formatted.contains("path = \"src/lib.rs\"\n\n[[bin]]"),"Monolith [[bin]] must not eat preceding blank line/newline, got: {}", Formatted);
+    assert!(Formatted.contains("path = \"src/main.rs\"\n\n[dependencies]"),"Monolith [dependencies] must not eat preceding blank line/newline, got: {}", Formatted);
 }
 
 #[test]
 fn Test_Monolith_Does_Not_Glue_Across_Single_Newline_After_Assignment()
 {
     let Input = "edition = \"2021\"\n[lib]\n";
-    let Config = Config_Settings::default();
+    let Config = Config_Settings:: default();
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert_eq!(Formatted, "edition = \"2021\"\n[lib]\n");
 }
 
@@ -305,9 +305,32 @@ fn Test_Monolith_Does_Not_Glue_Across_Single_Newline_After_Assignment()
 fn Test_Standalone_Container_Preserves_Preceding_Newlines()
 {
     let Input = "let x = 1;\n\n[1, 2, 3];\n";
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Rust;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
-    assert!(Formatted.contains("let x = 1;\n\n[1, 2, 3];"), "Standalone array must preserve preceding blank line, got: {}", Formatted);
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!(Formatted.contains("let x = 1;\n\n[1, 2, 3];"),"Standalone array must preserve preceding blank line, got: {}", Formatted);
+}
+
+#[test]
+fn Test_Rust_Closure_Return_Type_Arrow_Spacing()
+{
+    let Input = "let run_cross_test = || -> anyhow::Result<Output> {\n    Ok(Output)\n};\n";
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::Rust;
+
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!(Formatted.contains("|| -> anyhow::Result<Output>"),"Closure return type arrow must preserve spaces around ->, got: {}", Formatted);
+    assert!( ! Formatted.contains("||->"),"Closure return type arrow must never fuse into ||->, got: {}", Formatted);
+}
+
+#[test]
+fn Test_Rust_Function_Return_Type_Arrow_Spacing()
+{
+    let Input = "fn disabled() -> bool {\n    true\n}\n";
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::Rust;
+
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!(Formatted.contains("fn disabled() -> bool"),"Function return type arrow must preserve spaces around ->, got: {}", Formatted);
 }

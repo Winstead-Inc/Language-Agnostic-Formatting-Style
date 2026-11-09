@@ -11,12 +11,12 @@ pub struct Container_Node
 
 impl Container_Node
 {
-    pub fn New(Kind: Container_Kind, Open_Token: Token_Info)->Self
+    pub fn New(Kind: Container_Kind, Open_Token: Token_Info) -> Self
     {
         Container_Node { Kind, Open_Token, Close_Token: None, Children: Vec::new (), Tail_Glue: Vec::new (), Has_Forced_Break: false, Statement_Count: 0, }
     }
 
-    pub fn IsSoleChildChain( & self)-> bool
+    pub fn IsSoleChildChain( & self) -> bool
     {
         let NonCommentChildren: Vec <& Syntax_Node > = self.Children.iter().filter( | Node | match Node { Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Syntax_Node::Container(_) => true, })
         .collect();
@@ -24,7 +24,7 @@ impl Container_Node
         if NonCommentChildren.len() == 1 { matches ! (NonCommentChildren[0], Syntax_Node::Container(_)) } else { false }
     }
 
-    pub fn GetSoleChildContainer( & self)->Option <& Container_Node >
+    pub fn GetSoleChildContainer( & self) -> Option <& Container_Node >
     {
         let NonCommentChildren: Vec <& Syntax_Node > = self.Children.iter().filter( | Node | match Node { Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Syntax_Node::Container(_) => true, })
         .collect();
@@ -33,7 +33,7 @@ impl Container_Node
         None
     }
 
-    pub fn CollectChain( & self)->Vec <& Container_Node >
+    pub fn CollectChain( & self) -> Vec <& Container_Node >
     {
         let mut Chain = vec![self];
         let mut Current = self;
@@ -47,7 +47,7 @@ impl Container_Node
         Chain
     }
 
-    pub fn CalculateSingleLineSpan( & self)->usize
+    pub fn CalculateSingleLineSpan( & self) -> usize
     {
         if self.Has_Forced_Break { return usize::MAX; }
 
@@ -64,11 +64,7 @@ impl Container_Node
             {
                 Syntax_Node::Token(T) => { Total += T.Text.len() + 1; }
                 Syntax_Node::Container(C) =>
-                {
-                    let SubSpan = C.CalculateSingleLineSpan();
-                    if SubSpan == usize::MAX { return usize::MAX; }
-                    Total += SubSpan + 1;
-                }
+                { let SubSpan = C.CalculateSingleLineSpan(); if SubSpan == usize::MAX { return usize::MAX; } Total += SubSpan + 1; }
             }
         }
 
@@ -77,7 +73,7 @@ impl Container_Node
         Total
     }
 
-    pub fn CalculateBlockDepth( & self)->usize
+    pub fn CalculateBlockDepth( & self) -> usize
     {
         let mut MaxChildDepth = 0;
         for Child in & self.Children
@@ -87,7 +83,7 @@ impl Container_Node
         if self.Kind == Container_Kind::Brace { 1 + MaxChildDepth } else { MaxChildDepth }
     }
 
-    pub fn CountTotalContainers( & self)->usize
+    pub fn CountTotalContainers( & self) -> usize
     {
         let mut Total = 1;
         for Child in & self.Children { if let Syntax_Node::Container(C) = Child { Total += C.CountTotalContainers(); } }
@@ -99,16 +95,16 @@ pub struct Container_Tree_Builder { Tokens: Vec<Token_Info>, Index: usize, }
 
 impl Container_Tree_Builder
 {
-    pub fn New(Tokens: Vec<Token_Info>)->Self { Container_Tree_Builder { Tokens, Index: 0 } }
+    pub fn New(Tokens: Vec<Token_Info>) -> Self { Container_Tree_Builder { Tokens, Index: 0 } }
 
-    pub fn BuildTree( & mut self)->Vec<Syntax_Node>
+    pub fn BuildTree( & mut self) -> Vec<Syntax_Node>
     {
         let mut RootNodes = Vec:: new ();
         while self.Index < self.Tokens.len() { if let Some(Node) = self.ParseNode() { RootNodes.push(Node); } }
         RootNodes
     }
 
-    fn ParseNode( & mut self)->Option<Syntax_Node>
+    fn ParseNode( & mut self) -> Option<Syntax_Node>
     {
         if self.Index >= self.Tokens.len() { return None; }
         let Current = self.Tokens[self.Index].clone();

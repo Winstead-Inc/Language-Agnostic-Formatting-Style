@@ -6,7 +6,7 @@ pub struct Polyglot_Formatter;
 
 impl Polyglot_Formatter
 {
-    pub fn Format(Source: & str, Config: & Config_Settings)->Result<String, String>
+    pub fn Format(Source: & str, Config: & Config_Settings) -> Result<String, String>
     {
         let mut Formatted = String:: new ();
         let mut Remaining = Source;
@@ -22,7 +22,9 @@ impl Polyglot_Formatter
 
             let Tags =
             [
-                ("<script", "</script>", Source_Language::JavaScript, true),("<style", "</style>", Source_Language::Css, true),("<?php", "?>", Source_Language::Generic, false),
+                ("<script", "</script>", Source_Language::JavaScript, true),
+                ("<style", "</style>", Source_Language::Css, true),
+                ("<?php", "?>", Source_Language::Generic, false),
             ];
 
             for (Open, Close, Lang, NeedsAngle) in Tags.iter()

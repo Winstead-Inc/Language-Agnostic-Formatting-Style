@@ -9,7 +9,7 @@ pub struct Source_Formatter;
 
 impl Source_Formatter
 {
-    pub fn Format(Source: & str, Config: & Config_Settings)->Result<String, String>
+    pub fn Format(Source: & str, Config: & Config_Settings) -> Result<String, String>
     {
         if Config.Language.IsJavaScriptOrTypeScript() { return crate::js_ts::JS_TS_Formatter::Format(Source, Config); }
 
@@ -20,9 +20,7 @@ impl Source_Formatter
         if Config.Language.IsKotlin() { return crate::kotlin::Kotlin_Formatter::Format(Source, Config); }
 
         if matches!(Config.Language, crate::types::Source_Language::Html | crate::types::Source_Language::Php)
-        {
-            return crate::polyglot::Polyglot_Formatter::Format(Source, Config);
-        }
+        { return crate::polyglot::Polyglot_Formatter::Format(Source, Config); }
 
         let mut Scanner = Lexer_Scanner::New(Source, Config.Language);
         let Tokens = Scanner.TokenizeAll();
@@ -42,5 +40,5 @@ impl Source_Formatter
         Ok(Formatted)
     }
 
-    pub fn IsFormatted(Source: & str, Config: & Config_Settings)-> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
+    pub fn IsFormatted(Source: & str, Config: & Config_Settings) -> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
 }
