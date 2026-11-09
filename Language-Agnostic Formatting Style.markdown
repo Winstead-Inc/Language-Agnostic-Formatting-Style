@@ -24,17 +24,18 @@ This specification outlines the philosophy, rules, and practical applications of
 
 ##### 0.1 Evolution of the Mental Model
 
-| **Stage** | **Scope** | **Mental Model** |
-| :--- | :--- | :--- |
-| **Traditional Allman (1980s)** | Braces `{}` only | "Put curly brackets on their own line for C functions." *(Narrow, syntax-bound)* |
-| **Language-Agnostic v1** | `{}`, `()`, `[]` | "Extend Allman to parentheses and array brackets to avoid clumping callbacks." *(Format-bound)* |
-| **LAFS Core Philosophy** | **Any Boundary Pair** (`{}`, `()`, `[]`, `\|\|`, `` ` ` ``, `$$`, `"""`, `<>`) | **The Character is irrelevant; only the Boundary exists.** If text is enclosed, it is a room. A room must have structurally sound walls. *(Universal Topology)* |
+| **Stage**                      | **Scope**                                                                                  | **Mental Model**                                                                                                                                                  |
+| :----------------------------------- | :----------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Traditional Allman (1980s)** | Braces `{}` only                                                                               | "Put curly brackets on their own line for C functions." *(Narrow, syntax-bound)*                                                                                      |
+| **Language-Agnostic v1**       | `{}`, `()`, `[]`                                                                           | "Extend Allman to parentheses and array brackets to avoid clumping callbacks." *(Format-bound)*                                                                       |
+| **LAFS Core Philosophy**       | **Any Boundary Pair** (`{}`, `()`, `[]`, `\|\|`, `` ` ` ``, `$$`, `"""`, `<>`) | **The Character is irrelevant; only the Boundary exists.** If text is enclosed, it is a room. A room must have structurally sound walls. *(Universal Topology)* |
 
 In this philosophy, **the glyph itself is just arbitrary paint**. Whether a language designer chose `{`, `(`, `|`, or `$$` does not matter. What matters is that **a boundary exists between an outer environment and an inner cognitive payload**.
 
 ##### 0.2 Definition of a Container
 
 Any pair of characters (including identical starting and ending characters) that encloses internal code, data, or expressions is treated as a Container:
+
 * **Structural, Common, and Default Code Containers:** `( )`, `{ }`, `[ ]`, `< >`, `${ }`
 * **Identical-Glyph & Specialized Code Containers:** `` ` ` `` (template literals), `| |` (closure pipes), `$$ $$` (procedural SQL blocks), `""" """` / `' '` / `" "` (multiline or complex strings), `<!-- -->`, `<Tag>...</Tag>` (markup), regex boundaries, etc.
 
@@ -78,6 +79,7 @@ Any pair of characters (including identical starting and ending characters) that
      (| ... |)       // Paren + Pipe
      [` ... `]       // Bracket + Backtick
      ```
+
      As long as the closing alloy mirrors the opening alloy on the exact same column, structural integrity is 100% preserved.
 
 ---
@@ -88,7 +90,7 @@ Any pair of characters (including identical starting and ending characters) that
 
 The Language-Agnostic Formatting Style (LAFS) is designed as a language-agnostic structural formatting standard applicable across systems languages, scripting environments, query languages, data-interchange formats, and markup (C, C++, C#, Java, Rust, Go, Python, Swift, Kotlin, JavaScript, TypeScript, JSX/TSX, HTML/XML, SQL, Shell/PowerShell, JSON, YAML, CSS/SCSS, and beyond).
 
-* **Syntax Tolerance & Parser Sovereignty:** Formatting must adapt when a language's formal grammar or runtime semantics penalize detached delimiters (e.g., Automatic Semicolon Insertion in JavaScript/TypeScript, or compiler-enforced control block syntax in Go). In languages where whitespace semantics enforce specific indentation regimes (such as Python), standard language grammar supersedes detached-brace rules. If this formatting breaks functionality in certain components, do not use it.
+* **Syntax Tolerance & Parser Sovereignty:** Formatting must adapt when a language's formal grammar or runtime semantics penalize detached delimiters (e.g., Automatic Semicolon Insertion in JavaScript/TypeScript, or compiler-enforced control block syntax in Go). In languages where whitespace semantics enforce specific indentation regimes (such as Python), standard language grammar supersedes detached-brace rules. If this formatting breaks functionality in certain components, do not use it **OR** rewite the language's Syntax parser to make it compatible wiht this style and use that version.
 
 ##### 1.2 The Logical Preference for PascalCase, SCREAMING_SNAKE_CASE, and Pascal_Snake_Case
 
@@ -134,7 +136,6 @@ In any source code editor, characters occupy a discrete two-dimensional grid def
      │  
      Vector is skewed and diagonal. No load-bearing vertical path.
   ```
-
 * **LAFS Translational Symmetry:**
   LAFS anchors container boundaries on fixed vertical baselines:
 
@@ -161,15 +162,15 @@ Under the Gestalt Law of Closure, visual comprehension accelerates when elements
 
 ##### 2.3 Structural Comparison: Detached vs. Hugged Containers
 
-| **Principle** | **Detached Container (LAFS)** | **Hugged Container (K&R)** |
-| :--- | :--- | :--- |
-| **Identity vs. Structure** | Separated (`Anything` then `[`) | Fused (`Anything[`) |
-| **Structural Anchoring** | Vertical ($X_{\text{open}} = X_{\text{close}}$) | Offset / Floating |
-| **Hugging** | None | Present |
-| **Symmetry** | Perfect | Broken |
-| **Readability** | Immediate | Requires horizontal & vertical parsing |
-| **Geometry** | Rectangular | Skewed trapezoid |
-| **Cognitive Load** | Low | Higher |
+| **Principle**              | **Detached Container (LAFS)**               | **Hugged Container (K&R)**       |
+| :------------------------------- | :------------------------------------------------ | :------------------------------------- |
+| **Identity vs. Structure** | Separated (`Anything` then `[`)               | Fused (`Anything[`)                  |
+| **Structural Anchoring**   | Vertical ($X_{\text{open}} = X_{\text{close}}$) | Offset / Floating                      |
+| **Hugging**                | None                                              | Present                                |
+| **Symmetry**               | Perfect                                           | Broken                                 |
+| **Readability**            | Immediate                                         | Requires horizontal & vertical parsing |
+| **Geometry**               | Rectangular                                       | Skewed trapezoid                       |
+| **Cognitive Load**         | Low                                               | Higher                                 |
 
 ##### 2.4 Historical Context vs. Modern Display Architectures
 
@@ -205,14 +206,13 @@ LAFS operates on a strict priority order: **"Monolith First" $\longrightarrow$ "
 
 1. **State 1 — The Monolith (Horizontal Completeness):**
    If an expression, parameter list, or control block fits entirely within the editor viewport without soft-wrapping and meets the Complexity Budget with no forced line breaks, it resides on a single line. Horizontal density is preserved because scanning remains purely linear.
+
    * **Monolith First:** Every container is evaluated as a Monolith before any other state, whatever its source line breaks were. A container stays a Monolith when it fits the Canvas and contains no forced break. A forced break is only a line comment (`//`) inside the container, a token that itself spans lines (multi-line string, heredoc), or a line-bound directive. A manual line break or a blank line in the source is not a forced break. Layout depends on tokens and Canvas only, never on prior whitespace.
    * **Complexity Budget:** Logic inside a container does not forbid a Monolith. A container that fits the Canvas stays a Monolith while every block in it holds at most 4 statements and blocks nest at most 2 deep (both configurable). Exceeding the budget, not the presence of `if` or loops, makes symmetry expansion mandatory.
    * **Empty Containers:** An empty container is always a Monolith and never detaches: `Constructor(A, B) {}`. A body that has content and is not a Monolith detaches as usual.
    * **Inner Padding in a Monolith:** Inner padding in a Monolith is fixed by container kind. Braces `{ }` get one space inside (`{ Parse(Data); }`); parentheses `()`, brackets `[]`, and angles `<>` get none (`[Alpha, Beta, Gamma]`). Source spacing is not preserved.
-
 2. **State 2 — Simplified Symmetry (Container Grouping Architecture):**
    When a Monolith is impossible and a container is a link in a **Sole-Child Chain** (a continuous **Structural Boundary Run**), consecutive opening delimiters collapse horizontally into a Compound Node on its own line (e.g., `[{(`), with their closing counterparts mirrored in reverse sequence on a dedicated line at the exact same $X$-coordinate (`)}]`).
-
 3. **State 3 — Expanded Symmetry (Hierarchical Architecture):**
    When a Monolith is impossible and a container is not a link in a Sole-Child Chain (or when nested boundaries are interrupted by significant content), every affected delimiter occupies an independent line and indentation tier ($X+4$), with its closer aligned at the exact same $X$-coordinate.
 
@@ -282,12 +282,12 @@ ExecuteQuery(UserIdentifier, TargetPartitionKey, SecurityScopeToken);
 
 * **Direct Side-by-Side Comparison:**
 
-| **Scenario** | **❌ Illegal (Excessive Expansion)** | **✔️ Mandatory LAFS Rule** |
-| :--- | :--- | :--- |
-| **Class Constructor** | `Constructor(\n Private Service: DataService\n)\n{\n}` | `Constructor(Private Service: DataService) {}` |
-| **Error Handling** | `Catch(\n ErrorInstance\n)` | `Catch(ErrorInstance)` |
-| **Object Argument** | `SendPayload(\n {\n Id: 101\n }\n)` | `SendPayload({ Id: 101 });` *(Monolith)* <br> **or** *(if multiline)* <br> `SendPayload`<br>`({`<br>`    Id: 101`<br>`})` *(Container Grouping)* |
-| **Nested Data Array** | `[\n {\n (\n Data\n )\n }\n]` | `[{(Data)}]` *(Monolith)* <br> **or** *(if multiline)* <br> `[{( `<br>`    Data`<br>`)}]` *(Container Grouping)* |
+| **Scenario**          | **❌ Illegal (Excessive Expansion)**               | **✔️ Mandatory LAFS Rule**                                                                                                         |
+| :-------------------------- | :------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Class Constructor** | `Constructor(\n Private Service: DataService\n)\n{\n}` | `Constructor(Private Service: DataService) {}`                                                                                           |
+| **Error Handling**    | `Catch(\n ErrorInstance\n)`                            | `Catch(ErrorInstance)`                                                                                                                   |
+| **Object Argument**   | `SendPayload(\n {\n Id: 101\n }\n)`                    | `SendPayload({ Id: 101 });` *(Monolith)*  **or** *(if multiline)*  `SendPayload({``    Id: 101})` *(Container Grouping)* |
+| **Nested Data Array** | `[\n {\n (\n Data\n )\n }\n]`                          | `[{(Data)}]` *(Monolith)*  **or** *(if multiline)*  `[{(     Data``)}]` *(Container Grouping)*                           |
 
 * **The Law of Proportional Restraint:** Expanding code vertically is an architectural measure reserved for managing cognitive complexity and resolving horizontal canvas overflow. Expanding simple signatures, atomic variables, and flat parameter lists when they fit cleanly within the editor canvas is a violation of LAFS principles. **Keep it flat until the canvas or Complexity Budget forces a break; group delimiters whenever they meet in a continuous boundary run; expand hierarchically only when boundaries are separated by content.**
 
@@ -378,10 +378,13 @@ InitializeCoreEngine                        InitializeCoreEngine
 **Example Transition (Multiple Sibling Items Inside an Outer Container):**
 
 When an outer container holds multiple grouped children that exceed the Monolith canvas:
+
 ```text
 [{( ... )}, {( ... )}, {( ... )}]
 ```
+
 The outer container has three items (not a Sole-Child Chain), so it expands, while each child remains a Sole-Child Chain and stays grouped:
+
 ```text
 [
     {(
@@ -421,6 +424,7 @@ When Monolith applies, the complete construct is already represented on one line
 A **Structural Boundary Run** is a continuous sequence of structural boundary material that can remain grouped together.
 
 A boundary run may contain:
+
 1. Opening containers;
 2. Closing containers;
 3. One or more permitted unpaired structural characters; and
@@ -468,6 +472,7 @@ ClosingContainer1.1ClosingContainer1
 ```
 
 The result is:
+
 * `OpeningContainer1OpeningContainer1.1` is grouped,
 * while `OpeningContainer1.1.1`, `OpeningContainer1.1.1.1`, `ClosingContainer1.1.1.1`, and `ClosingContainer1.1.1` are represented separately,
 * and finally `ClosingContainer1.1ClosingContainer1` is grouped again.
@@ -502,6 +507,7 @@ Container1
 ```
 
 means:
+
 * `1.1` is inside `1`;
 * `1.1.1` is inside `1.1`;
 * `1.1.1.1` is inside `1.1.1`;
@@ -672,6 +678,7 @@ The representation is intentionally capable of expressing arbitrary nesting dept
 ###### 4.3.9 Meaning of A, B, C, and D
 
 The labels in the full-featured representation describe the points at which the nested boundary structure must be considered separately:
+
 * `A` = first affected opening boundary
 * `B` = next affected nested opening boundary
 * `C` = corresponding affected nested closing boundary
@@ -682,6 +689,7 @@ The labels are explanatory markers for the structural traversal. They MUST NOT b
 ###### 4.3.10 Unpaired Characters
 
 Unpaired characters require special treatment because they may participate in structural boundary runs without themselves forming a container pair. The formatter MUST distinguish:
+
 * **Structural unpaired characters:** Characters recognized as belonging to the structural boundary syntax. These MAY participate in grouping.
 * **Significant content:** Content that belongs to the interior operation or semantic body of the construct. This interrupts the applicable structural boundary run.
 
@@ -742,6 +750,7 @@ Container Grouping MUST NOT be independently selected when Monolith applies. The
 ###### 4.3.14 Implementation Intent
 
 The implementation MUST avoid a simplistic rule such as *"If a nested container is separated, separate all of its ancestors and descendants."* It MUST instead operate conceptually as:
+
 1. Determine whether Monolith applies.
 2. If Monolith applies, stop.
 3. Identify the structural boundary material.
@@ -822,12 +831,12 @@ RULE: THE ANTI-END-HUGGING LAW (THE LINUS-ALLMAN RECONCILIATION)
 ================================================================================
 ```
 
-| **Feature** | **K&R / Linux Kernel** | **Dogmatic Allman** | **Language-Agnostic Formatting Style (LAFS)** |
-| :--- | :--- | :--- | :--- |
-| **Protects Vertical Space?** | **YES** | NO (Excessive waste) | **YES** (Monolith + Container Grouping) |
-| **Structural Soundness?** | NO (Trailing hugs) | **YES** (Strict pillars) | **YES** (Strict pillars) |
-| **Translational Symmetry?** | NO (Skewed vectors) | **YES** (Complete) | **YES** (Mirrored nodes) |
-| **Scanning Efficiency?** | Low (Jagged scan) | High (Clean column) | **Maximum** (Spacious yet compact) |
+| **Feature**                  | **K&R / Linux Kernel** | **Dogmatic Allman**      | **Language-Agnostic Formatting Style (LAFS)** |
+| :--------------------------------- | :--------------------------- | :----------------------------- | :-------------------------------------------------- |
+| **Protects Vertical Space?** | **YES**                | NO (Excessive waste)           | **YES** (Monolith + Container Grouping)       |
+| **Structural Soundness?**    | NO (Trailing hugs)           | **YES** (Strict pillars) | **YES** (Strict pillars)                      |
+| **Translational Symmetry?**  | NO (Skewed vectors)          | **YES** (Complete)       | **YES** (Mirrored nodes)                      |
+| **Scanning Efficiency?**     | Low (Jagged scan)            | High (Clean column)            | **Maximum** (Spacious yet compact)            |
 
 ---
 
@@ -840,6 +849,7 @@ RULE: THE ANTI-END-HUGGING LAW (THE LINUS-ALLMAN RECONCILIATION)
 The Language-Agnostic Formatting Style prioritizes structural purity, **except when structural purity breaks execution**.
 
 In certain programming languages, syntax parsers, compilers, and lexers enforce strict grammar rules that treat a newline before an opening delimiter as a fatal syntax error or a semantic termination:
+
 1. **JavaScript / TypeScript ASI (Automatic Semicolon Insertion):** Placing a newline immediately after `return`, `throw`, `yield`, or `break` causes the engine to insert an invisible `;`. A pure Allman newline after `return` results in `return; /* undefined */`, completely severing execution and making the subsequent block unreachable dead code.
 2. **Go (Golang) Lexer Semicolon Injection:** The Go compiler automatically inserts semicolons at the end of unpunctuated lines. A pure Allman `func Main()\n{` or `if Condition\n{` throws an immediate compiler error: `syntax error: unexpected semicolon or newline before {`.
 3. **Macro Preprocessors & DSLs:** Specific shell, macro, or query scopes where a newline between an instruction and its container character invalidates the expression.
@@ -869,6 +879,7 @@ In standard K&R, the closing delimiter is thrown arbitrarily back to Column 0 or
 ```
 
 **The Exact Rules:**
+
 1. **The Compulsory Inline Open:** The opening delimiter (`(`, `{`, `[`) stays on the same line as the keyword to satisfy the compiler/lexer.
 2. **The Coordinate-Matched Return:** The closing delimiter (`)`, `}`, `]`) **MUST NOT** drop to the start of the keyword. It must align vertically beneath the opening delimiter's column coordinate.
 3. **The Content Indent:** The inner enclosed code indents by one additional tab/indent level (`+4`) beyond the opening delimiter’s column.
@@ -947,12 +958,12 @@ func ProcessAccountData(AccountID string) {
 
 ###### 6.1.4 Specification Matrix for Language Exceptions
 
-| **Scope / Scenario** | **Structural Status** | **Rule Enforced** | **Delimiter Position** |
-| :--- | :--- | :--- | :--- |
-| **Standard Scope (JS, C#, Java, Rust, SQL)** | Standard Language Rule | **Pure LAFS Symmetry** | Dedicated new line with own column |
-| **JS/TS `return` / `throw` / `yield`** | ASI Semicolon Hazard | **Column-Anchored Hybrid** | Opens at `Keyword + 1`; closes matching `(` column |
-| **Go Grammar (`if`, `func`, `for`)** | Compiler Semicolon Injection | **Column-Anchored Hybrid** | Opens on keyword line; closes matching `{` column |
-| **Any Custom DSL / Tooling Bug** | Hard Parser Error | **Column-Anchored Hybrid** | Opens inline; closes on matching column coordinate |
+| **Scope / Scenario**                         | **Structural Status**  | **Rule Enforced**          | **Delimiter Position**                           |
+| :------------------------------------------------- | :--------------------------- | :------------------------------- | :----------------------------------------------------- |
+| **Standard Scope (JS, C#, Java, Rust, SQL)** | Standard Language Rule       | **Pure LAFS Symmetry**     | Dedicated new line with own column                     |
+| **JS/TS `return` / `throw` / `yield`** | ASI Semicolon Hazard         | **Column-Anchored Hybrid** | Opens at `Keyword + 1`; closes matching `(` column |
+| **Go Grammar (`if`, `func`, `for`)**   | Compiler Semicolon Injection | **Column-Anchored Hybrid** | Opens on keyword line; closes matching `{` column    |
+| **Any Custom DSL / Tooling Bug**             | Hard Parser Error            | **Column-Anchored Hybrid** | Opens inline; closes on matching column coordinate     |
 
 ---
 
@@ -965,6 +976,7 @@ Text inside a string, template literal, heredoc, or any verbatim token is **neve
 ###### 6.2.2 Universal Delimiter Rule: Backticks (`` ` ``) Must Always Be On Their Own Line
 
 Whenever a backtick (`` ` ``) is used to create a container (template literals, multiline strings, code containers), the backtick delimiter MUST obey strict symmetry:
+
 * **Single-Line Monolith:** Single-line Monolith backticks (e.g., ``const Tag = `Span`;`` or ``const Msg = `Hello ${Name}`;``) are permitted only when completely flat and atomic on one single line within viewport limits.
 * **Multiline Detachment:** The instant a line break occurs, both the opening and closing backticks MUST immediately detach onto their own independent lines:
   * The opening backtick (`` ` ``) MUST be on its own line—it must NEVER cling to the tail of an assignment, property name, function call, or identifier, nor may content begin on the same line as the opening backtick.
@@ -1221,6 +1233,7 @@ When an HTML, XML, SVG, or template tag (e.g., PHP, JSX, Blade) expands across m
 In raw text processing, treating identical characters as containers is error-prone because `|` can be a bitwise OR operator (`A | B | C`), `/` can be division (`X / Y / Z`) or a regex boundary (`/pattern/`), and `"` can be a single-line string.
 
 In a Concrete Syntax Tree (CST) such as Tree-Sitter, a closure's `|` is parsed as `closure_parameters`, a template string's `` ` `` is parsed as `template_literal`, and SQL's `$$` is parsed as `function_body_block`. The engine identifies:
+
 1. `Node.StartDelimiter` (The opening boundary token)
 2. `Node.EndDelimiter` (The closing boundary token)
 3. `Node.Body` (The encapsulated content)
@@ -1284,12 +1297,12 @@ To maintain absolute visual clarity and reduce eye strain when parsing dense str
 
 ##### 8.2 Approved High-Contrast Alternatives
 
-| **Semantic Role** | **Approved Color Name** | **Mandatory Hex / RGBA Code** |
-| :--- | :--- | :--- |
+| **Semantic Role**                                    | **Approved Color Name**    | **Mandatory Hex / RGBA Code**                       |
+| :--------------------------------------------------------- | :------------------------------- | :-------------------------------------------------------- |
 | **Primary Replacement for `#00E5FF` / Highlights** | Purple (and alpha/dark variants) | `#7100FF` / `#7100FF22` / `rgba(113, 0, 255, 0.22)` |
-| **Warnings** | Deep Orange | `#FC6A03` |
-| **Errors / Critical Alerts** | Bright Red | `#FF1744` |
-| **Accents / Ratings / Tokens** | Azure Blue | `#00BFFF` |
-| **Success / Positive Indicators** | Emerald Green | `#00E676` |
-| **Secondary Accents / Tokens** | Lavender / Violet | `#C77DFF` |
-| **Deep Structural Accents** | Indigo | `#3D5AFE` |
+| **Warnings**                                         | Deep Orange                      | `#FC6A03`                                               |
+| **Errors / Critical Alerts**                         | Bright Red                       | `#FF1744`                                               |
+| **Accents / Ratings / Tokens**                       | Azure Blue                       | `#00BFFF`                                               |
+| **Success / Positive Indicators**                    | Emerald Green                    | `#00E676`                                               |
+| **Secondary Accents / Tokens**                       | Lavender / Violet                | `#C77DFF`                                               |
+| **Deep Structural Accents**                          | Indigo                           | `#3D5AFE`                                               |
