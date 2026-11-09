@@ -1,7 +1,7 @@
 #![allow(
 non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Source_Language { C, Cpp, CSharp, JavaScript, TypeScript, Shell, Go, Php, Html, Css, Rust, Generic, }
+pub enum Source_Language { C, Cpp, CSharp, JavaScript, TypeScript, Shell, Go, Php, Html, Css, Rust, Kotlin, KotlinOfficial, Generic, }
 
 impl Source_Language
 {
@@ -23,17 +23,20 @@ impl Source_Language
         if Lower.ends_with(".php") { return Source_Language::Php; }
         if Lower.ends_with(".html") || Lower.ends_with(".htm") { return Source_Language::Html; }
         if Lower.ends_with(".css") { return Source_Language::Css; }
+        if Lower.ends_with(".kt") || Lower.ends_with(".kts") { return Source_Language::Kotlin; }
         Source_Language::Generic
     }
 
     pub fn SupportsAngleGenerics( & self)-> bool
     {
-        matches!(self, Source_Language::Cpp | Source_Language::CSharp | Source_Language::TypeScript | Source_Language::Rust)
+        matches!(self, Source_Language::Cpp | Source_Language::CSharp | Source_Language::TypeScript | Source_Language::Rust | Source_Language::Kotlin | Source_Language::KotlinOfficial)
     }
 
     pub fn IsJavaScriptOrTypeScript( & self)-> bool { matches ! (self, Source_Language::JavaScript | Source_Language::TypeScript) }
 
     pub fn IsShell( & self)-> bool { matches ! (self, Source_Language::Shell) }
+
+    pub fn IsKotlin( & self)-> bool { matches ! (self, Source_Language::Kotlin | Source_Language::KotlinOfficial) }
 
     pub fn DefaultExtensions( & self)-> & 'static[ & 'static str]
     {
@@ -51,6 +54,7 @@ impl Source_Language
             [
                 "rs"
             ],
+            Source_Language::Kotlin | Source_Language::KotlinOfficial => & ["kt", "kts"],
             Source_Language::Generic => & [],
         }
     }
@@ -59,7 +63,7 @@ impl Source_Language
     {
         match self
         {
-            Source_Language::C => "c", Source_Language::Cpp => "cpp", Source_Language::CSharp => "cs", Source_Language::JavaScript => "js", Source_Language::TypeScript => "ts", Source_Language::Shell => "sh", Source_Language::Go => "go", Source_Language::Php => "php", Source_Language::Html => "html", Source_Language::Css => "css", Source_Language::Rust => "rs", Source_Language::Generic => "generic", 
+            Source_Language::C => "c", Source_Language::Cpp => "cpp", Source_Language::CSharp => "cs", Source_Language::JavaScript => "js", Source_Language::TypeScript => "ts", Source_Language::Shell => "sh", Source_Language::Go => "go", Source_Language::Php => "php", Source_Language::Html => "html", Source_Language::Css => "css", Source_Language::Rust => "rs", Source_Language::Kotlin => "kt", Source_Language::KotlinOfficial => "kt-official", Source_Language::Generic => "generic", 
         }
     }
 }
@@ -111,10 +115,16 @@ impl Token_Info
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layout_State { Monolith, Grouped, Expanded, }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Kotlin_Style
+{
+    Allman,   // Version 1: Pure Allman style for all containers
+    Official, // Version 2: Official Kotlin (Column-Anchored Hybrid where required by Kotlin compiler grammar / Brain K&R)
+}
 #[derive(Debug, Clone)]
 pub struct Config_Settings
 {
-    pub Canvas_Width: usize, pub Indent_Width: usize, pub Use_Tabs: bool, pub Max_Statements_In_Monolith: usize, pub Max_Block_Depth: usize, pub Max_Containers_In_Monolith: usize, pub Max_Blank_Lines: usize, pub Language: Source_Language, pub Allow_Brace_Grouping: bool, 
+    pub Canvas_Width: usize, pub Indent_Width: usize, pub Use_Tabs: bool, pub Max_Statements_In_Monolith: usize, pub Max_Block_Depth: usize, pub Max_Containers_In_Monolith: usize, pub Max_Blank_Lines: usize, pub Language: Source_Language, pub Allow_Brace_Grouping: bool, pub Kotlin_Style: Kotlin_Style, 
 }
 
 impl Default for Config_Settings
@@ -123,7 +133,7 @@ impl Default for Config_Settings
     {
         Config_Settings
         {
-            Canvas_Width: 160, Indent_Width: 4, Use_Tabs: false, Max_Statements_In_Monolith: 4, Max_Block_Depth: 2, Max_Containers_In_Monolith: 12, Max_Blank_Lines: 1, Language: Source_Language::Generic, Allow_Brace_Grouping: true, 
+            Canvas_Width: 160, Indent_Width: 4, Use_Tabs: false, Max_Statements_In_Monolith: 4, Max_Block_Depth: 2, Max_Containers_In_Monolith: 12, Max_Blank_Lines: 1, Language: Source_Language::Generic, Allow_Brace_Grouping: true, Kotlin_Style: Kotlin_Style::Allman, 
         }
     }
 }

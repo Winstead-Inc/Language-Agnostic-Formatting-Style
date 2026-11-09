@@ -4,6 +4,7 @@ mod emitter;
 mod formatter;
 mod go;
 mod js_ts;
+mod kotlin;
 mod lexer;
 mod planner;
 mod polyglot;
@@ -20,7 +21,7 @@ use std::sync:: { Arc, Mutex };
 use std::time::Instant;
 
 use formatter::Source_Formatter;
-use types:: { Config_Settings, Source_Language };
+use types:: { Config_Settings, Kotlin_Style, Source_Language };
 
 const DEFAULT_EXCLUDED_DIRS: & [ & str] = & 
 [
@@ -39,7 +40,7 @@ const BINARY_EXTENSIONS: & [ & str] = &
 
 const DEFAULT_SUPPORTED_EXTENSIONS: & [ & str] = & 
 [
-    "c", "h", "cpp", "hpp", "cc", "cxx", "hh", "hxx", "inl", "cu", "cs", "rs", "java", "kt", "scala", "js", "mjs", "cjs", "jsx", "ts", "tsx", "mts", "cts", "go", "dart", "php", "py", "swift", "m", "mm", "sh", "bash", "zsh", "ksh", "json", "jsonc", "json5", "toml", "css", "scss", "less", "sql", "graphql", "proto", "html", "htm", 
+    "c", "h", "cpp", "hpp", "cc", "cxx", "hh", "hxx", "inl", "cu", "cs", "rs", "java", "kt", "kts", "scala", "js", "mjs", "cjs", "jsx", "ts", "tsx", "mts", "cts", "go", "dart", "php", "py", "swift", "m", "mm", "sh", "bash", "zsh", "ksh", "json", "jsonc", "json5", "toml", "css", "scss", "less", "sql", "graphql", "proto", "html", "htm", 
 ];
 
 #[derive(Clone)]
@@ -164,7 +165,11 @@ fn PrintUsage(Logger: & Terminal_Logger)
     Logger.Println("  -c, --canvas-width <WIDTH>  Set maximum canvas width before expansion (default: 160)");
     Logger.Println("  -i, --indent <SIZE>         Set indentation width in spaces (default: 4)");
     Logger.Println("  -t, --tabs                  Use tabs instead of spaces for indentation");
-    Logger.Println("  -l, --language <LANG>       Force source language: 'c', 'cpp', 'csharp', 'js', 'ts', 'sh'");
+    Logger.Println("  -l, --language <LANG>       Force source language: 'c', 'cpp', 'csharp', 'js', 'ts', 'sh', 'kt', 'kt-official'");
+    Logger.Println("      --kotlin-version <1|2>  Kotlin formatting version (1 = Allman for all containers, 2 = Official Kotlin)");
+    Logger.Println("      --kotlin-style <STYLE>  Kotlin style: 'allman' (Version 1) or 'official' (Version 2)");
+    Logger.Println("      --allman-kotlin         Enforce Version 1 (Pure Allman style for all containers)");
+    Logger.Println("      --official-kotlin       Enforce Version 2 (Official Kotlin compiler compatible / Brain K&R)");
     Logger.Println("      --max-statements <NUM>  Max statements in a monolith block (default: 4)");
     Logger.Println("      --stdin-filepath <PATH> Virtual filepath when formatting stdin");
     Logger.Println("  -h, --help                  Show this help message");
@@ -611,10 +616,42 @@ fn Main()
                     let LangStr = Args[I].to_lowercase();
                     Config.Language = match LangStr.as_str()
                     {
-                        "c" => Source_Language::C, "cpp" | "c++" => Source_Language::Cpp, "cs" | "csharp" | "c#" => Source_Language::CSharp, "js" | "javascript" => Source_Language::JavaScript, "ts" | "typescript" => Source_Language::TypeScript, "sh" | "shell" | "bash" | "zsh" | "ksh" => Source_Language::Shell, "go" => Source_Language::Go, "php" => Source_Language::Php, "html" | "htm" => Source_Language::Html, "css" => Source_Language::Css, _ => Source_Language::Generic, 
+                        "c" => Source_Language::C, "cpp" | "c++" => Source_Language::Cpp, "cs" | "csharp" | "c#" => Source_Language::CSharp, "js" | "javascript" => Source_Language::JavaScript, "ts" | "typescript" => Source_Language::TypeScript, "sh" | "shell" | "bash" | "zsh" | "ksh" => Source_Language::Shell, "go" => Source_Language::Go, "php" => Source_Language::Php, "html" | "htm" => Source_Language::Html, "css" => Source_Language::Css, "kt" | "kotlin" | "kotlin-allman" | "kt-allman" | "kotlin-v1" | "kt-v1" => { Config.Kotlin_Style = Kotlin_Style::Allman; Source_Language::Kotlin }, "kt-official" | "kotlin-official" | "kotlin-v2" | "kt-v2" => { Config.Kotlin_Style = Kotlin_Style::Official; Source_Language::KotlinOfficial }, _ => Source_Language::Generic, 
                     };
                 }
             }
+            "--kotlin-version" | "-kv" => 
+            {
+                I += 1;
+                if I < Args.len()
+                {
+                    if Args[I] == "2" || Args[I].eq_ignore_ascii_case("v2") || Args[I].eq_ignore_ascii_case("official")
+                    {
+                        Config.Kotlin_Style = Kotlin_Style::Official;
+                    }
+                    else
+                    {
+                        Config.Kotlin_Style = Kotlin_Style::Allman;
+                    }
+                }
+            }
+            "--kotlin-style" | "-ks" => 
+            {
+                I += 1;
+                if I < Args.len()
+                {
+                    if Args[I].eq_ignore_ascii_case("official") || Args[I] == "2"
+                    {
+                        Config.Kotlin_Style = Kotlin_Style::Official;
+                    }
+                    else
+                    {
+                        Config.Kotlin_Style = Kotlin_Style::Allman;
+                    }
+                }
+            }
+            "--allman-kotlin" => { Config.Kotlin_Style = Kotlin_Style::Allman; }
+            "--official-kotlin" => { Config.Kotlin_Style = Kotlin_Style::Official; }
             "--stdin-filepath" => { I += 1; if I < Args.len() { StdinVirtualPath = Some(Args[I].clone()); } }
             "-" => { ReadFromStdin = true; }
             "-h" | "--help" => { Logger.Set_Disable_Logs(true); PrintUsage( & Logger); return ; }
@@ -652,6 +689,34 @@ fn Main()
                         {
                             let Trimmed = Part.trim();
                             if ! Trimmed.is_empty() { ExcludedPatterns.push(Trimmed.to_string()); }
+                        }
+                    }
+                }
+                else if Arg.starts_with("--kotlin-version=") || Arg.starts_with("-kv=")
+                {
+                    if let Some((_, Value)) = Arg.split_once('=')
+                    {
+                        if Value == "2" || Value.eq_ignore_ascii_case("v2") || Value.eq_ignore_ascii_case("official")
+                        {
+                            Config.Kotlin_Style = Kotlin_Style::Official;
+                        }
+                        else
+                        {
+                            Config.Kotlin_Style = Kotlin_Style::Allman;
+                        }
+                    }
+                }
+                else if Arg.starts_with("--kotlin-style=") || Arg.starts_with("-ks=")
+                {
+                    if let Some((_, Value)) = Arg.split_once('=')
+                    {
+                        if Value.eq_ignore_ascii_case("official") || Value == "2"
+                        {
+                            Config.Kotlin_Style = Kotlin_Style::Official;
+                        }
+                        else
+                        {
+                            Config.Kotlin_Style = Kotlin_Style::Allman;
                         }
                     }
                 }
