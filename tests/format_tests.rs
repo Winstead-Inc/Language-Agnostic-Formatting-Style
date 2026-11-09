@@ -1,5 +1,6 @@
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
 
+use Language_Agnostic_Formatting_Style as lafs;
 use lafs:: { Config_Settings, Source_Formatter, Source_Language };
 
 #[test]
@@ -261,4 +262,52 @@ fn Test_Rust_Chained_Try_Operator_Double_Question_Mark()
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("Val??;"),"Rust try operators must not be merged as ?? binary operator, got: {}", Formatted);
+}
+
+#[test]
+fn Test_Monolith_Preserves_Preceding_Newlines_And_Blank_Lines()
+{
+    let Input = r#"[package]
+name = "lafs"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "lafs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "lafs"
+path = "src/main.rs"
+
+[dependencies]
+chrono = "0.4.45"
+"#;
+    let Config = Config_Settings::default();
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    assert!(Formatted.contains("edition = \"2021\"\n\n[lib]"), "Monolith [lib] must not eat preceding blank line/newline, got: {}", Formatted);
+    assert!(Formatted.contains("path = \"src/lib.rs\"\n\n[[bin]]"), "Monolith [[bin]] must not eat preceding blank line/newline, got: {}", Formatted);
+    assert!(Formatted.contains("path = \"src/main.rs\"\n\n[dependencies]"), "Monolith [dependencies] must not eat preceding blank line/newline, got: {}", Formatted);
+}
+
+#[test]
+fn Test_Monolith_Does_Not_Glue_Across_Single_Newline_After_Assignment()
+{
+    let Input = "edition = \"2021\"\n[lib]\n";
+    let Config = Config_Settings::default();
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    assert_eq!(Formatted, "edition = \"2021\"\n[lib]\n");
+}
+
+#[test]
+fn Test_Standalone_Container_Preserves_Preceding_Newlines()
+{
+    let Input = "let x = 1;\n\n[1, 2, 3];\n";
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Rust;
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    assert!(Formatted.contains("let x = 1;\n\n[1, 2, 3];"), "Standalone array must preserve preceding blank line, got: {}", Formatted);
 }

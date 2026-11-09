@@ -83,7 +83,54 @@ impl <'a> Code_Emitter<'a>
                 Syntax_Node::Container(C) =>
                 {
                     let IsTemplate = Index > 0 && matches!( & Nodes[Index - 1], Syntax_Node::Token(T) if T.Text == "template");
-                    let Layout = self.Planner.DecideLayout(C, Level, self.Current_Line_Len);
+
+                    let ShouldAttachInline = if Index > 0
+                    {
+                        match & Nodes[Index - 1]
+                        {
+                            Syntax_Node::Token(PrevT) =>
+                            {
+                                if matches!(PrevT.Kind, Token_Kind::String_Lit(_) | Token_Kind::Number(_) | Token_Kind::Char_Lit(_))
+                                {
+                                    false
+                                }
+                                else if PrevT.Text == ";" || PrevT.Text == "," || PrevT.Text == "=" || PrevT.Text == ":"
+                                {
+                                    false
+                                }
+                                else if Self::IsPrecededByAssignment(Nodes, Index - 1)
+                                {
+                                    false
+                                }
+                                else if matches!(C.Kind, Container_Kind::Paren | Container_Kind::Bracket) && matches!(PrevT.Kind, Token_Kind::Identifier(_))
+                                {
+                                    ! Self::IsControlKeyword( & PrevT.Text)
+                                }
+                                else
+                                {
+                                    false
+                                }
+                            }
+                            Syntax_Node::Container(_) => false,
+                        }
+                    }
+                    else
+                    {
+                        false
+                    };
+
+                    if C.Open_Token.Preceding_Newlines > 0 && ! ShouldAttachInline
+                    {
+                        self.EnsureNewline();
+                        if C.Open_Token.Preceding_Newlines >= 2
+                        {
+                            self.EnsureBlankLine();
+                        }
+                    }
+
+                    let StartedAtLineStart = ! self.Line_Has_Content;
+                    let EffectiveCol = if self.Line_Has_Content { self.Current_Line_Len } else { Level * self.Config.Indent_Width };
+                    let Layout = self.Planner.DecideLayout(C, Level, EffectiveCol);
                     self.EmitContainerNodeWithLayout(C, Level, Layout);
                     // Check if followed by continuation keyword (else, catch, finally, while)
                     let NextContinuation = if Index + 1 < Total
@@ -133,11 +180,51 @@ impl <'a> Code_Emitter<'a>
                         }
                         else { self.EnsureNewline(); }
                     }
+                    else if StartedAtLineStart
+                    {
+                        let IsTrailingPunct = Index + 1 < Total && matches!( & Nodes[Index + 1], Syntax_Node::Token(T) if T.Text == ";" || T.Text == ",");
+                        if ! IsTrailingPunct
+                        {
+                            self.EnsureNewline();
+                        }
+                    }
                 }
             }
 
             Index += 1;
         }
+    }
+
+    fn IsControlKeyword(Text: & str)-> bool
+    {
+        matches!
+        (
+            Text,
+            "return" | "throw" | "break" | "continue" | "yield" | "await" | "assert" | "case" | "default" | "in" | "is" | "as"
+        )
+    }
+
+    fn IsPrecededByAssignment(Nodes: & [Syntax_Node], FromIdx: usize)-> bool
+    {
+        let mut ScanIdx = FromIdx;
+        loop
+        {
+            match & Nodes[ScanIdx]
+            {
+                Syntax_Node::Token(T) =>
+                {
+                    if T.Text == "=" { return true; }
+                    if T.Text == ";" || T.Text == "{" || T.Text == "}" || T.Preceding_Newlines > 0 { break ; }
+                }
+                Syntax_Node::Container(C) =>
+                {
+                    if C.Kind == Container_Kind::Brace || C.Open_Token.Preceding_Newlines > 0 { break ; }
+                }
+            }
+            if ScanIdx == 0 { break ; }
+            ScanIdx -= 1;
+        }
+        false
     }
 
     fn IsImportStatement(Nodes: & [Syntax_Node], mut StartIdx: usize)-> bool
@@ -318,7 +405,15 @@ impl <'a> Code_Emitter<'a>
                     if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
                     self.EmitRaw(Op);
                 }
-                else if Op == "++" || Op == "--" || Op == "!" || Op == "~" { self.EmitRaw(Op); }
+                else if Op == "++" || Op == "--" || Op == "!" || Op == "~" || Op == ".." || Op == "..=" || Op == "..." || Op == "#"
+                {
+                    if (Op == ".." || Op == "..=" || Op == "..." || Op == "#") && self.Output.ends_with(' ')
+                    {
+                        self.Output.pop();
+                        self.Current_Line_Len -= 1;
+                    }
+                    self.EmitRaw(Op);
+                }
                 else { self.EmitSpace(); self.EmitRaw(Op); self.EmitSpace(); }
             }
             Token_Kind::Keyword(K) =>
@@ -367,7 +462,8 @@ impl <'a> Code_Emitter<'a>
     {
         if ! self.Line_Has_Content { self.EmitIndent(Level); }
         // For Monolith: openers and closers remain horizontal on the same line
-        if Container.Kind == Container_Kind::Brace { self.EmitSpace(); }
+        let IsAtLineStart = self.Output.is_empty() || self.Output.trim_end_matches([' ', '\t']).ends_with('\n');
+        if Container.Kind == Container_Kind::Brace && ! IsAtLineStart { self.EmitSpace(); }
 
         self.EmitRaw(Container.Kind.OpenGlyph());
 
@@ -402,7 +498,15 @@ impl <'a> Code_Emitter<'a>
                         if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
                         self.EmitRaw( & T.Text);
                     }
-                    else if matches!(T.Kind, Token_Kind::Operator(_)) { self.EmitSpace(); self.EmitRaw( & T.Text); self.EmitSpace(); }
+                    else if let Token_Kind::Operator(ref Op) = T.Kind
+                    {
+                        if Op == ".." || Op == "..=" || Op == "..." || Op == "#"
+                        {
+                            if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
+                            self.EmitRaw( & T.Text);
+                        }
+                        else { self.EmitSpace(); self.EmitRaw( & T.Text); self.EmitSpace(); }
+                    }
                     else
                     {
                         let NeedSpace = if self.Output.ends_with('(') || self.Output.ends_with('[') || self.Output.ends_with('<') || self.Output.ends_with('{') || self.Output.ends_with(' ')

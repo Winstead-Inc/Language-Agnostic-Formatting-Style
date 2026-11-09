@@ -30,7 +30,7 @@ const DEFAULT_EXCLUDED_DIRS: & [ & str] = &
 
 const DOCUMENT_EXTENSIONS: & [ & str] = &
 [
-    "adoc", "asciidoc", "pdf", "docx", "doc", "md", "markdown", "mdown", "mkd", "rst", "rtf", "odt", "pages", "ppt", "pptx", "key", "xls", "xlsx", "numbers", "csv", "tsv", "epub", "tex", "latex", "txt", "org", "textile", "yml", "yaml",
+    "adoc", "asciidoc", "pdf", "docx", "doc", "md", "markdown", "mdown", "mkd", "rst", "rtf", "odt", "pages", "ppt", "pptx", "key", "xls", "xlsx", "numbers", "csv", "tsv", "epub", "tex", "latex", "txt", "org", "textile", "yml", "yaml", "log",
 ];
 
 const BINARY_EXTENSIONS: & [ & str] = &
@@ -187,8 +187,12 @@ fn IsBinaryFile(PathTarget: & Path)-> bool
 fn IsDirExcluded(DirName: & str, DirPath: & Path, ExcludedPatterns: & [String])-> bool
 {
     if DEFAULT_EXCLUDED_DIRS.iter().any( |& D | D.eq_ignore_ascii_case(DirName)) { return true; }
+    if DirName.to_ascii_lowercase().starts_with("old.src") { return true; }
 
     let DirPathStr = DirPath.to_string_lossy().replace('\\', "/");
+    let LowerPath = DirPathStr.to_ascii_lowercase();
+    if LowerPath.starts_with("old.src") || LowerPath.contains("/old.src") { return true; }
+
     for Pattern in ExcludedPatterns
     {
         let CleanPattern = Pattern.trim_matches('/').trim_matches('\\');
@@ -211,6 +215,7 @@ fn IsFileEligible(PathTarget: & Path, AllTypes: bool , AllowedExtensions: & [Str
     }
 
     let Ext = PathTarget.extension().unwrap_or_default().to_string_lossy().to_lowercase();
+    if Ext == "log" || FileName.to_ascii_lowercase().ends_with(".log") { return false; }
     // 2. Specific extension filter (-e / --ext / --extension)
     if ! AllowedExtensions.is_empty() { if ! AllowedExtensions.iter().any( | A | A.eq_ignore_ascii_case( & Ext)) { return false; } }
     else if ! AllTypes && ! DEFAULT_SUPPORTED_EXTENSIONS.iter().any( |& S | S == Ext.as_str()) { return false; }
@@ -301,8 +306,11 @@ fn MatchesSpecifiedTarget(Candidate: & Path, Spec: & str)-> bool
 
 fn IsSpecifiedFileEligible(PathTarget: & Path, AllTypes: bool , AllowedExtensions: & [String], ExcludedPatterns: & [String], ForceLanguage: Source_Language,)-> bool
 {
-    // 1. Exclude known binary file types or binary content
     let Ext = PathTarget.extension().unwrap_or_default().to_string_lossy().to_lowercase();
+    let FileName = PathTarget.file_name().unwrap_or_default().to_string_lossy();
+    if Ext == "log" || FileName.to_ascii_lowercase().ends_with(".log") { return false; }
+
+    // 1. Exclude known binary file types or binary content
     if BINARY_EXTENSIONS.iter().any( |& B | B == Ext.as_str()) || IsBinaryFile(PathTarget) { return false; }
 
     // 2. Check user exclusion patterns
@@ -1096,6 +1104,8 @@ mod Tests
         assert!( ! IsFileEligible(Path::new ("config.yaml"), true, & EmptyExts, & Excludes));
         assert!( ! IsFileEligible(Path::new ("workflow.yml"), false, & EmptyExts, & Excludes));
         assert!( ! IsFileEligible(Path::new ("config.yaml"), false, & EmptyExts, & Excludes));
+        assert!( ! IsFileEligible(Path::new ("lafs.log"), true, & EmptyExts, & Excludes));
+        assert!( ! IsFileEligible(Path::new ("session 2026-11-09.log"), false, & EmptyExts, & Excludes));
     }
 
     # [test] fn Test_Binary_Extension_Filter()
@@ -1116,6 +1126,8 @@ mod Tests
         assert!(IsDirExcluded(".git", Path::new (".git"), & CustomExcludes));
         assert!(IsDirExcluded("target", Path::new ("target"), & CustomExcludes));
         assert!(IsDirExcluded("node_modules", Path::new ("node_modules"), & CustomExcludes));
+        assert!(IsDirExcluded("old.src(unclear)", Path::new ("old.src(unclear)"), & CustomExcludes));
+        assert!(IsDirExcluded("old.src", Path::new ("deep/nested/old.src"), & CustomExcludes));
         // Custom exclusions
         assert!(IsDirExcluded("vendor", Path::new ("vendor"), & CustomExcludes));
         assert!(IsDirExcluded("build_debug", Path::new ("build_debug"), & CustomExcludes));

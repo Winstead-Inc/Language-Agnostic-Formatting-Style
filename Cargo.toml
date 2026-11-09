@@ -1,9 +1,16 @@
 [package]
-name = "lafs"
+name = "Language-Agnostic-Formatting-Style"
+description = "Language-Agnostic Formatting Style (LAFS)"
 version = "0.1.0"
-edition = "2021"[lib]
-name = "lafs"
-path = "src/lib.rs"[[bin]]
-name = "lafs"
-path = "src/main.rs"[dependencies]
+edition = "2021"
+
+[lib]
+name = "Language_Agnostic_Formatting_Style"
+path = "src/lib.rs"
+
+[[bin]]
+name = "Language-Agnostic-Formatting-Style"
+path = "src/main.rs"
+
+[dependencies]
 chrono = "0.4.45"

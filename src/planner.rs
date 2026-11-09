@@ -18,7 +18,7 @@ impl <'a> Layout_Planner<'a>
             let SingleSpan = Container.CalculateSingleLineSpan();
             if SingleSpan != usize::MAX
             {
-                let BaseCol = if CurrentColumn > 0 { CurrentColumn } else { CurrentIndentLevel * self.Config.Indent_Width };
+                let BaseCol = if CurrentColumn > 0 && Container.Open_Token.Preceding_Newlines == 0 { CurrentColumn } else { CurrentIndentLevel * self.Config.Indent_Width };
                 let ProjectedCol = BaseCol + SingleSpan;
                 if ProjectedCol <= self.Config.Canvas_Width { return Layout_State::Monolith; }
 

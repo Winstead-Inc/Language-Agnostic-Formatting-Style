@@ -230,12 +230,29 @@ impl <'a> Lexer_Scanner<'a>
                     PrecedingNewlines = 0;
                     continue;
                 }
-                if Ch == '.' && self.PeekAhead(1) == Some('.') && self.PeekAhead(2) == Some('.')
+                if Ch == '.' && self.PeekAhead(1) == Some('.')
                 {
+                    if self.PeekAhead(2) == Some('.')
+                    {
+                        self.Advance();
+                        self.Advance();
+                        self.Advance();
+                        RawTokens.push(Token_Info::New(Token_Kind::Operator("...".to_string()),"...".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                        PrecedingNewlines = 0;
+                        continue;
+                    }
+                    if self.PeekAhead(2) == Some('=')
+                    {
+                        self.Advance();
+                        self.Advance();
+                        self.Advance();
+                        RawTokens.push(Token_Info::New(Token_Kind::Operator("..=".to_string()),"..=".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                        PrecedingNewlines = 0;
+                        continue;
+                    }
                     self.Advance();
                     self.Advance();
-                    self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("...".to_string()),"...".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("..".to_string()),"..".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     continue;
                 }
@@ -333,7 +350,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '"'
             {
                 let mut Match = true;
-                for i in 1.. = HashCount { if self.PeekAhead(i) != Some('#') { Match = false; break ; } }
+                for i in 1..=HashCount { if self.PeekAhead(i) != Some('#') { Match = false; break ; } }
                 if Match
                 {
                     Result.push(self.Advance().unwrap());

@@ -3,6 +3,13 @@
 version = 4
 
 [[package]]
+name = "Language-Agnostic-Formatting-Style"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+]
+
+[[package]]
 name = "android_system_properties"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -121,13 +128,6 @@ dependencies = [
  "cfg-if",
  "futures-util",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "lafs"
-version = "0.1.0"
-dependencies = [
- "chrono",
 ]
 
 [[package]]
