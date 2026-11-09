@@ -1,12 +1,12 @@
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
 
-use crate::types::{Config_Settings, Container_Kind, Layout_State, Source_Language, Token_Info, Token_Kind};
+use crate::types:: { Config_Settings, Container_Kind, Layout_State, Source_Language, Token_Info, Token_Kind };
 
 pub struct JS_TS_Formatter;
 
 impl JS_TS_Formatter
 {
-    pub fn Format(Source: &str, Config: &Config_Settings) -> Result<String, String>
+    pub fn Format(Source: & str, Config: & Config_Settings)->Result<String, String>
     {
         let mut Lexer = JS_Lexer::New(Source, Config.Language);
         let Tokens = Lexer.TokenizeAll();
@@ -15,85 +15,47 @@ impl JS_TS_Formatter
         let Nodes = Builder.BuildTree();
 
         let Emitter = JS_Emitter::New(Config);
-        let Formatted = Emitter.Emit(&Nodes);
+        let Formatted = Emitter.Emit( & Nodes);
 
         // Safety gate verification
-        if let Err(VerifyErr) = VerifyJSTokenEquivalence(Source, &Formatted, Config.Language)
+        if let Err(VerifyErr) = VerifyJSTokenEquivalence(Source, & Formatted, Config.Language)
         {
-            return Err(format!("{}. Output aborted to prevent code corruption.", VerifyErr));
+            return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr));
         }
 
         Ok(Formatted)
     }
 
-    pub fn IsFormatted(Source: &str, Config: &Config_Settings) -> bool
-    {
-        match Self::Format(Source, Config)
-        {
-            Ok(Formatted) => Formatted == Source,
-            Err(_) => false
-        }
-    }
+    pub fn IsFormatted(Source: & str, Config: & Config_Settings)-> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false } }
 }
 
-pub struct JS_Lexer<'a>
+pub struct JS_Lexer<'a> { Source: & 'a str, Chars: Vec<char>, Index: usize, Line: usize, Column: usize, Language: Source_Language, Expects_Expression: bool }
+
+impl <'a> JS_Lexer<'a>
 {
-    Source: &'a str,
-    Chars: Vec<char>,
-    Index: usize,
-    Line: usize,
-    Column: usize,
-    Language: Source_Language,
-    Expects_Expression: bool
-}
+    pub fn New(Source: & 'a str, Language: Source_Language)->Self { JS_Lexer { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, Language, Expects_Expression: true } }
 
-impl<'a> JS_Lexer<'a>
-{
-    pub fn New(Source: &'a str, Language: Source_Language) -> Self
-    {
-        JS_Lexer
-        {
-            Source,
-            Chars: Source.chars().collect(),
-            Index: 0,
-            Line: 1,
-            Column: 0,
-            Language,
-            Expects_Expression: true
-        }
-    }
+    fn Peek( & self)->Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
 
-    fn Peek(&self) -> Option<char>
-    {
-        if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None }
-    }
-
-    fn PeekAhead(&self, Offset: usize) -> Option<char>
+    fn PeekAhead( & self, Offset: usize)->Option<char>
     {
         let Target = self.Index + Offset;
         if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None }
     }
 
-    fn Advance(&mut self) -> Option<char>
+    fn Advance( & mut self)->Option<char>
     {
         if self.Index >= self.Chars.len() { return None; }
         let Ch = self.Chars[self.Index];
         self.Index += 1;
-        if Ch == '\n'
-        {
-            self.Line += 1;
-            self.Column = 0;
-        }
-        else
-        {
-            self.Column += 1;
-        }
+        if Ch == '\n' { self.Line += 1; self.Column = 0; }
+        else { self.Column += 1; }
         Some(Ch)
     }
 
-    pub fn TokenizeAll(&mut self) -> Vec<Token_Info>
+    pub fn TokenizeAll( & mut self)->Vec<Token_Info>
     {
-        let mut RawTokens: Vec<Token_Info> = Vec::new();
+        let mut RawTokens: Vec < Token_Info > = Vec:: new ();
         let mut PrecedingNewlines: usize = 0;
 
         while let Some(Ch) = self.Peek()
@@ -102,19 +64,10 @@ impl<'a> JS_Lexer<'a>
             let StartCol = self.Column;
 
             // 1. Newline
-            if Ch == '\n'
-            {
-                self.Advance();
-                PrecedingNewlines += 1;
-                continue;
-            }
+            if Ch == '\n' { self.Advance(); PrecedingNewlines += 1; continue ; }
 
             // 2. Horizontal Whitespace
-            if Ch == ' ' || Ch == '\t' || Ch == '\r'
-            {
-                self.Advance();
-                continue;
-            }
+            if Ch == ' ' || Ch == '\t' || Ch == '\r' { self.Advance(); continue ; }
 
             // 3. Comments
             if Ch == '/' && self.PeekAhead(1) == Some('/')
@@ -170,7 +123,7 @@ impl<'a> JS_Lexer<'a>
             if Ch == '('
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Paren), "(".to_string(), StartLine, StartCol, PrecedingNewlines));
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Paren),"(".to_string(), StartLine, StartCol, PrecedingNewlines));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
                 continue;
@@ -179,7 +132,7 @@ impl<'a> JS_Lexer<'a>
             if Ch == ')'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Paren), ")".to_string(), StartLine, StartCol, PrecedingNewlines));
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Paren),")".to_string(), StartLine, StartCol, PrecedingNewlines));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
                 continue;
@@ -188,7 +141,7 @@ impl<'a> JS_Lexer<'a>
             if Ch == '{'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace), "{".to_string(), StartLine, StartCol, PrecedingNewlines));
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace),"{".to_string(), StartLine, StartCol, PrecedingNewlines));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
                 continue;
@@ -197,7 +150,7 @@ impl<'a> JS_Lexer<'a>
             if Ch == '}'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines));
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace),"}".to_string(), StartLine, StartCol, PrecedingNewlines));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
                 continue;
@@ -206,7 +159,7 @@ impl<'a> JS_Lexer<'a>
             if Ch == '['
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Bracket), "[".to_string(), StartLine, StartCol, PrecedingNewlines));
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Bracket),"[".to_string(), StartLine, StartCol, PrecedingNewlines));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
                 continue;
@@ -215,14 +168,14 @@ impl<'a> JS_Lexer<'a>
             if Ch == ']'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Bracket), "]".to_string(), StartLine, StartCol, PrecedingNewlines));
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Bracket),"]".to_string(), StartLine, StartCol, PrecedingNewlines));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
                 continue;
             }
 
             // 8. Numbers
-            if Ch.is_ascii_digit() || (Ch == '.' && self.PeekAhead(1).map_or(false, |C| C.is_ascii_digit()))
+            if Ch.is_ascii_digit() || (Ch == '.' && self.PeekAhead(1).map_or(false, | C | C.is_ascii_digit()))
             {
                 let NumberText = self.ScanNumber();
                 RawTokens.push(Token_Info::New(Token_Kind::Number(NumberText.clone()), NumberText, StartLine, StartCol, PrecedingNewlines));
@@ -235,29 +188,16 @@ impl<'a> JS_Lexer<'a>
             if Ch.is_alphabetic() || Ch == '_' || Ch == '$'
             {
                 let IdentText = self.ScanIdentifier();
-                let IsKw = IsJSKeyword(&IdentText);
-                let Kind = if IsKw
-                {
-                    Token_Kind::Keyword(IdentText.clone())
-                }
-                else
-                {
-                    Token_Kind::Identifier(IdentText.clone())
-                };
+                let IsKw = IsJSKeyword( & IdentText);
+                let Kind = if IsKw { Token_Kind::Keyword(IdentText.clone()) }
+                else { Token_Kind::Identifier(IdentText.clone()) };
 
                 // Expression context tracking
                 if IsKw
                 {
-                    self.Expects_Expression = matches!(
-                        IdentText.as_str(),
-                        "return" | "throw" | "yield" | "case" | "typeof" | "delete" | "void"
-                        | "in" | "instanceof" | "of" | "new" | "await"
-                    );
+                    self.Expects_Expression = matches!(IdentText.as_str(),"return" | "throw" | "yield" | "case" | "typeof" | "delete" | "void" | "in" | "instanceof" | "of" | "new" | "await");
                 }
-                else
-                {
-                    self.Expects_Expression = false;
-                }
+                else { self.Expects_Expression = false; }
 
                 RawTokens.push(Token_Info::New(Kind, IdentText, StartLine, StartCol, PrecedingNewlines));
                 PrecedingNewlines = 0;
@@ -272,7 +212,7 @@ impl<'a> JS_Lexer<'a>
                     self.Advance();
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("...".to_string()), "...".to_string(), StartLine, StartCol, PrecedingNewlines));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("...".to_string()),"...".to_string(), StartLine, StartCol, PrecedingNewlines));
                     PrecedingNewlines = 0;
                     self.Expects_Expression = true;
                     continue;
@@ -282,7 +222,7 @@ impl<'a> JS_Lexer<'a>
                 {
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("?.".to_string()), "?.".to_string(), StartLine, StartCol, PrecedingNewlines));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("?.".to_string()),"?.".to_string(), StartLine, StartCol, PrecedingNewlines));
                     PrecedingNewlines = 0;
                     self.Expects_Expression = false;
                     continue;
@@ -303,30 +243,25 @@ impl<'a> JS_Lexer<'a>
         }
 
         // Post-process generic angle brackets in TypeScript
-        if self.Language.SupportsAngleGenerics()
-        {
-            ResolveJSAngleBrackets(&mut RawTokens);
-        }
+        if self.Language.SupportsAngleGenerics() { ResolveJSAngleBrackets( & mut RawTokens); }
 
         RawTokens
     }
 
-    fn ScanLineComment(&mut self) -> String
+    fn ScanLineComment( & mut self)->String
     {
-        let mut Result = String::new();
-        while let Some(Ch) = self.Peek()
-        {
-            if Ch == '\n' { break; }
-            Result.push(self.Advance().unwrap());
-        }
+        let mut Result = String:: new ();
+        while let Some(Ch) = self.Peek() { if Ch == '\n' { break ; } Result.push(self.Advance().unwrap()); }
         Result
     }
 
-    fn ScanBlockComment(&mut self) -> String
+    fn ScanBlockComment( & mut self)->String
     {
-        let mut Result = String::new();
-        Result.push(self.Advance().unwrap()); // '/'
-        Result.push(self.Advance().unwrap()); // '*'
+        let mut Result = String:: new ();
+        Result.push(self.Advance().unwrap());
+        // '/'
+        Result.push(self.Advance().unwrap());
+        // '*'
 
         while let Some(Ch) = self.Peek()
         {
@@ -341,27 +276,21 @@ impl<'a> JS_Lexer<'a>
         Result
     }
 
-    fn ScanQuotedString(&mut self, QuoteChar: char) -> String
+    fn ScanQuotedString( & mut self, QuoteChar: char)->String
     {
-        let mut Result = String::new();
-        Result.push(self.Advance().unwrap()); // Opening quote
+        let mut Result = String:: new ();
+        Result.push(self.Advance().unwrap());
+        // Opening quote
 
         while let Some(Ch) = self.Peek()
         {
             if Ch == '\\'
             {
                 Result.push(self.Advance().unwrap());
-                if self.Peek().is_some()
-                {
-                    Result.push(self.Advance().unwrap());
-                }
+                if self.Peek().is_some() { Result.push(self.Advance().unwrap()); }
                 continue;
             }
-            if Ch == QuoteChar
-            {
-                Result.push(self.Advance().unwrap());
-                break;
-            }
+            if Ch == QuoteChar { Result.push(self.Advance().unwrap()); break ; }
             if Ch == '\n'
             {
                 // Unclosed string on newline
@@ -372,10 +301,11 @@ impl<'a> JS_Lexer<'a>
         Result
     }
 
-    fn ScanTemplateLiteral(&mut self) -> String
+    fn ScanTemplateLiteral( & mut self)->String
     {
-        let mut Result = String::new();
-        Result.push(self.Advance().unwrap()); // '`'
+        let mut Result = String:: new ();
+        Result.push(self.Advance().unwrap());
+        // '`'
 
         let mut InterpolationDepth = 0;
 
@@ -384,40 +314,25 @@ impl<'a> JS_Lexer<'a>
             if Ch == '\\'
             {
                 Result.push(self.Advance().unwrap());
-                if self.Peek().is_some()
-                {
-                    Result.push(self.Advance().unwrap());
-                }
+                if self.Peek().is_some() { Result.push(self.Advance().unwrap()); }
                 continue;
             }
 
             if Ch == '$' && self.PeekAhead(1) == Some('{')
             {
-                Result.push(self.Advance().unwrap()); // '$'
-                Result.push(self.Advance().unwrap()); // '{'
+                Result.push(self.Advance().unwrap());
+                // '$'
+                Result.push(self.Advance().unwrap());
+                // '{'
                 InterpolationDepth += 1;
                 continue;
             }
 
-            if Ch == '{' && InterpolationDepth > 0
-            {
-                Result.push(self.Advance().unwrap());
-                InterpolationDepth += 1;
-                continue;
-            }
+            if Ch == '{' && InterpolationDepth > 0 { Result.push(self.Advance().unwrap()); InterpolationDepth += 1; continue ; }
 
-            if Ch == '}' && InterpolationDepth > 0
-            {
-                Result.push(self.Advance().unwrap());
-                InterpolationDepth -= 1;
-                continue;
-            }
+            if Ch == '}' && InterpolationDepth > 0 { Result.push(self.Advance().unwrap()); InterpolationDepth -= 1; continue ; }
 
-            if Ch == '`' && InterpolationDepth == 0
-            {
-                Result.push(self.Advance().unwrap());
-                break;
-            }
+            if Ch == '`' && InterpolationDepth == 0 { Result.push(self.Advance().unwrap()); break ; }
 
             Result.push(self.Advance().unwrap());
         }
@@ -425,11 +340,12 @@ impl<'a> JS_Lexer<'a>
         Result
     }
 
-    fn ScanRegexLiteral(&mut self) -> Option<String>
+    fn ScanRegexLiteral( & mut self)->Option<String>
     {
         let mut TempIndex = self.Index;
         if TempIndex >= self.Chars.len() || self.Chars[TempIndex] != '/' { return None; }
-        TempIndex += 1; // skip '/'
+        TempIndex += 1;
+        // skip '/'
 
         let mut InCharClass = false;
 
@@ -443,36 +359,21 @@ impl<'a> JS_Lexer<'a>
             }
             if Ch == '\\'
             {
-                TempIndex += 2; // skip escape and escaped char
+                TempIndex += 2;
+                // skip escape and escaped char
                 continue;
             }
-            if Ch == '['
-            {
-                InCharClass = true;
-                TempIndex += 1;
-                continue;
-            }
-            if Ch == ']' && InCharClass
-            {
-                InCharClass = false;
-                TempIndex += 1;
-                continue;
-            }
-            if Ch == '/' && !InCharClass
+            if Ch == '[' { InCharClass = true; TempIndex += 1; continue ; }
+            if Ch == ']' && InCharClass { InCharClass = false; TempIndex += 1; continue ; }
+            if Ch == '/' && ! InCharClass
             {
                 TempIndex += 1;
                 // Scan trailing flags: g, i, m, s, u, y, d, v
-                while TempIndex < self.Chars.len() && self.Chars[TempIndex].is_ascii_alphabetic()
-                {
-                    TempIndex += 1;
-                }
+                while TempIndex < self.Chars.len() && self.Chars[TempIndex].is_ascii_alphabetic() { TempIndex += 1; }
 
                 // Valid regex! Advance lexer to TempIndex and build string
-                let mut Result = String::new();
-                while self.Index < TempIndex
-                {
-                    Result.push(self.Advance().unwrap());
-                }
+                let mut Result = String:: new ();
+                while self.Index < TempIndex { Result.push(self.Advance().unwrap()); }
                 return Some(Result);
             }
             TempIndex += 1;
@@ -481,9 +382,9 @@ impl<'a> JS_Lexer<'a>
         None
     }
 
-    fn ScanNumber(&mut self) -> String
+    fn ScanNumber( & mut self)->String
     {
-        let mut Result = String::new();
+        let mut Result = String:: new ();
 
         // Check for 0x, 0b, 0o
         if self.Peek() == Some('0')
@@ -494,21 +395,8 @@ impl<'a> JS_Lexer<'a>
                 if matches!(Prefix, 'x' | 'X' | 'b' | 'B' | 'o' | 'O')
                 {
                     Result.push(self.Advance().unwrap());
-                    while let Some(Ch) = self.Peek()
-                    {
-                        if Ch.is_ascii_hexdigit() || Ch == '_'
-                        {
-                            Result.push(self.Advance().unwrap());
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    if self.Peek() == Some('n')
-                    {
-                        Result.push(self.Advance().unwrap());
-                    }
+                    while let Some(Ch) = self.Peek() { if Ch.is_ascii_hexdigit() || Ch == '_' { Result.push(self.Advance().unwrap()); } else { break ; } }
+                    if self.Peek() == Some('n') { Result.push(self.Advance().unwrap()); }
                     return Result;
                 }
             }
@@ -516,20 +404,11 @@ impl<'a> JS_Lexer<'a>
 
         while let Some(Ch) = self.Peek()
         {
-            if Ch.is_ascii_digit() || Ch == '.' || Ch == '_'
-            {
-                Result.push(self.Advance().unwrap());
-            }
+            if Ch.is_ascii_digit() || Ch == '.' || Ch == '_' { Result.push(self.Advance().unwrap()); }
             else if Ch == 'e' || Ch == 'E'
             {
                 Result.push(self.Advance().unwrap());
-                if let Some(Sign) = self.Peek()
-                {
-                    if Sign == '+' || Sign == '-'
-                    {
-                        Result.push(self.Advance().unwrap());
-                    }
-                }
+                if let Some(Sign) = self.Peek() { if Sign == '+' || Sign == '-' { Result.push(self.Advance().unwrap()); } }
             }
             else if Ch == 'n'
             {
@@ -537,34 +416,21 @@ impl<'a> JS_Lexer<'a>
                 Result.push(self.Advance().unwrap());
                 break;
             }
-            else
-            {
-                break;
-            }
+            else { break ; }
         }
         Result
     }
 
-    fn ScanIdentifier(&mut self) -> String
+    fn ScanIdentifier( & mut self)->String
     {
-        let mut Result = String::new();
-        while let Some(Ch) = self.Peek()
-        {
-            if Ch.is_alphanumeric() || Ch == '_' || Ch == '$'
-            {
-                Result.push(self.Advance().unwrap());
-            }
-            else
-            {
-                break;
-            }
-        }
+        let mut Result = String:: new ();
+        while let Some(Ch) = self.Peek() { if Ch.is_alphanumeric() || Ch == '_' || Ch == '$' { Result.push(self.Advance().unwrap()); } else { break ; } }
         Result
     }
 
-    fn ScanOperator(&mut self) -> String
+    fn ScanOperator( & mut self)->String
     {
-        let mut Result = String::new();
+        let mut Result = String:: new ();
         let First = self.Advance().unwrap();
         Result.push(First);
 
@@ -574,76 +440,43 @@ impl<'a> JS_Lexer<'a>
             ('=', Some('=')) =>
             {
                 Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=')
-                {
-                    Result.push(self.Advance().unwrap());
-                }
+                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
             ('!', Some('=')) =>
             {
                 Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=')
-                {
-                    Result.push(self.Advance().unwrap());
-                }
+                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
-            ('=', Some('>')) =>
-            {
-                Result.push(self.Advance().unwrap());
-            }
+            ('=', Some('>')) => { Result.push(self.Advance().unwrap()); }
             ('&', Some('&')) =>
             {
                 Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=')
-                {
-                    Result.push(self.Advance().unwrap());
-                }
+                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
             ('|', Some('|')) =>
             {
                 Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=')
-                {
-                    Result.push(self.Advance().unwrap());
-                }
+                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
             ('?', Some('?')) =>
             {
                 Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=')
-                {
-                    Result.push(self.Advance().unwrap());
-                }
+                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
             ('<', Some('<')) | ('>', Some('>')) =>
             {
                 Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=')
-                {
-                    Result.push(self.Advance().unwrap());
-                }
+                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
-            ('<', Some('=')) | ('>', Some('=')) =>
-            {
-                Result.push(self.Advance().unwrap());
-            }
-            ('+', Some('+')) | ('-', Some('-')) =>
-            {
-                Result.push(self.Advance().unwrap());
-            }
+            ('<', Some('=')) | ('>', Some('=')) => { Result.push(self.Advance().unwrap()); }
+            ('+', Some('+')) | ('-', Some('-')) => { Result.push(self.Advance().unwrap()); }
             ('*', Some('*')) =>
             {
                 Result.push(self.Advance().unwrap());
-                if self.Peek() == Some('=')
-                {
-                    Result.push(self.Advance().unwrap());
-                }
+                if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
             ('+', Some('=')) | ('-', Some('=')) | ('*', Some('=')) | ('/', Some('=')) | ('%', Some('='))
-            | ('&', Some('=')) | ('|', Some('=')) | ('^', Some('=')) =>
-            {
-                Result.push(self.Advance().unwrap());
-            }
+            | ('&', Some('=')) | ('|', Some('=')) | ('^', Some('=')) => { Result.push(self.Advance().unwrap()); }
             _ => {}
         }
 
@@ -651,9 +484,10 @@ impl<'a> JS_Lexer<'a>
     }
 }
 
-fn IsJSKeyword(Text: &str) -> bool
+fn IsJSKeyword(Text: & str)-> bool
 {
-    matches!(
+    matches!
+    (
         Text,
         "async" | "await" | "break" | "case" | "catch" | "class" | "const" | "continue"
         | "debugger" | "default" | "delete" | "do" | "else" | "enum" | "export" | "extends"
@@ -666,7 +500,7 @@ fn IsJSKeyword(Text: &str) -> bool
     )
 }
 
-fn ResolveJSAngleBrackets(Tokens: &mut [Token_Info])
+fn ResolveJSAngleBrackets(Tokens: & mut [Token_Info])
 {
     let Len = Tokens.len();
     let mut I = 0;
@@ -675,12 +509,7 @@ fn ResolveJSAngleBrackets(Tokens: &mut [Token_Info])
     {
         if Tokens[I].Text == "<"
         {
-            let IsPrecededByGenericContext = I > 0 && match &Tokens[I - 1].Kind
-            {
-                Token_Kind::Identifier(_) => true,
-                Token_Kind::Keyword(K) => matches!(K.as_str(), "type" | "interface" | "class"),
-                _ => false
-            };
+            let IsPrecededByGenericContext = I > 0 && match & Tokens[I - 1].Kind { Token_Kind::Identifier(_) => true, Token_Kind::Keyword(K) => matches ! (K.as_str(),"type" | "interface" | "class"), _ => false };
 
             if IsPrecededByGenericContext
             {
@@ -690,23 +519,9 @@ fn ResolveJSAngleBrackets(Tokens: &mut [Token_Info])
 
                 while J < Len
                 {
-                    if Tokens[J].Text == "<"
-                    {
-                        Depth += 1;
-                    }
-                    else if Tokens[J].Text == ">"
-                    {
-                        Depth -= 1;
-                        if Depth == 0
-                        {
-                            IsValidGeneric = true;
-                            break;
-                        }
-                    }
-                    else if matches!(Tokens[J].Text.as_str(), ";" | "{" | "}")
-                    {
-                        break;
-                    }
+                    if Tokens[J].Text == "<" { Depth += 1; }
+                    else if Tokens[J].Text == ">" { Depth -= 1; if Depth == 0 { IsValidGeneric = true; break ; } }
+                    else if matches!(Tokens[J].Text.as_str(),";" | "{" | "}") { break ; }
                     J += 1;
                 }
 
@@ -722,11 +537,7 @@ fn ResolveJSAngleBrackets(Tokens: &mut [Token_Info])
 }
 
 #[derive(Debug, Clone)]
-pub enum JS_Syntax_Node
-{
-    Token(Token_Info),
-    Container(JS_Container)
-}
+pub enum JS_Syntax_Node { Token(Token_Info), Container(JS_Container) }
 
 #[derive(Debug, Clone)]
 pub struct JS_Container
@@ -743,105 +554,73 @@ pub struct JS_Container
 
 impl JS_Container
 {
-    pub fn New(Kind: Container_Kind, Open_Token: Token_Info, Is_ASI_Hybrid: bool) -> Self
+    pub fn New(Kind: Container_Kind, Open_Token: Token_Info, Is_ASI_Hybrid: bool)->Self
     {
         JS_Container
         {
             Kind,
             Open_Token,
             Close_Token: None,
-            Children: Vec::new(),
-            Tail_Glue: Vec::new(),
+            Children: Vec:: new (),
+            Tail_Glue: Vec:: new (),
             Has_Forced_Break: false,
             Statement_Count: 0,
             Is_ASI_Hybrid
         }
     }
 
-    pub fn IsSoleChildChain(&self) -> bool
+    pub fn IsSoleChildChain( & self)-> bool
     {
-        let NonCommentChildren: Vec<&JS_Syntax_Node> = self.Children
-            .iter()
-            .filter(|Node| match Node
-            {
-                JS_Syntax_Node::Token(T) => !T.IsTrivia() && !T.IsComment(),
-                JS_Syntax_Node::Container(_) => true
-            })
-            .collect();
+        let NonCommentChildren: Vec <& JS_Syntax_Node > = self.Children
+        .iter()
+        .filter( | Node | match Node { JS_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), JS_Syntax_Node::Container(_) => true })
+        .collect();
 
-        if NonCommentChildren.len() == 1
-        {
-            matches!(NonCommentChildren[0], JS_Syntax_Node::Container(_))
-        }
-        else
-        {
-            false
-        }
+        if NonCommentChildren.len() == 1 { matches ! (NonCommentChildren[0], JS_Syntax_Node::Container(_)) }
+        else { false }
     }
 
-    pub fn GetSoleChildContainer(&self) -> Option<&JS_Container>
+    pub fn GetSoleChildContainer( & self)->Option <& JS_Container >
     {
-        let NonCommentChildren: Vec<&JS_Syntax_Node> = self.Children
-            .iter()
-            .filter(|Node| match Node
-            {
-                JS_Syntax_Node::Token(T) => !T.IsTrivia() && !T.IsComment(),
-                JS_Syntax_Node::Container(_) => true
-            })
-            .collect();
+        let NonCommentChildren: Vec <& JS_Syntax_Node > = self.Children
+        .iter()
+        .filter( | Node | match Node { JS_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), JS_Syntax_Node::Container(_) => true })
+        .collect();
 
-        if NonCommentChildren.len() == 1
-        {
-            if let JS_Syntax_Node::Container(C) = NonCommentChildren[0]
-            {
-                return Some(C);
-            }
-        }
+        if NonCommentChildren.len() == 1 { if let JS_Syntax_Node::Container(C) = NonCommentChildren[0] { return Some(C); } }
         None
     }
 
-    pub fn CollectChain(&self) -> Vec<&JS_Container>
+    pub fn CollectChain( & self)->Vec <& JS_Container >
     {
         let mut Chain = vec![self];
         let mut Current = self;
         while let Some(Child) = Current.GetSoleChildContainer()
         {
-            if Current.Kind == Container_Kind::Angle || Child.Kind == Container_Kind::Angle
-            {
-                break;
-            }
+            if Current.Kind == Container_Kind::Angle || Child.Kind == Container_Kind::Angle { break ; }
             Chain.push(Child);
             Current = Child;
         }
         Chain
     }
 
-    pub fn CalculateSingleLineSpan(&self) -> usize
+    pub fn CalculateSingleLineSpan( & self)->usize
     {
         if self.Has_Forced_Break { return usize::MAX; }
 
         let mut Total = self.Kind.OpenGlyph().len() + self.Kind.CloseGlyph().len();
-        for Glue in &self.Tail_Glue
-        {
-            Total += Glue.Text.len();
-        }
+        for Glue in & self.Tail_Glue { Total += Glue.Text.len(); }
 
         let mut PrevTokenNeedsSpace = false;
-        for Node in &self.Children
+        for Node in & self.Children
         {
             match Node
             {
                 JS_Syntax_Node::Token(T) =>
                 {
-                    if T.IsTrivia() { continue; }
-                    if T.IsComment() && matches!(T.Kind, Token_Kind::Comment_Line(_))
-                    {
-                        return usize::MAX;
-                    }
-                    if PrevTokenNeedsSpace
-                    {
-                        Total += 1;
-                    }
+                    if T.IsTrivia() { continue ; }
+                    if T.IsComment() && matches!(T.Kind, Token_Kind::Comment_Line(_)) { return usize::MAX; }
+                    if PrevTokenNeedsSpace { Total += 1; }
                     Total += T.Text.len();
                     PrevTokenNeedsSpace = true;
                 }
@@ -849,10 +628,7 @@ impl JS_Container
                 {
                     let ChildSpan = C.CalculateSingleLineSpan();
                     if ChildSpan == usize::MAX { return usize::MAX; }
-                    if PrevTokenNeedsSpace
-                    {
-                        Total += 1;
-                    }
+                    if PrevTokenNeedsSpace { Total += 1; }
                     Total += ChildSpan;
                     PrevTokenNeedsSpace = true;
                 }
@@ -862,82 +638,60 @@ impl JS_Container
         Total
     }
 
-    pub fn CalculateBlockDepth(&self) -> usize
+    pub fn CalculateBlockDepth( & self)->usize
     {
         let mut MaxChildDepth = 0;
-        for Child in &self.Children
+        for Child in & self.Children
         {
             if let JS_Syntax_Node::Container(Sub) = Child
             {
                 let SubDepth = Sub.CalculateBlockDepth();
-                if SubDepth > MaxChildDepth
-                {
-                    MaxChildDepth = SubDepth;
-                }
+                if SubDepth > MaxChildDepth { MaxChildDepth = SubDepth; }
             }
         }
         1 + MaxChildDepth
     }
 
-    pub fn CountTotalContainers(&self) -> usize
+    pub fn CountTotalContainers( & self)->usize
     {
         let mut Count = 1;
-        for Child in &self.Children
-        {
-            if let JS_Syntax_Node::Container(Sub) = Child
-            {
-                Count += Sub.CountTotalContainers();
-            }
-        }
+        for Child in & self.Children { if let JS_Syntax_Node::Container(Sub) = Child { Count += Sub.CountTotalContainers(); } }
         Count
     }
 }
 
-pub struct JS_Container_Builder
-{
-    Tokens: Vec<Token_Info>,
-    Index: usize
-}
+pub struct JS_Container_Builder { Tokens: Vec<Token_Info>, Index: usize }
 
 impl JS_Container_Builder
 {
-    pub fn New(Tokens: Vec<Token_Info>) -> Self
-    {
-        JS_Container_Builder { Tokens, Index: 0 }
-    }
+    pub fn New(Tokens: Vec<Token_Info>)->Self { JS_Container_Builder { Tokens, Index: 0 } }
 
-    pub fn BuildTree(&mut self) -> Vec<JS_Syntax_Node>
+    pub fn BuildTree( & mut self)->Vec<JS_Syntax_Node>
     {
-        let mut RootNodes = Vec::new();
-        while self.Index < self.Tokens.len()
-        {
-            if let Some(Node) = self.ParseNextNode(false)
-            {
-                RootNodes.push(Node);
-            }
-        }
+        let mut RootNodes = Vec:: new ();
+        while self.Index < self.Tokens.len() { if let Some(Node) = self.ParseNextNode(false) { RootNodes.push(Node); } }
         RootNodes
     }
 
-    fn ParseNextNode(&mut self, PrecededByReturn: bool) -> Option<JS_Syntax_Node>
+    fn ParseNextNode( & mut self, PrecededByReturn: bool)->Option<JS_Syntax_Node>
     {
         if self.Index >= self.Tokens.len() { return None; }
         let Token = self.Tokens[self.Index].clone();
         self.Index += 1;
 
-        match &Token.Kind
+        match & Token.Kind
         {
             Token_Kind::Open_Delim(Kind) =>
             {
-                let mut Container = JS_Container::New(*Kind, Token, PrecededByReturn);
-                self.PopulateContainerChildren(&mut Container);
+                let mut Container = JS_Container::New( * Kind, Token, PrecededByReturn);
+                self.PopulateContainerChildren( & mut Container);
                 Some(JS_Syntax_Node::Container(Container))
             }
             _ => Some(JS_Syntax_Node::Token(Token))
         }
     }
 
-    fn PopulateContainerChildren(&mut self, Container: &mut JS_Container)
+    fn PopulateContainerChildren( & mut self, Container: & mut JS_Container)
     {
         let mut StatementCount = 0;
         let mut LastSignificantWasReturn = false;
@@ -946,14 +700,11 @@ impl JS_Container_Builder
         {
             let CurrentToken = self.Tokens[self.Index].clone();
 
-            if CurrentToken.Preceding_Newlines > 0
-            {
-                Container.Has_Forced_Break = true;
-            }
+            if CurrentToken.Preceding_Newlines > 0 { Container.Has_Forced_Break = true; }
 
-            match &CurrentToken.Kind
+            match & CurrentToken.Kind
             {
-                Token_Kind::Close_Delim(CloseKind) if *CloseKind == Container.Kind =>
+                Token_Kind::Close_Delim(CloseKind) if * CloseKind == Container.Kind =>
                 {
                     self.Index += 1;
                     Container.Close_Token = Some(CurrentToken);
@@ -961,25 +712,19 @@ impl JS_Container_Builder
                     // Consume trailing glue (; or ,)
                     while self.Index < self.Tokens.len()
                     {
-                        let NextToken = &self.Tokens[self.Index];
+                        let NextToken = & self.Tokens[self.Index];
                         if NextToken.Preceding_Newlines == 0 && (NextToken.Text == ";" || NextToken.Text == ",")
                         {
                             Container.Tail_Glue.push(NextToken.clone());
                             self.Index += 1;
                         }
-                        else
-                        {
-                            break;
-                        }
+                        else { break ; }
                     }
                     break;
                 }
                 Token_Kind::Open_Delim(_) =>
                 {
-                    if let Some(ChildNode) = self.ParseNextNode(LastSignificantWasReturn)
-                    {
-                        Container.Children.push(ChildNode);
-                    }
+                    if let Some(ChildNode) = self.ParseNextNode(LastSignificantWasReturn) { Container.Children.push(ChildNode); }
                     LastSignificantWasReturn = false;
                 }
                 Token_Kind::Comment_Line(_) =>
@@ -991,17 +736,11 @@ impl JS_Container_Builder
                 }
                 _ =>
                 {
-                    if CurrentToken.Text == ";"
-                    {
-                        StatementCount += 1;
-                    }
+                    if CurrentToken.Text == ";" { StatementCount += 1; }
 
-                    if !CurrentToken.IsTrivia() && !CurrentToken.IsComment()
+                    if ! CurrentToken.IsTrivia() && ! CurrentToken.IsComment()
                     {
-                        LastSignificantWasReturn = matches!(
-                            CurrentToken.Text.as_str(),
-                            "return" | "throw" | "yield"
-                        );
+                        LastSignificantWasReturn = matches!(CurrentToken.Text.as_str(),"return" | "throw" | "yield");
                     }
 
                     Container.Children.push(JS_Syntax_Node::Token(CurrentToken));
@@ -1014,42 +753,27 @@ impl JS_Container_Builder
     }
 }
 
-pub struct JS_Layout_Planner<'a>
-{
-    Config: &'a Config_Settings
-}
+pub struct JS_Layout_Planner<'a> { Config: & 'a Config_Settings }
 
-impl<'a> JS_Layout_Planner<'a>
+impl <'a> JS_Layout_Planner<'a>
 {
-    pub fn New(Config: &'a Config_Settings) -> Self
-    {
-        JS_Layout_Planner { Config }
-    }
+    pub fn New(Config: & 'a Config_Settings)->Self { JS_Layout_Planner { Config } }
 
-    pub fn DecideLayout(&self, Container: &JS_Container, CurrentIndentLevel: usize, CurrentColumn: usize) -> Layout_State
+    pub fn DecideLayout( & self, Container: & JS_Container, CurrentIndentLevel: usize, CurrentColumn: usize)->Layout_State
     {
         // 1. Monolith First (Horizontal Density)
-        if !Container.Has_Forced_Break
-            && Container.Statement_Count <= self.Config.Max_Statements_In_Monolith
-            && Container.CalculateBlockDepth() <= self.Config.Max_Block_Depth
-            && Container.CountTotalContainers() <= self.Config.Max_Containers_In_Monolith
+        if ! Container.Has_Forced_Break
+        && Container.Statement_Count <= self.Config.Max_Statements_In_Monolith
+        && Container.CalculateBlockDepth() <= self.Config.Max_Block_Depth
+        && Container.CountTotalContainers() <= self.Config.Max_Containers_In_Monolith
         {
             let SingleSpan = Container.CalculateSingleLineSpan();
             if SingleSpan != usize::MAX
             {
-                let BaseCol = if CurrentColumn > 0
-                {
-                    CurrentColumn
-                }
-                else
-                {
-                    CurrentIndentLevel * self.Config.Indent_Width
-                };
+                let BaseCol = if CurrentColumn > 0 { CurrentColumn }
+                else { CurrentIndentLevel * self.Config.Indent_Width };
                 let ProjectedCol = BaseCol + SingleSpan;
-                if ProjectedCol <= self.Config.Canvas_Width
-                {
-                    return Layout_State::Monolith;
-                }
+                if ProjectedCol <= self.Config.Canvas_Width { return Layout_State::Monolith; }
             }
         }
 
@@ -1057,10 +781,7 @@ impl<'a> JS_Layout_Planner<'a>
         if self.Config.Allow_Brace_Grouping && Container.IsSoleChildChain()
         {
             let Chain = Container.CollectChain();
-            if Chain.len() >= 2
-            {
-                return Layout_State::Grouped;
-            }
+            if Chain.len() >= 2 { return Layout_State::Grouped; }
         }
 
         // 3. Expanded Symmetry Last (Hierarchical Architecture)
@@ -1068,100 +789,63 @@ impl<'a> JS_Layout_Planner<'a>
     }
 }
 
-pub struct JS_Emitter<'a>
-{
-    Config: &'a Config_Settings,
-    Planner: JS_Layout_Planner<'a>,
-    Output: String,
-    Current_Line_Len: usize,
-    Line_Has_Content: bool
-}
+pub struct JS_Emitter<'a> { Config: & 'a Config_Settings, Planner: JS_Layout_Planner<'a>, Output: String, Current_Line_Len: usize, Line_Has_Content: bool }
 
-impl<'a> JS_Emitter<'a>
+impl <'a> JS_Emitter<'a>
 {
-    pub fn New(Config: &'a Config_Settings) -> Self
-    {
-        JS_Emitter
-        {
-            Config,
-            Planner: JS_Layout_Planner::New(Config),
-            Output: String::new(),
-            Current_Line_Len: 0,
-            Line_Has_Content: false
-        }
-    }
+    pub fn New(Config: & 'a Config_Settings)->Self { JS_Emitter { Config, Planner: JS_Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false } }
 
-    pub fn Emit(mut self, Nodes: &[JS_Syntax_Node]) -> String
+    pub fn Emit(mut self, Nodes: & [JS_Syntax_Node])->String
     {
         self.EmitNodeList(Nodes, 0);
-        if !self.Output.ends_with('\n')
-        {
-            self.Output.push('\n');
-        }
+        if ! self.Output.ends_with('\n') { self.Output.push('\n'); }
         self.Output
     }
 
-    fn WriteNewline(&mut self)
+    fn WriteNewline( & mut self)
     {
-        while self.Output.ends_with(' ')
-        {
-            self.Output.pop();
-        }
+        while self.Output.ends_with(' ') { self.Output.pop(); }
         self.Output.push('\n');
         self.Current_Line_Len = 0;
         self.Line_Has_Content = false;
     }
 
-    fn EnsureNewline(&mut self)
-    {
-        if self.Line_Has_Content
-        {
-            self.WriteNewline();
-        }
-    }
+    fn EnsureNewline( & mut self) { if self.Line_Has_Content { self.WriteNewline(); } }
 
-    fn EmitIndent(&mut self, Level: usize)
+    fn EmitIndent( & mut self, Level: usize)
     {
-        if !self.Line_Has_Content
+        if ! self.Line_Has_Content
         {
             let IndentStr = self.Config.IndentString(Level);
-            self.Output.push_str(&IndentStr);
+            self.Output.push_str( & IndentStr);
             self.Current_Line_Len = IndentStr.len();
             self.Line_Has_Content = true;
         }
     }
 
-    fn EmitRaw(&mut self, Text: &str)
-    {
-        self.Output.push_str(Text);
-        self.Current_Line_Len += Text.len();
-        self.Line_Has_Content = true;
-    }
+    fn EmitRaw( & mut self, Text: & str) { self.Output.push_str(Text); self.Current_Line_Len += Text.len(); self.Line_Has_Content = true; }
 
-    fn EmitSpace(&mut self)
+    fn EmitSpace( & mut self)
     {
-        if self.Line_Has_Content && self.Current_Line_Len > 0 && !self.Output.ends_with(' ') && !self.Output.ends_with('\n')
+        if self.Line_Has_Content && self.Current_Line_Len > 0 && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
         {
             self.Output.push(' ');
             self.Current_Line_Len += 1;
         }
     }
 
-    fn EmitNodeList(&mut self, Nodes: &[JS_Syntax_Node], Level: usize)
+    fn EmitNodeList( & mut self, Nodes: & [JS_Syntax_Node], Level: usize)
     {
         let Total = Nodes.len();
         let mut Index = 0;
 
         while Index < Total
         {
-            let Node = &Nodes[Index];
+            let Node = & Nodes[Index];
 
             match Node
             {
-                JS_Syntax_Node::Token(T) =>
-                {
-                    self.EmitSingleToken(T, Level);
-                }
+                JS_Syntax_Node::Token(T) => { self.EmitSingleToken(T, Level); }
                 JS_Syntax_Node::Container(C) =>
                 {
                     let Layout = self.Planner.DecideLayout(C, Level, self.Current_Line_Len);
@@ -1170,25 +854,12 @@ impl<'a> JS_Emitter<'a>
                     // Check if followed by continuation keyword (else, catch, finally)
                     let NextContinuation = if Index + 1 < Total
                     {
-                        match &Nodes[Index + 1]
-                        {
-                            JS_Syntax_Node::Token(T) if matches!(T.Text.as_str(), "else" | "catch" | "finally") => Some(T.Text.clone()),
-                            _ => None
-                        }
+                        match & Nodes[Index + 1] { JS_Syntax_Node::Token(T) if matches ! (T.Text.as_str(),"else" | "catch" | "finally") => Some(T.Text.clone()), _ => None }
                     }
-                    else
-                    {
-                        None
-                    };
+                    else { None };
 
-                    if NextContinuation.is_some()
-                    {
-                        self.EnsureNewline();
-                    }
-                    else if C.Tail_Glue.iter().any(|G| G.Text == ";") || C.Kind == Container_Kind::Brace
-                    {
-                        self.EnsureNewline();
-                    }
+                    if NextContinuation.is_some() { self.EnsureNewline(); }
+                    else if C.Tail_Glue.iter().any( | G | G.Text == ";") || C.Kind == Container_Kind::Brace { self.EnsureNewline(); }
                 }
             }
 
@@ -1196,69 +867,43 @@ impl<'a> JS_Emitter<'a>
         }
     }
 
-    fn EmitSingleToken(&mut self, Token: &Token_Info, Level: usize)
+    fn EmitSingleToken( & mut self, Token: & Token_Info, Level: usize)
     {
-        if let Token_Kind::Comment_Line(CommentText) = &Token.Kind
+        if let Token_Kind::Comment_Line(CommentText) = & Token.Kind
         {
-            if self.Line_Has_Content
-            {
-                self.EmitSpace();
-            }
-            else
-            {
-                self.EmitIndent(Level);
-            }
+            if self.Line_Has_Content { self.EmitSpace(); }
+            else { self.EmitIndent(Level); }
             self.EmitRaw(CommentText);
             self.WriteNewline();
-            return;
+            return ;
         }
 
-        if let Token_Kind::Comment_Block(CommentText) = &Token.Kind
+        if let Token_Kind::Comment_Block(CommentText) = & Token.Kind
         {
-            if !self.Line_Has_Content
-            {
-                self.EmitIndent(Level);
-            }
-            else
-            {
-                self.EmitSpace();
-            }
+            if ! self.Line_Has_Content { self.EmitIndent(Level); }
+            else { self.EmitSpace(); }
             self.EmitRaw(CommentText);
-            return;
+            return ;
         }
 
-        if Token.IsTrivia()
-        {
-            return;
-        }
+        if Token.IsTrivia() { return ; }
 
         if Token.Preceding_Newlines > 0
         {
             let BlankLines = (Token.Preceding_Newlines - 1).min(self.Config.Max_Blank_Lines);
             self.EnsureNewline();
-            for _ in 0..BlankLines
-            {
-                self.WriteNewline();
-            }
+            for _ in 0..BlankLines { self.WriteNewline(); }
         }
 
-        if !self.Line_Has_Content
-        {
-            self.EmitIndent(Level);
-        }
-        else
-        {
-            self.EmitSpaceBeforeToken(Token);
-        }
+        if ! self.Line_Has_Content { self.EmitIndent(Level); }
+        else { self.EmitSpaceBeforeToken(Token); }
 
-        self.EmitRaw(&Token.Text);
-        if Token.Text == ";"
+        self.EmitRaw( & Token.Text);
+        if Token.Text == ";" { self.WriteNewline(); }
+        else if let Token_Kind::Keyword(K) = & Token.Kind
         {
-            self.WriteNewline();
-        }
-        else if let Token_Kind::Keyword(K) = &Token.Kind
-        {
-            if matches!(
+            if matches!
+            (
                 K.as_str(),
                 "if" | "while" | "for" | "switch" | "catch" | "with"
                 | "return" | "throw" | "yield" | "case" | "new" | "typeof" | "void" | "delete"
@@ -1266,163 +911,112 @@ impl<'a> JS_Emitter<'a>
                 | "function" | "class" | "interface" | "type" | "enum" | "extends" | "implements"
                 | "async" | "await" | "default" | "else"
             )
-            {
-                self.EmitSpace();
-            }
+            { self.EmitSpace(); }
         }
-        else if let Token_Kind::Operator(Op) = &Token.Kind
+        else if let Token_Kind::Operator(Op) = & Token.Kind
         {
-            if matches!(
+            if matches!
+            (
                 Op.as_str(),
                 "=" | "=>" | "===" | "!==" | "==" | "!=" | "<=" | ">="
                 | "&&" | "||" | "??" | "+=" | "-=" | "*=" | "/=" | "%="
                 | "+" | "-" | "*" | "/" | "%" | "&" | "|" | "^"
             )
-            {
-                self.EmitSpace();
-            }
+            { self.EmitSpace(); }
         }
     }
 
-    fn EmitSpaceBeforeToken(&mut self, Token: &Token_Info)
+    fn EmitSpaceBeforeToken( & mut self, Token: & Token_Info)
     {
-        if Token.Text == ";" || Token.Text == "," || Token.Text == "." || Token.Text == "?."
-        {
-            return;
-        }
-        if self.Output.ends_with('.') || self.Output.ends_with("?.")
-        {
-            return;
-        }
-        if self.Output.ends_with('(') || self.Output.ends_with('[')
-        {
-            return;
-        }
+        if Token.Text == ";" || Token.Text == "," || Token.Text == "." || Token.Text == "?." { return ; }
+        if self.Output.ends_with('.') || self.Output.ends_with("?.") { return ; }
+        if self.Output.ends_with('(') || self.Output.ends_with('[') { return ; }
         if Token.Text == ":"
         {
             // Colon in JS objects or TS types usually sits directly after identifier
-            return;
+            return ;
         }
         self.EmitSpace();
     }
 
-    fn EmitContainerNodeWithLayout(&mut self, Container: &JS_Container, Level: usize, Layout: Layout_State)
+    fn EmitContainerNodeWithLayout( & mut self, Container: & JS_Container, Level: usize, Layout: Layout_State)
     {
         match Layout
         {
-            Layout_State::Monolith =>
-            {
-                self.EmitMonolith(Container, Level);
-            }
-            Layout_State::Grouped =>
-            {
-                self.EmitGrouped(Container, Level);
-            }
-            Layout_State::Expanded =>
-            {
-                self.EmitExpanded(Container, Level);
-            }
+            Layout_State::Monolith => { self.EmitMonolith(Container, Level); }
+            Layout_State::Grouped => { self.EmitGrouped(Container, Level); }
+            Layout_State::Expanded => { self.EmitExpanded(Container, Level); }
         }
     }
 
-    fn EmitMonolith(&mut self, Container: &JS_Container, Level: usize)
+    fn EmitMonolith( & mut self, Container: & JS_Container, Level: usize)
     {
-        if !self.Line_Has_Content
-        {
-            self.EmitIndent(Level);
-        }
-        else if Container.Kind == Container_Kind::Brace
-        {
-            self.EmitSpace();
-        }
+        if ! self.Line_Has_Content { self.EmitIndent(Level); }
+        else if Container.Kind == Container_Kind::Brace { self.EmitSpace(); }
         else if Container.Kind == Container_Kind::Paren
         {
-            if !self.Output.ends_with(' ')
+            if ! self.Output.ends_with(' ')
             {
                 let LastChar = self.Output.chars().last();
-                if let Some(Ch) = LastChar
-                {
-                    if !Ch.is_alphanumeric() && Ch != '_' && Ch != '$' && Ch != ')' && Ch != ']' && Ch != '.'
-                    {
-                        self.EmitSpace();
-                    }
-                }
+                if let Some(Ch) = LastChar { if ! Ch.is_alphanumeric() && Ch != '_' && Ch != '$' && Ch != ')' && Ch != ']' && Ch != '.' { self.EmitSpace(); } }
             }
         }
 
         self.EmitRaw(Container.Kind.OpenGlyph());
 
         let mut PrevNeedsSpace = matches!(Container.Kind, Container_Kind::Brace);
-        for Child in &Container.Children
+        for Child in & Container.Children
         {
             match Child
             {
                 JS_Syntax_Node::Token(T) =>
                 {
-                    if T.IsTrivia() { continue; }
+                    if T.IsTrivia() { continue ; }
                     let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || T.Text == ":" || T.Text == "?.";
-                    if PrevNeedsSpace && !IsPunct && !self.Output.ends_with('.') && !self.Output.ends_with("?.") && !self.Output.ends_with('(') && !self.Output.ends_with('[')
+                    if PrevNeedsSpace && ! IsPunct && ! self.Output.ends_with('.') && ! self.Output.ends_with("?.") && ! self.Output.ends_with('(') && ! self.Output.ends_with('[')
                     {
                         self.EmitSpace();
                     }
-                    self.EmitRaw(&T.Text);
-                    PrevNeedsSpace = !matches!(T.Text.as_str(), "." | "?." | "(" | "[" | "!" | "~");
+                    self.EmitRaw( & T.Text);
+                    PrevNeedsSpace = ! matches!(T.Text.as_str(),"." | "?." | "(" | "[" | "!" | "~");
                 }
                 JS_Syntax_Node::Container(Sub) =>
                 {
-                    if PrevNeedsSpace && Sub.Kind == Container_Kind::Brace
-                    {
-                        self.EmitSpace();
-                    }
+                    if PrevNeedsSpace && Sub.Kind == Container_Kind::Brace { self.EmitSpace(); }
                     self.EmitMonolith(Sub, Level);
                     PrevNeedsSpace = true;
                 }
             }
         }
 
-        if matches!(Container.Kind, Container_Kind::Brace) && !self.Output.ends_with(' ') && !self.Output.ends_with('{')
-        {
-            self.EmitSpace();
-        }
+        if matches!(Container.Kind, Container_Kind::Brace) && ! self.Output.ends_with(' ') && ! self.Output.ends_with('{') { self.EmitSpace(); }
 
         self.EmitRaw(Container.Kind.CloseGlyph());
-        for Glue in &Container.Tail_Glue
-        {
-            self.EmitRaw(&Glue.Text);
-        }
+        for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
     }
 
-    fn EmitGrouped(&mut self, Container: &JS_Container, Level: usize)
+    fn EmitGrouped( & mut self, Container: & JS_Container, Level: usize)
     {
         let Chain = Container.CollectChain();
-        let OpenRun: String = Chain.iter().map(|C| C.Kind.OpenGlyph()).collect();
-        let CloseRun: String = Chain.iter().rev().map(|C| C.Kind.CloseGlyph()).collect();
+        let OpenRun: String = Chain.iter().map( | C | C.Kind.OpenGlyph()).collect();
+        let CloseRun: String = Chain.iter().rev().map( | C | C.Kind.CloseGlyph()).collect();
 
         self.EnsureNewline();
         self.EmitIndent(Level);
-        self.EmitRaw(&OpenRun);
+        self.EmitRaw( & OpenRun);
         self.WriteNewline();
 
-        if let Some(Innermost) = Chain.last()
-        {
-            self.EmitNodeList(&Innermost.Children, Level + 1);
-        }
+        if let Some(Innermost) = Chain.last() { self.EmitNodeList( & Innermost.Children, Level + 1); }
 
         self.EnsureNewline();
         self.EmitIndent(Level);
-        self.EmitRaw(&CloseRun);
+        self.EmitRaw( & CloseRun);
 
-        if let Some(Outermost) = Chain.first()
-        {
-            for Glue in &Outermost.Tail_Glue
-            {
-                self.EmitRaw(&Glue.Text);
-            }
-        }
+        if let Some(Outermost) = Chain.first() { for Glue in & Outermost.Tail_Glue { self.EmitRaw( & Glue.Text); } }
         self.WriteNewline();
     }
 
-    fn EmitExpanded(&mut self, Container: &JS_Container, Level: usize)
+    fn EmitExpanded( & mut self, Container: & JS_Container, Level: usize)
     {
         // Check Column-Anchored Hybrid Exception (ASI protection after return / throw / yield)
         if Container.Is_ASI_Hybrid
@@ -1431,17 +1025,14 @@ impl<'a> JS_Emitter<'a>
             self.EmitRaw(Container.Kind.OpenGlyph());
             self.WriteNewline();
 
-            self.EmitNodeList(&Container.Children, Level + 1);
+            self.EmitNodeList( & Container.Children, Level + 1);
 
             self.EnsureNewline();
             self.EmitIndent(Level);
             self.EmitRaw(Container.Kind.CloseGlyph());
-            for Glue in &Container.Tail_Glue
-            {
-                self.EmitRaw(&Glue.Text);
-            }
+            for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
             self.WriteNewline();
-            return;
+            return ;
         }
 
         // Standard OLAFS Detached Delimiter Symmetry
@@ -1450,20 +1041,17 @@ impl<'a> JS_Emitter<'a>
         self.EmitRaw(Container.Kind.OpenGlyph());
         self.WriteNewline();
 
-        self.EmitNodeList(&Container.Children, Level + 1);
+        self.EmitNodeList( & Container.Children, Level + 1);
 
         self.EnsureNewline();
         self.EmitIndent(Level);
         self.EmitRaw(Container.Kind.CloseGlyph());
-        for Glue in &Container.Tail_Glue
-        {
-            self.EmitRaw(&Glue.Text);
-        }
+        for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
         self.WriteNewline();
     }
 }
 
-pub fn VerifyJSTokenEquivalence(OriginalSource: &str, FormattedSource: &str, Language: Source_Language) -> Result<(), String>
+pub fn VerifyJSTokenEquivalence(OriginalSource: & str, FormattedSource: & str, Language: Source_Language)->Result<(), String>
 {
     let mut OriginalScanner = JS_Lexer::New(OriginalSource, Language);
     let OriginalTokens = OriginalScanner.TokenizeAll();
@@ -1471,30 +1059,24 @@ pub fn VerifyJSTokenEquivalence(OriginalSource: &str, FormattedSource: &str, Lan
     let mut FormattedScanner = JS_Lexer::New(FormattedSource, Language);
     let FormattedTokens = FormattedScanner.TokenizeAll();
 
-    let OrigSignificant: Vec<&str> = OriginalTokens
-        .iter()
-        .filter(|T| !matches!(T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
-        .map(|T| T.Text.as_str())
-        .collect();
+    let OrigSignificant: Vec <& str > = OriginalTokens
+    .iter()
+    .filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
+    .map( | T | T.Text.as_str())
+    .collect();
 
-    let FormSignificant: Vec<&str> = FormattedTokens
-        .iter()
-        .filter(|T| !matches!(T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
-        .map(|T| T.Text.as_str())
-        .collect();
+    let FormSignificant: Vec <& str > = FormattedTokens
+    .iter()
+    .filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
+    .map( | T | T.Text.as_str())
+    .collect();
 
     if OrigSignificant.len() != FormSignificant.len()
     {
-        return Err(format!("Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
+        return Err(format ! ("Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
     }
 
-    for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate()
-    {
-        if Orig != Form
-        {
-            return Err(format!("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form));
-        }
-    }
+    for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate() { if Orig != Form { return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); } }
 
     Ok(())
 }

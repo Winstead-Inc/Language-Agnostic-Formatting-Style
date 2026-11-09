@@ -10,7 +10,7 @@ pub struct Source_Formatter;
 
 impl Source_Formatter
 {
-    pub fn Format(Source: & str, Config: & Config_Settings)->Result < String, String > 
+    pub fn Format(Source: & str, Config: & Config_Settings)->Result<String, String>
     {
         if Config.Language.IsJavaScriptOrTypeScript() { return crate::js_ts::JS_TS_Formatter::Format(Source, Config); }
 
@@ -34,8 +34,5 @@ impl Source_Formatter
         Ok(Formatted)
     }
 
-    pub fn IsFormatted(Source: & str, Config: & Config_Settings)-> bool
-    {
-        match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false }
-    }
+    pub fn IsFormatted(Source: & str, Config: & Config_Settings)-> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false } }
 }

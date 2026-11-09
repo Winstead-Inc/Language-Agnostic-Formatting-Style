@@ -1,16 +1,9 @@
 [package]
 name = "lafs"
 version = "0.1.0"
-edition = "2021"
-
-[lib]
+edition = "2021"[lib]
 name = "lafs"
-path = "src/lib.rs"
-
-[[bin]]
+path = "src/lib.rs"[[bin]]
 name = "lafs"
-path = "src/main.rs"
-
-[dependencies]
+path = "src/main.rs"[dependencies]
 chrono = "0.4.45"
-

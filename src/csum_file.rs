@@ -14,6 +14,7 @@ use crate::hash:: { HashAlgorithm, GIT_MAX_RAWSZ };
 use std::ffi::CStr;
 use std::io:: { self, Write };
 use std::os::raw::c_void;
+
 /// A writer that can write files identified by their hash or containing a trailing hash.
 pub struct HashFile { ptr: * mut c_void, algo: HashAlgorithm, }
 
@@ -27,6 +28,7 @@ impl HashFile
     {
         HashFile { ptr: unsafe { c::hashfd(algo.hash_algo_ptr(), fd, name.as_ptr()) }, algo, }
     }
+
     /// Finalize this HashFile instance.
     ///
     /// Returns the hash computed over the data.

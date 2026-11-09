@@ -16,7 +16,7 @@ impl Safety_Verifier
 
         let OrigSignificant: Vec <& str > = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str()).collect();
 
-        let FormSignificant: Vec <& str > = FormattedTokens.iter().filter (| T | ! matches!(T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
+        let FormSignificant: Vec <& str > = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
         .map( | T | T.Text.as_str()).collect();
 
         if OrigSignificant.len() != FormSignificant.len()
@@ -31,24 +31,15 @@ impl Safety_Verifier
                     break;
                 }
             }
-            return Err
-            (
-                format!
-                (
-                    "Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()
-                )
-            );
+            return Err(format ! ("Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
         }
 
-        for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate()
-        {
-            if Orig != Form { return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); }
-        }
+        for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate() { if Orig != Form { return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); } }
 
         Ok(())
     }
 
-    pub fn VerifyIdempotence<F>(FormattedSource: & str, FormatFn: F)->Result<(), String> where F: Fn( & str)->String, 
+    pub fn VerifyIdempotence<F>(FormattedSource: & str, FormatFn: F)->Result<(), String> where F: Fn( & str)->String,
     {
         let SecondPass = FormatFn(FormattedSource);
         if SecondPass != FormattedSource { return Err("Safety Gate Warning: Formatting is not idempotent on second pass!".to_string(),); }

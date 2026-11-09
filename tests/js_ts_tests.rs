@@ -1,6 +1,7 @@
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
 
 use lafs:: { Config_Settings, Source_Formatter, Source_Language };
+
 #[test]
 fn Test_JS_Monolith_Function()
 {
@@ -12,13 +13,14 @@ fn Test_JS_Monolith_Function()
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert_eq!(Formatted.trim(),"function Add(A, B) { return A + B; }");
 }
+
 #[test]
 fn Test_JS_Expanded_Function_Detached_Brace()
 {
     let Input = r#"function ExecuteTask(A, B) {
     DoFirst(A);
     DoSecond(B);
-}"# ;
+}"#;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
     Config.Canvas_Width = 40;
@@ -27,13 +29,14 @@ fn Test_JS_Expanded_Function_Detached_Brace()
     let Expected = "function ExecuteTask(A, B)\n{\n    DoFirst(A);\n    DoSecond(B);\n}";
     assert_eq!(Formatted.trim(), Expected);
 }
+
 #[test]
 fn Test_JS_Arrow_Function()
 {
     let Input = r#"const Calculate = (A, B) => {
     StepOne(A);
     StepTwo(B);
-};"# ;
+};"#;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
     Config.Canvas_Width = 40;
@@ -42,6 +45,7 @@ fn Test_JS_Arrow_Function()
     assert!(Formatted.contains("const Calculate = (A, B) =>\n{\n"));
     assert!(Formatted.trim_end().ends_with("\n};"));
 }
+
 #[test]
 fn Test_JS_ASI_Column_Anchored_Hybrid_On_Return()
 {
@@ -52,7 +56,7 @@ fn Test_JS_ASI_Column_Anchored_Hybrid_On_Return()
         Status: 200,
         Payload: " OK"
     };
-}"# ;
+}"#;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
     Config.Canvas_Width = 40;
@@ -61,23 +65,25 @@ fn Test_JS_ASI_Column_Anchored_Hybrid_On_Return()
     assert!(Formatted.contains("return {\n"),"Opening brace after return must remain on the return line (Column-Anchored Hybrid)");
     assert!(Formatted.contains("\n    };\n"),"Closing brace must align with the return statement baseline");
 }
+
 #[test]
 fn Test_JS_Template_Literal_Preservation()
 {
     let Input = r#"const Message = `Hello, ${User.Name}!
 Welcome to the system.
-Your balance is: ${Account.Balance}.`;"# ;
+Your balance is: ${Account.Balance}.`;"#;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert_eq!(Formatted.trim(), Input.trim());
 }
+
 #[test]
 fn Test_JS_Regex_Literal_Vs_Division()
 {
     let Input = r#"const IsMatch = /^[a-z0-9_-]+$/i.test(Str);
-const Half = Total / 2;"# ;
+const Half = Total / 2;"#;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
 
@@ -85,13 +91,14 @@ const Half = Total / 2;"# ;
     assert!(Formatted.contains("/^[a-z0-9_-]+$/i.test(Str);"));
     assert!(Formatted.contains("Total / 2;"));
 }
+
 #[test]
 fn Test_JS_Compound_Delimiter_Sole_Child_Chain()
 {
     let Input = r#"const Config = [{(
     Module: " Security",
     Active: true
-)}];"# ;
+)}];"#;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
     Config.Canvas_Width = 40;
@@ -100,6 +107,7 @@ fn Test_JS_Compound_Delimiter_Sole_Child_Chain()
     assert!(Formatted.contains("[{(\n"));
     assert!(Formatted.contains("\n)}];"));
 }
+
 #[test]
 fn Test_TS_Interface_And_Enum()
 {
@@ -112,7 +120,7 @@ fn Test_TS_Interface_And_Enum()
 enum Status_Code {
     Success,
     Failure
-}"# ;
+}"#;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::TypeScript;
     Config.Canvas_Width = 40;
@@ -121,6 +129,7 @@ enum Status_Code {
     assert!(Formatted.contains("interface User_Profile\n{\n"));
     assert!(Formatted.contains("enum Status_Code\n{\n"));
 }
+
 #[test]
 fn Test_JS_Control_Flow_If_Else()
 {
@@ -129,7 +138,7 @@ fn Test_JS_Control_Flow_If_Else()
 }
 else {
     DoBeta();
-}"# ;
+}"#;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
     Config.Canvas_Width = 40;
@@ -138,6 +147,7 @@ else {
     let Expected = "if (Condition)\n{\n    DoAlpha();\n}\nelse\n{\n    DoBeta();\n}";
     assert_eq!(Formatted.trim(), Expected);
 }
+
 #[test]
 fn Test_JS_Class_Declaration()
 {
@@ -145,7 +155,7 @@ fn Test_JS_Class_Declaration()
     constructor(Config) {
         this.Config = Config;
     }
-}"# ;
+}"#;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
     Config.Canvas_Width = 40;
@@ -154,6 +164,7 @@ fn Test_JS_Class_Declaration()
     assert!(Formatted.contains("class Service_Manager\n{\n"));
     assert!(Formatted.contains("constructor(Config)\n    {\n"));
 }
+
 #[test]
 fn Test_JS_Idempotence()
 {
@@ -165,7 +176,7 @@ fn Test_JS_Idempotence()
         Total += Item.Price;
     }
     return Total;
-}"# ;
+}"#;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
 
@@ -178,32 +189,32 @@ fn Test_JS_Idempotence()
 fn Test_JS_Nullish_Coalescing_Operator()
 {
     let Input = "const Value = A ?? B;\nconst Other = X ??= Y;\n";
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
-    assert!(Formatted.contains("A ?? B"), "Formatter should keep ?? intact without whitespace, got: {}", Formatted);
-    assert!(Formatted.contains("X ??= Y"), "Formatter should keep ??= intact without whitespace, got: {}", Formatted);
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!(Formatted.contains("A ?? B"),"Formatter should keep ?? intact without whitespace, got: {}", Formatted);
+    assert!(Formatted.contains("X ??= Y"),"Formatter should keep ??= intact without whitespace, got: {}", Formatted);
 }
 
 #[test]
 fn Test_JS_Nullish_Coalescing_With_Optional_Chaining()
 {
     let Input = "const Name = User?.Profile?.Name ?? \"Guest\";\n";
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
-    assert!(Formatted.contains("User?.Profile?.Name ?? \"Guest\""), "Got: {}", Formatted);
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!(Formatted.contains("User?.Profile?.Name ?? \"Guest\""),"Got: {}", Formatted);
 }
 
 #[test]
 fn Test_JS_Nullish_Coalescing_Chained_And_Ternary()
 {
     let Input = "const Result = Condition ? A ?? B ?? C : DefaultValue;\n";
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
-    assert!(Formatted.contains("A ?? B ?? C"), "Got: {}", Formatted);
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!(Formatted.contains("A ?? B ?? C"),"Got: {}", Formatted);
 }

@@ -14,6 +14,7 @@ use crate::hash:: { HashAlgorithm, GIT_MAX_RAWSZ };
 use std::ffi::CStr;
 use std::io:: { self, Write };
 use std::os::raw::c_void;
+
 /// A writer that can write files identified by their hash or containing a trailing hash.
 pub struct HashFile { ptr: * mut c_void, algo: HashAlgorithm, }
 
@@ -27,10 +28,11 @@ impl HashFile
     {
         HashFile { ptr: unsafe { c::hashfd(algo.hash_algo_ptr(), fd, name.as_ptr()) }, algo, }
     }
+
     /// Finalize this HashFile instance.
     ///
     /// Returns the hash computed over the data.
-    pub fn finalize(self, component: u32, flags: u32)->Vec < u8 > 
+    pub fn finalize(self, component: u32, flags: u32)->Vec<u8>
     {
         let mut result = vec![0u8; GIT_MAX_RAWSZ];
         unsafe { c::finalize_hashfile(self.ptr, result.as_mut_ptr(), component, flags) };
@@ -41,7 +43,7 @@ impl HashFile
 
 impl Write for HashFile
 {
-    fn write( & mut self, data: & [u8])->io::Result < usize > 
+    fn write( & mut self, data: & [u8])->io::Result<usize>
     {
         for chunk in data.chunks(u32::MAX as usize)
         {
@@ -50,7 +52,7 @@ impl Write for HashFile
         Ok(data.len())
     }
 
-    fn flush( & mut self)->io::Result < () > { unsafe { c::hashflush(self.ptr) }; Ok(()) }
+    fn flush( & mut self)->io::Result<()> { unsafe { c::hashflush(self.ptr) }; Ok(()) }
 }
 
 pub mod c

@@ -25,23 +25,14 @@ impl JS_TS_Formatter
         Ok(Formatted)
     }
 
-    pub fn IsFormatted(Source: & str, Config: & Config_Settings)-> bool
-    {
-        match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, }
-    }
+    pub fn IsFormatted(Source: & str, Config: & Config_Settings)-> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
 }
 
-pub struct JS_Lexer<'a>
-{
-    Source: & 'a str, Chars: Vec<char>, Index: usize, Line: usize, Column: usize, Language: Source_Language, Expects_Expression: bool, 
-}
+pub struct JS_Lexer<'a> { Source: & 'a str, Chars: Vec<char>, Index: usize, Line: usize, Column: usize, Language: Source_Language, Expects_Expression: bool , }
 
 impl <'a> JS_Lexer<'a>
 {
-    pub fn New(Source: & 'a str, Language: Source_Language)->Self
-    {
-        JS_Lexer { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, Language, Expects_Expression: true, }
-    }
+    pub fn New(Source: & 'a str, Language: Source_Language)->Self { JS_Lexer { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, Language, Expects_Expression: true, } }
 
     fn Peek( & self)->Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
 
@@ -77,10 +68,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == '/' && self.PeekAhead(1) == Some('/')
             {
                 let CommentText = self.ScanLineComment();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Comment_Line(CommentText.clone()), CommentText, StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Comment_Line(CommentText.clone()), CommentText, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -88,10 +76,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == '/' && self.PeekAhead(1) == Some('*')
             {
                 let CommentText = self.ScanBlockComment();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Comment_Block(CommentText.clone()), CommentText, StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Comment_Block(CommentText.clone()), CommentText, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -100,10 +85,7 @@ impl <'a> JS_Lexer<'a>
             {
                 if let Some(RegexText) = self.ScanRegexLiteral()
                 {
-                    RawTokens.push
-                    (
-                        Token_Info::New(Token_Kind::Regex_Lit(RegexText.clone()), RegexText, StartLine, StartCol, PrecedingNewlines,)
-                    );
+                    RawTokens.push(Token_Info::New(Token_Kind::Regex_Lit(RegexText.clone()), RegexText, StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     self.Expects_Expression = false;
                     continue;
@@ -113,10 +95,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == '`'
             {
                 let TemplateText = self.ScanTemplateLiteral();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Template_Lit(TemplateText.clone()), TemplateText, StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Template_Lit(TemplateText.clone()), TemplateText, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
                 continue;
@@ -126,10 +105,7 @@ impl <'a> JS_Lexer<'a>
             {
                 let QuoteChar = Ch;
                 let StringText = self.ScanQuotedString(QuoteChar);
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
                 continue;
@@ -138,10 +114,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == '('
             {
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Paren),"(".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Paren),"(".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
                 continue;
@@ -150,10 +123,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == ')'
             {
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Paren),")".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Paren),")".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
                 continue;
@@ -162,10 +132,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == '{'
             {
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace),"{".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace),"{".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
                 continue;
@@ -174,10 +141,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == '}'
             {
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace),"}".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace),"}".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
                 continue;
@@ -186,10 +150,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == '['
             {
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Bracket),"[".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Bracket),"[".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
                 continue;
@@ -198,10 +159,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == ']'
             {
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Bracket),"]".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Bracket),"]".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
                 continue;
@@ -224,10 +182,7 @@ impl <'a> JS_Lexer<'a>
                 // Expression context tracking
                 if IsKw
                 {
-                    self.Expects_Expression = matches!
-                    (
-                        IdentText.as_str(),"return" | "throw" | "yield" | "case" | "typeof" | "delete" | "void" | "in" | "instanceof" | "of" | "new" | "await"
-                    );
+                    self.Expects_Expression = matches!(IdentText.as_str(),"return" | "throw" | "yield" | "case" | "typeof" | "delete" | "void" | "in" | "instanceof" | "of" | "new" | "await");
                 }
                 else { self.Expects_Expression = false; }
 
@@ -243,10 +198,7 @@ impl <'a> JS_Lexer<'a>
                     self.Advance();
                     self.Advance();
                     self.Advance();
-                    RawTokens.push
-                    (
-                        Token_Info::New(Token_Kind::Operator("...".to_string()),"...".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                    );
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("...".to_string()),"...".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     self.Expects_Expression = true;
                     continue;
@@ -256,10 +208,7 @@ impl <'a> JS_Lexer<'a>
                 {
                     self.Advance();
                     self.Advance();
-                    RawTokens.push
-                    (
-                        Token_Info::New(Token_Kind::Operator("?.".to_string()),"?.".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                    );
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("?.".to_string()),"?.".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     self.Expects_Expression = false;
                     continue;
@@ -269,19 +218,9 @@ impl <'a> JS_Lexer<'a>
                 {
                     self.Advance();
                     self.Advance();
-                    let OpStr = if self.Peek() == Some('=')
-                    {
-                        self.Advance();
-                        "??="
-                    }
-                    else
-                    {
-                        "??"
-                    };
-                    RawTokens.push
-                    (
-                        Token_Info::New(Token_Kind::Operator(OpStr.to_string()), OpStr.to_string(), StartLine, StartCol, PrecedingNewlines,)
-                    );
+                    let OpStr = if self.Peek() == Some('=') { self.Advance();"??=" }
+                    else { "??" };
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator(OpStr.to_string()), OpStr.to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     self.Expects_Expression = true;
                     continue;
@@ -450,10 +389,7 @@ impl <'a> JS_Lexer<'a>
                 if matches!(Prefix, 'x' | 'X' | 'b' | 'B' | 'o' | 'O')
                 {
                     Result.push(self.Advance().unwrap());
-                    while let Some(Ch) = self.Peek()
-                    {
-                        if Ch.is_ascii_hexdigit() || Ch == '_' { Result.push(self.Advance().unwrap()); } else { break ; }
-                    }
+                    while let Some(Ch) = self.Peek() { if Ch.is_ascii_hexdigit() || Ch == '_' { Result.push(self.Advance().unwrap()); } else { break ; } }
                     if self.Peek() == Some('n') { Result.push(self.Advance().unwrap()); }
                     return Result;
                 }
@@ -482,10 +418,7 @@ impl <'a> JS_Lexer<'a>
     fn ScanIdentifier( & mut self)->String
     {
         let mut Result = String:: new ();
-        while let Some(Ch) = self.Peek()
-        {
-            if Ch.is_alphanumeric() || Ch == '_' || Ch == '$' { Result.push(self.Advance().unwrap()); } else { break ; }
-        }
+        while let Some(Ch) = self.Peek() { if Ch.is_alphanumeric() || Ch == '_' || Ch == '$' { Result.push(self.Advance().unwrap()); } else { break ; } }
         Result
     }
 
@@ -498,48 +431,45 @@ impl <'a> JS_Lexer<'a>
         let Next = self.Peek();
         match (First, Next)
         {
-            ('=', Some('=')) => 
+            ('=', Some('=')) =>
             {
                 Result.push(self.Advance().unwrap());
                 if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
-            ('!', Some('=')) => 
+            ('!', Some('=')) =>
             {
                 Result.push(self.Advance().unwrap());
                 if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
             ('=', Some('>')) => { Result.push(self.Advance().unwrap()); }
-            ('&', Some('&')) => 
+            ('&', Some('&')) =>
             {
                 Result.push(self.Advance().unwrap());
                 if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
-            ('|', Some('|')) => 
+            ('|', Some('|')) =>
             {
                 Result.push(self.Advance().unwrap());
                 if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
-            ('?', Some('?')) => 
+            ('?', Some('?')) =>
             {
                 Result.push(self.Advance().unwrap());
                 if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
-            ('<', Some('<')) | ('>', Some('>')) => 
+            ('<', Some('<')) | ('>', Some('>')) =>
             {
                 Result.push(self.Advance().unwrap());
                 if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
             ('<', Some('=')) | ('>', Some('=')) => { Result.push(self.Advance().unwrap()); }
             ('+', Some('+')) | ('-', Some('-')) => { Result.push(self.Advance().unwrap()); }
-            ('*', Some('*')) => 
+            ('*', Some('*')) =>
             {
                 Result.push(self.Advance().unwrap());
                 if self.Peek() == Some('=') { Result.push(self.Advance().unwrap()); }
             }
-            ('+', Some('=')) | ('-', Some('=')) | ('*', Some('=')) | ('/', Some('=')) | ('%', Some('=')) | ('&', Some('=')) | ('|', Some('=')) | 
-            (
-                '^', Some('=')
-            )
+            ('+', Some('=')) | ('-', Some('=')) | ('*', Some('=')) | ('/', Some('=')) | ('%', Some('=')) | ('&', Some('=')) | ('|', Some('=')) | ('^', Some('='))
             => { Result.push(self.Advance().unwrap()); }
             _ => {}
         }
@@ -565,10 +495,7 @@ fn ResolveJSAngleBrackets(Tokens: & mut [Token_Info])
     {
         if Tokens[I].Text == "<"
         {
-            let IsPrecededByGenericContext = I > 0 && match & Tokens[I - 1].Kind
-            {
-                Token_Kind::Identifier(_) => true, Token_Kind::Keyword(K) => matches!(K.as_str(),"type" | "interface" | "class"), _ => false, 
-            };
+            let IsPrecededByGenericContext = I > 0 && match & Tokens[I - 1].Kind { Token_Kind::Identifier(_) => true, Token_Kind::Keyword(K) => matches ! (K.as_str(),"type" | "interface" | "class"), _ => false, };
 
             if IsPrecededByGenericContext
             {
@@ -594,16 +521,15 @@ fn ResolveJSAngleBrackets(Tokens: & mut [Token_Info])
         I += 1;
     }
 }
+
 #[derive(Debug, Clone)]
 pub enum JS_Syntax_Node { Token(Token_Info), Container(JS_Container), }
+
 #[derive(Debug, Clone)]
 pub struct JS_Container
 {
-    pub Kind: Container_Kind, pub Open_Token: Token_Info, pub Close_Token: Option<Token_Info>, pub Children: Vec<JS_Syntax_Node>, pub Tail_Glue: Vec
-    <
-        Token_Info
-    >,
-    pub Has_Forced_Break: bool, pub Statement_Count: usize, pub Is_ASI_Hybrid: bool, 
+    pub Kind: Container_Kind, pub Open_Token: Token_Info, pub Close_Token: Option<Token_Info>, pub Children: Vec<JS_Syntax_Node>, pub Tail_Glue: Vec<Token_Info>,
+    pub Has_Forced_Break: bool, pub Statement_Count: usize, pub Is_ASI_Hybrid: bool,
 }
 
 impl JS_Container
@@ -612,34 +538,28 @@ impl JS_Container
     {
         JS_Container
         {
-            Kind, Open_Token, Close_Token: None, Children: Vec:: new (), Tail_Glue: Vec:: new (), Has_Forced_Break: false, Statement_Count: 0, Is_ASI_Hybrid, 
+            Kind, Open_Token, Close_Token: None, Children: Vec:: new (), Tail_Glue: Vec:: new (), Has_Forced_Break: false, Statement_Count: 0, Is_ASI_Hybrid,
         }
     }
 
     pub fn IsSoleChildChain( & self)-> bool
     {
-        let NonCommentChildren: Vec <& JS_Syntax_Node > = self.Children.iter().filter
-        (
-            | Node | match Node { JS_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), JS_Syntax_Node::Container(_) => true, }
-        )
+        let NonCommentChildren: Vec <& JS_Syntax_Node > = self.Children.iter().filter( | Node | match Node { JS_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), JS_Syntax_Node::Container(_) => true, })
         .collect();
 
         if NonCommentChildren.len() == 1 { matches ! (NonCommentChildren[0], JS_Syntax_Node::Container(_)) } else { false }
     }
 
-    pub fn GetSoleChildContainer( & self)->Option <& JS_Container > 
+    pub fn GetSoleChildContainer( & self)->Option <& JS_Container >
     {
-        let NonCommentChildren: Vec <& JS_Syntax_Node > = self.Children.iter().filter
-        (
-            | Node | match Node { JS_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), JS_Syntax_Node::Container(_) => true, }
-        )
+        let NonCommentChildren: Vec <& JS_Syntax_Node > = self.Children.iter().filter( | Node | match Node { JS_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), JS_Syntax_Node::Container(_) => true, })
         .collect();
 
         if NonCommentChildren.len() == 1 { if let JS_Syntax_Node::Container(C) = NonCommentChildren[0] { return Some(C); } }
         None
     }
 
-    pub fn CollectChain( & self)->Vec <& JS_Container > 
+    pub fn CollectChain( & self)->Vec <& JS_Container >
     {
         let mut Chain = vec![self];
         let mut Current = self;
@@ -664,7 +584,7 @@ impl JS_Container
         {
             match Node
             {
-                JS_Syntax_Node::Token(T) => 
+                JS_Syntax_Node::Token(T) =>
                 {
                     if T.IsTrivia() { continue ; }
                     if T.IsComment() && matches!(T.Kind, Token_Kind::Comment_Line(_)) { return usize::MAX; }
@@ -672,7 +592,7 @@ impl JS_Container
                     Total += T.Text.len();
                     PrevTokenNeedsSpace = true;
                 }
-                JS_Syntax_Node::Container(C) => 
+                JS_Syntax_Node::Container(C) =>
                 {
                     let ChildSpan = C.CalculateSingleLineSpan();
                     if ChildSpan == usize::MAX { return usize::MAX; }
@@ -729,7 +649,7 @@ impl JS_Container_Builder
 
         match & Token.Kind
         {
-            Token_Kind::Open_Delim(Kind) => 
+            Token_Kind::Open_Delim(Kind) =>
             {
                 let mut Container = JS_Container::New( * Kind, Token, PrecededByReturn);
                 self.PopulateContainerChildren( & mut Container);
@@ -752,7 +672,7 @@ impl JS_Container_Builder
 
             match & CurrentToken.Kind
             {
-                Token_Kind::Close_Delim(CloseKind) if * CloseKind == Container.Kind => 
+                Token_Kind::Close_Delim(CloseKind) if * CloseKind == Container.Kind =>
                 {
                     self.Index += 1;
                     Container.Close_Token = Some(CurrentToken);
@@ -769,19 +689,19 @@ impl JS_Container_Builder
                     }
                     break;
                 }
-                Token_Kind::Open_Delim(_) => 
+                Token_Kind::Open_Delim(_) =>
                 {
                     if let Some(ChildNode) = self.ParseNextNode(LastSignificantWasReturn) { Container.Children.push(ChildNode); }
                     LastSignificantWasReturn = false;
                 }
-                Token_Kind::Comment_Line(_) => 
+                Token_Kind::Comment_Line(_) =>
                 {
                     Container.Has_Forced_Break = true;
                     Container.Children.push(JS_Syntax_Node::Token(CurrentToken));
                     self.Index += 1;
                     LastSignificantWasReturn = false;
                 }
-                _ => 
+                _ =>
                 {
                     if CurrentToken.Text == ";" { StatementCount += 1; }
 
@@ -809,9 +729,7 @@ impl <'a> JS_Layout_Planner<'a>
     pub fn DecideLayout( & self, Container: & JS_Container, CurrentIndentLevel: usize, CurrentColumn: usize,)->Layout_State
     {
         // 1. Monolith First (Horizontal Density)
-        if ! Container.Has_Forced_Break && Container.Statement_Count <= self.Config.Max_Statements_In_Monolith && Container.CalculateBlockDepth() <= self.Config.Max_Block_Depth && Container.CountTotalContainers
-        (
-        )
+        if ! Container.Has_Forced_Break && Container.Statement_Count <= self.Config.Max_Statements_In_Monolith && Container.CalculateBlockDepth() <= self.Config.Max_Block_Depth && Container.CountTotalContainers()
         <= self.Config.Max_Containers_In_Monolith
         {
             let SingleSpan = Container.CalculateSingleLineSpan();
@@ -833,17 +751,11 @@ impl <'a> JS_Layout_Planner<'a>
     }
 }
 
-pub struct JS_Emitter<'a>
-{
-    Config: & 'a Config_Settings, Planner: JS_Layout_Planner<'a>, Output: String, Current_Line_Len: usize, Line_Has_Content: bool, 
-}
+pub struct JS_Emitter<'a> { Config: & 'a Config_Settings, Planner: JS_Layout_Planner<'a>, Output: String, Current_Line_Len: usize, Line_Has_Content: bool , }
 
 impl <'a> JS_Emitter<'a>
 {
-    pub fn New(Config: & 'a Config_Settings)->Self
-    {
-        JS_Emitter { Config, Planner: JS_Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, }
-    }
+    pub fn New(Config: & 'a Config_Settings)->Self { JS_Emitter { Config, Planner: JS_Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, } }
 
     pub fn Emit(mut self, Nodes: & [JS_Syntax_Node])->String
     {
@@ -896,18 +808,14 @@ impl <'a> JS_Emitter<'a>
             match Node
             {
                 JS_Syntax_Node::Token(T) => { self.EmitSingleToken(T, Level); }
-                JS_Syntax_Node::Container(C) => 
+                JS_Syntax_Node::Container(C) =>
                 {
                     let Layout = self.Planner.DecideLayout(C, Level, self.Current_Line_Len);
                     self.EmitContainerNodeWithLayout(C, Level, Layout);
                     // Check if followed by continuation keyword (else, catch, finally)
                     let NextContinuation = if Index + 1 < Total
                     {
-                        match & Nodes[Index + 1]
-                        {
-                            JS_Syntax_Node::Token(T) if matches!(T.Text.as_str(),"else" | "catch" | "finally") => { Some(T.Text.clone()) }
-                            _ => None, 
-                        }
+                        match & Nodes[Index + 1] { JS_Syntax_Node::Token(T) if matches ! (T.Text.as_str(),"else" | "catch" | "finally") => { Some(T.Text.clone()) } _ => None, }
                     }
                     else { None };
 
@@ -1001,10 +909,7 @@ impl <'a> JS_Emitter<'a>
             if ! self.Output.ends_with(' ')
             {
                 let LastChar = self.Output.chars().last();
-                if let Some(Ch) = LastChar
-                {
-                    if ! Ch.is_alphanumeric() && Ch != '_' && Ch != '$' && Ch != ')' && Ch != ']' && Ch != '.' { self.EmitSpace(); }
-                }
+                if let Some(Ch) = LastChar { if ! Ch.is_alphanumeric() && Ch != '_' && Ch != '$' && Ch != ')' && Ch != ']' && Ch != '.' { self.EmitSpace(); } }
             }
         }
 
@@ -1015,19 +920,18 @@ impl <'a> JS_Emitter<'a>
         {
             match Child
             {
-                JS_Syntax_Node::Token(T) => 
+                JS_Syntax_Node::Token(T) =>
                 {
                     if T.IsTrivia() { continue ; }
                     let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || T.Text == ":" || T.Text == "?.";
-                    if PrevNeedsSpace && ! IsPunct && ! self.Output.ends_with('.') && ! self.Output.ends_with("?.") && ! self.Output.ends_with('(') && ! self.Output.ends_with
-                    (
-                        '['
-                    )
-                    { self.EmitSpace(); }
+                    if PrevNeedsSpace && ! IsPunct && ! self.Output.ends_with('.') && ! self.Output.ends_with("?.") && ! self.Output.ends_with('(') && ! self.Output.ends_with('[')
+                    {
+                        self.EmitSpace();
+                    }
                     self.EmitRaw( & T.Text);
                     PrevNeedsSpace = ! matches!(T.Text.as_str(),"." | "?." | "(" | "[" | "!" | "~");
                 }
-                JS_Syntax_Node::Container(Sub) => 
+                JS_Syntax_Node::Container(Sub) =>
                 {
                     if PrevNeedsSpace && Sub.Kind == Container_Kind::Brace { self.EmitSpace(); }
                     self.EmitMonolith(Sub, Level);
@@ -1105,30 +1009,18 @@ pub fn VerifyJSTokenEquivalence(OriginalSource: & str, FormattedSource: & str, L
     let mut FormattedScanner = JS_Lexer::New(FormattedSource, Language);
     let FormattedTokens = FormattedScanner.TokenizeAll();
 
-    let OrigSignificant: Vec <& str > = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map
-    (
-        | T | T.Text.as_str()
-    )
+    let OrigSignificant: Vec <& str > = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
     .collect();
 
-    let FormSignificant: Vec <& str > = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map
-    (
-        | T | T.Text.as_str()
-    )
+    let FormSignificant: Vec <& str > = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
     .collect();
 
     if OrigSignificant.len() != FormSignificant.len()
     {
-        return Err
-        (
-            format!("Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len())
-        );
+        return Err(format ! ("Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
     }
 
-    for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate()
-    {
-        if Orig != Form { return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); }
-    }
+    for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate() { if Orig != Form { return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); } }
 
     Ok(())
 }

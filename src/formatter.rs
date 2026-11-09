@@ -42,8 +42,5 @@ impl Source_Formatter
         Ok(Formatted)
     }
 
-    pub fn IsFormatted(Source: & str, Config: & Config_Settings)-> bool
-    {
-        match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, }
-    }
+    pub fn IsFormatted(Source: & str, Config: & Config_Settings)-> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
 }

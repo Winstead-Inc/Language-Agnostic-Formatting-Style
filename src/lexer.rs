@@ -5,10 +5,7 @@ pub struct Lexer_Scanner<'a> { Source: & 'a str, Chars: Vec<char>, Index: usize,
 
 impl <'a> Lexer_Scanner<'a>
 {
-    pub fn New(Source: & 'a str, Language: Source_Language)->Self
-    {
-        Lexer_Scanner { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, Language, }
-    }
+    pub fn New(Source: & 'a str, Language: Source_Language)->Self { Lexer_Scanner { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, Language, } }
 
     fn Peek( & self)->Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
 
@@ -44,10 +41,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '#' && StartCol == 0
             {
                 let DirectiveText = self.ScanPreprocessor();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Preprocessor(DirectiveText.clone()), DirectiveText, StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Preprocessor(DirectiveText.clone()), DirectiveText, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -55,10 +49,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '/' && self.PeekAhead(1) == Some('/')
             {
                 let CommentText = self.ScanLineComment();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Comment_Line(CommentText.clone()), CommentText, StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Comment_Line(CommentText.clone()), CommentText, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -66,10 +57,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '/' && self.PeekAhead(1) == Some('*')
             {
                 let CommentText = self.ScanBlockComment();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Comment_Block(CommentText.clone()), CommentText, StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Comment_Block(CommentText.clone()), CommentText, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -77,10 +65,7 @@ impl <'a> Lexer_Scanner<'a>
             if (Ch == 'R' || Ch == 'L' || Ch == 'u' || Ch == 'U') && self.PeekAhead(1) == Some('"') && self.Language == Source_Language::Cpp
             {
                 let StringText = self.ScanCppRawString();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -88,10 +73,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '@' && self.PeekAhead(1) == Some('"') && self.Language == Source_Language::CSharp
             {
                 let StringText = self.ScanCSharpVerbatimString();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -114,18 +96,12 @@ impl <'a> Lexer_Scanner<'a>
                 if self.PeekAhead(1) == Some('"') && self.PeekAhead(2) == Some('"') && self.Language == Source_Language::CSharp
                 {
                     let StringText = self.ScanCSharpRawString();
-                    RawTokens.push
-                    (
-                        Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,)
-                    );
+                    RawTokens.push(Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,));
                 }
                 else
                 {
                     let StringText = self.ScanStandardString();
-                    RawTokens.push
-                    (
-                        Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,)
-                    );
+                    RawTokens.push(Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,));
                 }
                 PrecedingNewlines = 0;
                 continue;
@@ -134,10 +110,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '`'
             {
                 let StringText = self.ScanRawBacktickString();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -153,10 +126,7 @@ impl <'a> Lexer_Scanner<'a>
                         // consume '\''
                         let IdentText = self.ScanIdentifier();
                         let LifetimeText = format!("'{}", IdentText);
-                        RawTokens.push
-                        (
-                            Token_Info::New(Token_Kind::Identifier(LifetimeText.clone()), LifetimeText, StartLine, StartCol, PrecedingNewlines,)
-                        );
+                        RawTokens.push(Token_Info::New(Token_Kind::Identifier(LifetimeText.clone()), LifetimeText, StartLine, StartCol, PrecedingNewlines,));
                         PrecedingNewlines = 0;
                         continue;
                     }
@@ -171,10 +141,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '('
             {
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Paren),"(".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Paren),"(".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -182,10 +149,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == ')'
             {
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Paren),")".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Paren),")".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -193,10 +157,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '{'
             {
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace),"{".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace),"{".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -204,10 +165,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '}'
             {
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace),"}".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace),"}".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -215,10 +173,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '['
             {
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Bracket),"[".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Bracket),"[".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -226,10 +181,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == ']'
             {
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Bracket),"]".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                );
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Bracket),"]".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -246,11 +198,7 @@ impl <'a> Lexer_Scanner<'a>
             {
                 let mut HashCount = 0;
                 let mut Lookahead = 1;
-                while let Some(c) = self.PeekAhead(Lookahead)
-                {
-                    if c == '#' { HashCount += 1; Lookahead += 1; }
-                    else { break; }
-                }
+                while let Some(c) = self.PeekAhead(Lookahead) { if c == '#' { HashCount += 1; Lookahead += 1; } else { break ; } }
                 if let Some(c) = self.PeekAhead(Lookahead)
                 {
                     if c == '"'
@@ -263,7 +211,7 @@ impl <'a> Lexer_Scanner<'a>
                 }
             }
             // 8. Identifiers and Keywords
-              if Ch.is_alphabetic() || Ch == '_' || Ch == '$' || (self.Language == Source_Language::Css && (Ch == '@' || Ch == '#' || Ch == '.'))
+            if Ch.is_alphabetic() || Ch == '_' || Ch == '$' || (self.Language == Source_Language::Css && (Ch == '@' || Ch == '#' || Ch == '.'))
             {
                 let IdentText = self.ScanIdentifier();
                 let Kind = if IsKeyword( & IdentText) { Token_Kind::Keyword(IdentText.clone()) } else { Token_Kind::Identifier(IdentText.clone()) };
@@ -278,10 +226,7 @@ impl <'a> Lexer_Scanner<'a>
                 {
                     self.Advance();
                     self.Advance();
-                    RawTokens.push
-                    (
-                        Token_Info::New(Token_Kind::Operator("::".to_string()),"::".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                    );
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("::".to_string()),"::".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     continue;
                 }
@@ -290,10 +235,7 @@ impl <'a> Lexer_Scanner<'a>
                     self.Advance();
                     self.Advance();
                     self.Advance();
-                    RawTokens.push
-                    (
-                        Token_Info::New(Token_Kind::Operator("...".to_string()),"...".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                    );
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("...".to_string()),"...".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     continue;
                 }
@@ -301,10 +243,7 @@ impl <'a> Lexer_Scanner<'a>
                 {
                     self.Advance();
                     self.Advance();
-                    RawTokens.push
-                    (
-                        Token_Info::New(Token_Kind::Operator("?.".to_string()),"?.".to_string(), StartLine, StartCol, PrecedingNewlines,)
-                    );
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("?.".to_string()),"?.".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     continue;
                 }
@@ -312,19 +251,9 @@ impl <'a> Lexer_Scanner<'a>
                 {
                     self.Advance();
                     self.Advance();
-                    let OpStr = if self.Peek() == Some('=')
-                    {
-                        self.Advance();
-                        "??="
-                    }
-                    else
-                    {
-                        "??"
-                    };
-                    RawTokens.push
-                    (
-                        Token_Info::New(Token_Kind::Operator(OpStr.to_string()), OpStr.to_string(), StartLine, StartCol, PrecedingNewlines,)
-                    );
+                    let OpStr = if self.Peek() == Some('=') { self.Advance();"??=" }
+                    else { "??" };
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator(OpStr.to_string()), OpStr.to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     continue;
                 }
@@ -392,23 +321,25 @@ impl <'a> Lexer_Scanner<'a>
     fn ScanRawRustString( & mut self, HashCount: usize)->String
     {
         let mut Result = String:: new ();
-        Result.push(self.Advance().unwrap()); // 'r'
-        for _ in 0..HashCount { Result.push(self.Advance().unwrap()); } // '#'
-        Result.push(self.Advance().unwrap()); // '"'
+        Result.push(self.Advance().unwrap());
+        // 'r'
+        for _ in 0..HashCount { Result.push(self.Advance().unwrap()); }
+        // '#'
+        Result.push(self.Advance().unwrap());
+        // '"'
 
         while let Some(Ch) = self.Peek()
         {
             if Ch == '"'
             {
                 let mut Match = true;
-                for i in 1..=HashCount
-                {
-                    if self.PeekAhead(i) != Some('#') { Match = false; break; }
-                }
+                for i in 1.. = HashCount { if self.PeekAhead(i) != Some('#') { Match = false; break ; } }
                 if Match
                 {
-                    Result.push(self.Advance().unwrap()); // '"'
-                    for _ in 0..HashCount { Result.push(self.Advance().unwrap()); } // '#'
+                    Result.push(self.Advance().unwrap());
+                    // '"'
+                    for _ in 0..HashCount { Result.push(self.Advance().unwrap()); }
+                    // '#'
                     break;
                 }
             }
@@ -439,10 +370,7 @@ impl <'a> Lexer_Scanner<'a>
         Result.push(self.Advance().unwrap());
         // '`'
 
-        while let Some(Ch) = self.Peek()
-        {
-            if Ch == '`' { Result.push(self.Advance().unwrap()); break ; } else { Result.push(self.Advance().unwrap()); }
-        }
+        while let Some(Ch) = self.Peek() { if Ch == '`' { Result.push(self.Advance().unwrap()); break ; } else { Result.push(self.Advance().unwrap()); } }
         Result
     }
 
@@ -530,7 +458,7 @@ impl <'a> Lexer_Scanner<'a>
         let mut Result = String:: new ();
         while let Some(Ch) = self.Peek()
         {
-              if Ch.is_alphanumeric() || Ch == '_' || Ch == '$' || (self.Language == crate::types::Source_Language::Css && (Ch == '-' || Ch == '.'))
+            if Ch.is_alphanumeric() || Ch == '_' || Ch == '$' || (self.Language == crate::types::Source_Language::Css && (Ch == '-' || Ch == '.'))
             {
                 Result.push(self.Advance().unwrap());
             }
@@ -542,10 +470,7 @@ impl <'a> Lexer_Scanner<'a>
     fn ScanNumber( & mut self)->String
     {
         let mut Result = String:: new ();
-        while let Some(Ch) = self.Peek()
-        {
-            if Ch.is_ascii_alphanumeric() || Ch == '.' || Ch == '_' || Ch == '\'' { Result.push(self.Advance().unwrap()); } else { break ; }
-        }
+        while let Some(Ch) = self.Peek() { if Ch.is_ascii_alphanumeric() || Ch == '.' || Ch == '_' || Ch == '\'' { Result.push(self.Advance().unwrap()); } else { break ; } }
         Result
     }
 
@@ -579,11 +504,8 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>)
             {
                 match & Tokens[I - 1].Kind
                 {
-                    Token_Kind::Identifier(_) => true, Token_Kind::Keyword(K) => matches!
-                    (
-                        K.as_str(),"template" | "typename" | "class" | "struct" | "interface" | "new" | "where" | "using" | "impl" | "fn" | "trait" | "enum" | "type"
-                    ),
-                    Token_Kind::Operator(Op) if Op == "::" => true, _ => false, 
+                    Token_Kind::Identifier(_) => true, Token_Kind::Keyword(K) => matches!(K.as_str(),"template" | "typename" | "class" | "struct" | "interface" | "new" | "where" | "using" | "impl" | "fn" | "trait" | "enum" | "type"),
+                    Token_Kind::Operator(Op) if Op == "::" => true, _ => false,
                 }
             }
             else { false };
@@ -605,10 +527,7 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>)
                         let Tok = Tokens[J].clone();
                         Tokens[J].Kind = Token_Kind::Operator(">".to_string());
                         Tokens[J].Text = ">".to_string();
-                        Tokens.insert
-                        (
-                            J + 1, Token_Info::New(Token_Kind::Operator(">".to_string()),">".to_string(), Tok.Line, Tok.Column + 1, 0,),
-                        );
+                        Tokens.insert(J + 1, Token_Info::New(Token_Kind::Operator(">".to_string()),">".to_string(), Tok.Line, Tok.Column + 1, 0,),);
                         Depth -= 1;
                         if Depth == 0 { MatchIndex = Some(J); break ; }
                     }
@@ -626,10 +545,7 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>)
                     let FollowValid = if M + 1 < Tokens.len()
                     {
                         let Next = & Tokens[M + 1];
-                        matches!
-                        (
-                            Next.Text.as_str(),"(" | ")" | "]" | "}" | ":" | ";" | "," | "." | "?" | "==" | "!=" | "[" | "{" | "::" | "&" | "*" | "->" | ">"
-                        )
+                        matches!(Next.Text.as_str(),"(" | ")" | "]" | "}" | ":" | ";" | "," | "." | "?" | "==" | "!=" | "[" | "{" | "::" | "&" | "*" | "->" | ">")
                         || matches!(Next.Kind, Token_Kind::Identifier(_) | Token_Kind::Keyword(_)) || Next.Preceding_Newlines > 0
                     }
                     else { true };

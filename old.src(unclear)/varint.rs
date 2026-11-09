@@ -30,6 +30,7 @@ pub unsafe extern "C" fn decode_varint(bufp: * mut * const u8)->u64
     * bufp = buf;
     val
 }
+
 /// Encode `value` into `buf` as a variable-length integer unless `buf` is null.
 ///
 /// Returns the number of bytes written, or, if `buf` is null, the number of bytes that would be
@@ -50,8 +51,9 @@ pub unsafe extern "C" fn encode_varint(value: u64, buf: * mut u8)->u8
     while value != 0 { pos -= 1; value -= 1; varint[pos] = 128 | (value & 127) as u8; value >>= 7; }
 
     if ! buf.is_null() { std::ptr::copy_nonoverlapping(varint.as_ptr().add(pos), buf, varint.len() - pos); }
-(varint.len() - pos) as u8
+    (varint.len() - pos) as u8
 }
+
 #[cfg(test)]
 mod tests
 {
@@ -61,14 +63,14 @@ mod tests
     {
         unsafe
         {
-            assert_eq!(decode_varint( & mut[0x00].as_slice().as_ptr()), 0);
-            assert_eq!(decode_varint( & mut[0x01].as_slice().as_ptr()), 1);
-            assert_eq!(decode_varint( & mut[0x7f].as_slice().as_ptr()), 127);
-            assert_eq!(decode_varint( & mut[0x80, 0x00].as_slice().as_ptr()), 128);
-            assert_eq!(decode_varint( & mut[0x80, 0x01].as_slice().as_ptr()), 129);
-            assert_eq!(decode_varint( & mut[0x80, 0x7f].as_slice().as_ptr()), 255);
+            assert_eq!(decode_varint( & mut [0x00].as_slice().as_ptr()), 0);
+            assert_eq!(decode_varint( & mut [0x01].as_slice().as_ptr()), 1);
+            assert_eq!(decode_varint( & mut [0x7f].as_slice().as_ptr()), 127);
+            assert_eq!(decode_varint( & mut [0x80, 0x00].as_slice().as_ptr()), 128);
+            assert_eq!(decode_varint( & mut [0x80, 0x01].as_slice().as_ptr()), 129);
+            assert_eq!(decode_varint( & mut [0x80, 0x7f].as_slice().as_ptr()), 255);
             // Overflows are expected to return 0.
-            assert_eq!(decode_varint( & mut[0x88; 16].as_slice().as_ptr()), 0);
+            assert_eq!(decode_varint( & mut [0x88; 16].as_slice().as_ptr()), 0);
         }
     }
 

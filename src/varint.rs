@@ -30,6 +30,7 @@ pub unsafe extern "C" fn decode_varint(bufp: * mut * const u8)->u64
     * bufp = buf;
     val
 }
+
 /// Encode `value` into `buf` as a variable-length integer unless `buf` is null.
 ///
 /// Returns the number of bytes written, or, if `buf` is null, the number of bytes that would be
@@ -52,6 +53,7 @@ pub unsafe extern "C" fn encode_varint(value: u64, buf: * mut u8)->u8
     if ! buf.is_null() { std::ptr::copy_nonoverlapping(varint.as_ptr().add(pos), buf, varint.len() - pos); }
     (varint.len() - pos) as u8
 }
+
 #[cfg(test)]
 mod tests
 {

@@ -12,9 +12,7 @@ impl <'a> Layout_Planner<'a>
     {
         // 1. Monolith First (Horizontal Density)
         // Check complexity budget: statements <= max_statements, block depth <= max_block_depth, total containers <= max_containers
-        if ! Container.Has_Forced_Break && Container.Statement_Count <= self.Config.Max_Statements_In_Monolith && Container.CalculateBlockDepth() <= self.Config.Max_Block_Depth && Container.CountTotalContainers
-        (
-        )
+        if ! Container.Has_Forced_Break && Container.Statement_Count <= self.Config.Max_Statements_In_Monolith && Container.CalculateBlockDepth() <= self.Config.Max_Block_Depth && Container.CountTotalContainers()
         <= self.Config.Max_Containers_In_Monolith
         {
             let SingleSpan = Container.CalculateSingleLineSpan();
@@ -23,7 +21,7 @@ impl <'a> Layout_Planner<'a>
                 let BaseCol = if CurrentColumn > 0 { CurrentColumn } else { CurrentIndentLevel * self.Config.Indent_Width };
                 let ProjectedCol = BaseCol + SingleSpan;
                 if ProjectedCol <= self.Config.Canvas_Width { return Layout_State::Monolith; }
-                
+
                 // If it's a data container (no statements) and fits within canvas on its own, don't expand it just because it's pushed right.
                 if Container.Statement_Count == 0 && SingleSpan <= self.Config.Canvas_Width { return Layout_State::Monolith; }
             }

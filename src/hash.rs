@@ -22,16 +22,14 @@ pub const GIT_MAX_RAWSZ: usize = 32;
 #[derive(Debug, Copy, Clone)]
 pub struct InvalidHashAlgorithm(pub u32);
 
-impl Display for InvalidHashAlgorithm
-{
-    fn fmt( & self, f: & mut fmt::Formatter<'_>)->fmt::Result { write ! (f, "invalid hash algorithm {}", self .0) }
-}
+impl Display for InvalidHashAlgorithm { fn fmt( & self, f: & mut fmt::Formatter<'_>)->fmt::Result { write ! (f, "invalid hash algorithm {}", self .0) } }
 
 impl Error for InvalidHashAlgorithm {}
 /// A binary object ID.
 #[repr(C)]
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct ObjectID { pub hash: [u8; GIT_MAX_RAWSZ], pub algo: u32, }
+
 #[allow(dead_code)]
 impl ObjectID
 {
@@ -46,28 +44,20 @@ impl ObjectID
         data[0..algo.raw_len()].copy_from_slice(hash);
         Self { hash: data, algo: algo as u32, }
     }
+
     /// Return the algorithm for this object ID.
     ///
     /// If the algorithm set internally is not valid, this function panics.
-    pub fn algo( & self)->Result<HashAlgorithm, InvalidHashAlgorithm>
+    pub fn algo( & self)->Result<HashAlgorithm, InvalidHashAlgorithm> { HashAlgorithm::from_u32(self.algo).ok_or(InvalidHashAlgorithm(self.algo)) }
+
+    pub fn as_slice( & self)->Result <& [u8], InvalidHashAlgorithm >
     {
-        HashAlgorithm::from_u32(self.algo).ok_or(InvalidHashAlgorithm(self.algo))
+        match HashAlgorithm::from_u32(self.algo) { Some(algo) => Ok( & self.hash[0..algo.raw_len()]), None => Err(InvalidHashAlgorithm(self.algo)), }
     }
 
-    pub fn as_slice( & self)->Result <& [u8], InvalidHashAlgorithm > 
+    pub fn as_mut_slice( & mut self)->Result <& mut [u8], InvalidHashAlgorithm >
     {
-        match HashAlgorithm::from_u32(self.algo)
-        {
-            Some(algo) => Ok( & self.hash[0..algo.raw_len()]), None => Err(InvalidHashAlgorithm(self.algo)),
-        }
-    }
-
-    pub fn as_mut_slice( & mut self)->Result <& mut [u8], InvalidHashAlgorithm > 
-    {
-        match HashAlgorithm::from_u32(self.algo)
-        {
-            Some(algo) => Ok( & mut self.hash[0..algo.raw_len()]), None => Err(InvalidHashAlgorithm(self.algo)),
-        }
+        match HashAlgorithm::from_u32(self.algo) { Some(algo) => Ok( & mut self.hash[0..algo.raw_len()]), None => Err(InvalidHashAlgorithm(self.algo)), }
     }
 }
 
@@ -111,6 +101,7 @@ pub trait CryptoDigest
     /// Return a hash as a `Vec`, consuming the hasher.
     fn into_vec(self)->Vec<u8>;
 }
+
 /// A structure to hash data with a cryptographic hash algorithm.
 ///
 /// Instances of this class are safe for use with untrusted data, provided Git has been compiled
@@ -136,8 +127,10 @@ impl CryptoDigest for CryptoHasher
 {
     /// Return true if this digest is safe for use with untrusted data, false otherwise.
     fn is_safe( & self)-> bool { true }
+
     /// Update the hasher with the specified data.
     fn update( & mut self, data: & [u8]) { unsafe { c::git_hash_update(self.ctx, data.as_ptr() as * const c_void, data.len()) }; }
+
     /// Return an object ID, consuming the hasher.
     fn into_oid(self)->ObjectID
     {
@@ -145,6 +138,7 @@ impl CryptoDigest for CryptoHasher
         unsafe { c::git_hash_final_oid( & mut oid as * mut ObjectID as * mut c_void, self.ctx) };
         oid
     }
+
     /// Return a hash as a `Vec`, consuming the hasher.
     fn into_vec(self)->Vec<u8> { let mut v = vec ! [0u8; self.algo.raw_len()]; unsafe { c::git_hash_final(v.as_mut_ptr(), self.ctx) }; v }
 }
@@ -174,6 +168,7 @@ impl Write for CryptoHasher
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub enum HashAlgorithm { SHA1 = 1, SHA256 = 2, }
+
 #[allow(dead_code)]
 impl HashAlgorithm
 {
@@ -182,66 +177,62 @@ impl HashAlgorithm
 
     const SHA1_EMPTY_TREE: ObjectID = ObjectID
     {
-        hash: * b"\x4b\x82\x5d\xc6\x42\xcb\x6e\xb9\xa0\x60\xe5\x4b\xf8\xd6\x92\x88\xfb\xee\x49\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", algo: Self::SHA1 as u32, 
+        hash: * b"\x4b\x82\x5d\xc6\x42\xcb\x6e\xb9\xa0\x60\xe5\x4b\xf8\xd6\x92\x88\xfb\xee\x49\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", algo: Self::SHA1 as u32,
     };
     const SHA256_EMPTY_TREE: ObjectID = ObjectID
     {
-        hash: * b"\x6e\xf1\x9b\x41\x22\x5c\x53\x69\xf1\xc1\x04\xd4\x5d\x8d\x85\xef\xa9\xb0\x57\xb5\x3b\x14\xb4\xb9\xb9\x39\xdd\x74\xde\xcc\x53\x21", algo: Self::SHA256 as u32, 
+        hash: * b"\x6e\xf1\x9b\x41\x22\x5c\x53\x69\xf1\xc1\x04\xd4\x5d\x8d\x85\xef\xa9\xb0\x57\xb5\x3b\x14\xb4\xb9\xb9\x39\xdd\x74\xde\xcc\x53\x21", algo: Self::SHA256 as u32,
     };
 
     const SHA1_EMPTY_BLOB: ObjectID = ObjectID
     {
-        hash: * b"\xe6\x9d\xe2\x9b\xb2\xd1\xd6\x43\x4b\x8b\x29\xae\x77\x5a\xd8\xc2\xe4\x8c\x53\x91\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", algo: Self::SHA1 as u32, 
+        hash: * b"\xe6\x9d\xe2\x9b\xb2\xd1\xd6\x43\x4b\x8b\x29\xae\x77\x5a\xd8\xc2\xe4\x8c\x53\x91\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", algo: Self::SHA1 as u32,
     };
     const SHA256_EMPTY_BLOB: ObjectID = ObjectID
     {
-        hash: * b"\x47\x3a\x0f\x4c\x3b\xe8\xa9\x36\x81\xa2\x67\xe3\xb1\xe9\xa7\xdc\xda\x11\x85\x43\x6f\xe1\x41\xf7\x74\x91\x20\xa3\x03\x72\x18\x13", algo: Self::SHA256 as u32, 
+        hash: * b"\x47\x3a\x0f\x4c\x3b\xe8\xa9\x36\x81\xa2\x67\xe3\xb1\xe9\xa7\xdc\xda\x11\x85\x43\x6f\xe1\x41\xf7\x74\x91\x20\xa3\x03\x72\x18\x13", algo: Self::SHA256 as u32,
     };
     /// Return a hash algorithm based on the internal integer ID used by Git.
     ///
     /// Returns `None` if the algorithm doesn't indicate a valid algorithm.
-    pub const fn from_u32(algo: u32)->Option<HashAlgorithm>
-    {
-        match algo { 1 => Some(HashAlgorithm::SHA1), 2 => Some(HashAlgorithm::SHA256), _ => None, }
-    }
+    pub const fn from_u32(algo: u32)->Option<HashAlgorithm> { match algo { 1 => Some(HashAlgorithm::SHA1), 2 => Some(HashAlgorithm::SHA256), _ => None, } }
+
     /// Return a hash algorithm based on the internal integer ID used by Git.
     ///
     /// Returns `None` if the algorithm doesn't indicate a valid algorithm.
-    pub const fn from_format_id(algo: u32)->Option<HashAlgorithm>
-    {
-        match algo { 0x73686131 => Some(HashAlgorithm::SHA1), 0x73323536 => Some(HashAlgorithm::SHA256), _ => None, }
-    }
+    pub const fn from_format_id(algo: u32)->Option<HashAlgorithm> { match algo { 0x73686131 => Some(HashAlgorithm::SHA1), 0x73323536 => Some(HashAlgorithm::SHA256), _ => None, } }
+
     /// The name of this hash algorithm as a string suitable for the configuration file.
     pub const fn name(self)-> & 'static str { match self { HashAlgorithm::SHA1 => "sha1", HashAlgorithm::SHA256 => "sha256", } }
+
     /// The format ID of this algorithm for binary formats.
     ///
     /// Note that when writing this to a data format, it should be written in big-endian format
     /// explicitly.
     pub const fn format_id(self)->u32 { match self { HashAlgorithm::SHA1 => 0x73686131, HashAlgorithm::SHA256 => 0x73323536, } }
+
     /// The length of binary object IDs in this algorithm in bytes.
     pub const fn raw_len(self)->usize { match self { HashAlgorithm::SHA1 => 20, HashAlgorithm::SHA256 => 32, } }
+
     /// The length of object IDs in this algorithm in hexadecimal characters.
     pub const fn hex_len(self)->usize { self.raw_len() * 2 }
+
     /// The number of bytes which is processed by one iteration of this algorithm's compression
     /// function.
     pub const fn block_size(self)->usize { match self { HashAlgorithm::SHA1 => 64, HashAlgorithm::SHA256 => 64, } }
+
     /// The object ID representing the empty blob.
-    pub const fn empty_blob(self)-> & 'static ObjectID
-    {
-        match self { HashAlgorithm::SHA1 => & Self::SHA1_EMPTY_BLOB, HashAlgorithm::SHA256 => & Self::SHA256_EMPTY_BLOB, }
-    }
+    pub const fn empty_blob(self)-> & 'static ObjectID { match self { HashAlgorithm::SHA1 => & Self::SHA1_EMPTY_BLOB, HashAlgorithm::SHA256 => & Self::SHA256_EMPTY_BLOB, } }
+
     /// The object ID representing the empty tree.
-    pub const fn empty_tree(self)-> & 'static ObjectID
-    {
-        match self { HashAlgorithm::SHA1 => & Self::SHA1_EMPTY_TREE, HashAlgorithm::SHA256 => & Self::SHA256_EMPTY_TREE, }
-    }
+    pub const fn empty_tree(self)-> & 'static ObjectID { match self { HashAlgorithm::SHA1 => & Self::SHA1_EMPTY_TREE, HashAlgorithm::SHA256 => & Self::SHA256_EMPTY_TREE, } }
+
     /// The object ID which is all zeros.
-    pub const fn null_oid(self)-> & 'static ObjectID
-    {
-        match self { HashAlgorithm::SHA1 => & Self::SHA1_NULL_OID, HashAlgorithm::SHA256 => & Self::SHA256_NULL_OID, }
-    }
+    pub const fn null_oid(self)-> & 'static ObjectID { match self { HashAlgorithm::SHA1 => & Self::SHA1_NULL_OID, HashAlgorithm::SHA256 => & Self::SHA256_NULL_OID, } }
+
     /// A pointer to the C `struct git_hash_algo` for interoperability with C.
     pub fn hash_algo_ptr(self)-> * const c_void { unsafe { c::hash_algo_ptr_by_number(self as u32) } }
+
     /// Create a hasher for this algorithm.
     pub fn hasher(self)->CryptoHasher { CryptoHasher::new (self) }
 }
@@ -264,6 +255,7 @@ pub mod c
         pub fn git_hash_final_oid(hash: * mut c_void, ctx: * mut c_void);
     }
 }
+
 #[cfg(test)]
 mod tests
 {
@@ -272,38 +264,28 @@ mod tests
 
     fn all_algos()-> & 'static[HashAlgorithm] { & [HashAlgorithm::SHA1, HashAlgorithm::SHA256] }
 
-    # [test] fn format_id_round_trips()
-    {
-        for algo in all_algos() { assert_eq ! ( * algo, HashAlgorithm::from_format_id(algo.format_id()).unwrap()); }
-    }
+    # [test] fn format_id_round_trips() { for algo in all_algos() { assert_eq ! ( * algo, HashAlgorithm::from_format_id(algo.format_id()).unwrap()); } }
 
     # [test] fn offset_round_trips() { for algo in all_algos() { assert_eq ! ( * algo, HashAlgorithm::from_u32( * algo as u32).unwrap()); } }
 
     # [test] fn slices_have_correct_length()
     {
-        for algo in all_algos()
-        {
-            for oid in[algo.null_oid(), algo.empty_blob(), algo.empty_tree()] { assert_eq ! (oid.as_slice().unwrap().len(), algo.raw_len()); }
-        }
+        for algo in all_algos() { for oid in[algo.null_oid(), algo.empty_blob(), algo.empty_tree()] { assert_eq ! (oid.as_slice().unwrap().len(), algo.raw_len()); } }
     }
 
     # [test] fn object_ids_format_correctly()
     {
-        let entries = & 
+        let entries = &
         [
-            (HashAlgorithm::SHA1.null_oid(),"0000000000000000000000000000000000000000", "0000000000000000000000000000000000000000:sha1",),
+            (HashAlgorithm::SHA1.null_oid(),"0000000000000000000000000000000000000000", "0000000000000000000000000000000000000000:sha1",),(HashAlgorithm::SHA1.empty_blob(),"e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391:sha1",),(HashAlgorithm::SHA1.empty_tree(),"4b825dc642cb6eb9a060e54bf8d69288fbee4904", "4b825dc642cb6eb9a060e54bf8d69288fbee4904:sha1",),
             (
-                HashAlgorithm::SHA1.empty_blob(),"e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391:sha1", 
-            ),
-            (HashAlgorithm::SHA1.empty_tree(),"4b825dc642cb6eb9a060e54bf8d69288fbee4904", "4b825dc642cb6eb9a060e54bf8d69288fbee4904:sha1",),
-            (
-                HashAlgorithm::SHA256.null_oid(),"0000000000000000000000000000000000000000000000000000000000000000", "0000000000000000000000000000000000000000000000000000000000000000:sha256", 
+                HashAlgorithm::SHA256.null_oid(),"0000000000000000000000000000000000000000000000000000000000000000", "0000000000000000000000000000000000000000000000000000000000000000:sha256",
             ),
             (
-                HashAlgorithm::SHA256.empty_blob(),"473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813", "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813:sha256", 
+                HashAlgorithm::SHA256.empty_blob(),"473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813", "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813:sha256",
             ),
             (
-                HashAlgorithm::SHA256.empty_tree(),"6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321", "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321:sha256", 
+                HashAlgorithm::SHA256.empty_tree(),"6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321", "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321:sha256",
             ),
         ];
         for (oid, display, debug) in entries { assert_eq ! (format ! ("{}", oid), * display); assert_eq ! (format ! ("{:?}", oid), * debug); }

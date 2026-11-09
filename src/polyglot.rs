@@ -20,12 +20,9 @@ impl Polyglot_Formatter
             let mut CloseTag = "";
             let mut NeedsRightAngle = false;
 
-            let Tags = 
+            let Tags =
             [
-                ("<script", "</script>", Source_Language::JavaScript, true),("<style", "</style>", Source_Language::Css, true),
-                (
-                    "<?php", "?>", Source_Language::Generic, false
-                ),
+                ("<script", "</script>", Source_Language::JavaScript, true),("<style", "</style>", Source_Language::Css, true),("<?php", "?>", Source_Language::Generic, false),
             ];
 
             for (Open, Close, Lang, NeedsAngle) in Tags.iter()
@@ -79,13 +76,13 @@ impl Polyglot_Formatter
                     {
                         match Source_Formatter::Format(InnerContent, & SubConfig)
                         {
-                            Ok(mut InnerFormatted) => 
+                            Ok(mut InnerFormatted) =>
                             {
                                 if ! InnerFormatted.starts_with('\n') && ! InnerFormatted.starts_with("\r\n") { Formatted.push('\n'); }
                                 if ! InnerFormatted.ends_with('\n') { InnerFormatted.push('\n'); }
                                 Formatted.push_str( & InnerFormatted);
                             }
-                            Err(e) => { println!("Error in inner formatter: {}", e); Formatted.push_str(InnerContent); }
+                            Err(e) => { println ! ("Error in inner formatter: {}", e); Formatted.push_str(InnerContent); }
                         }
                     }
 
