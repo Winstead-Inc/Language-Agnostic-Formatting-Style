@@ -987,16 +987,16 @@ Whenever a backtick (`` ` ``) is used to create a container (template literals, 
 ```javascript
 const Msg =
 `
-Hello
-${
-    User.IsAdmin
-    ? "Admin"
-    : "User"
-}
-Welcome to
-${
-    GetPlatformName()
-}
+	Hello
+	${
+	    User.IsAdmin
+	    ? "Admin"
+	    : "User"
+	}
+	Welcome to
+	${
+	    GetPlatformName()
+	}
 `;
 ```
 
