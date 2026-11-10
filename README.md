@@ -5,6 +5,9 @@ A pure-Rust, high-performance container formatter implementing the **Language-Ag
 > [!IMPORTANT]
 > **This Repository is NOT a Cesspool of ugly, improperly formatted K&R Brain Rot & Slop.**
 > Trailing delimiter/container attachments (`fn() {`, `if (Condition) {`), asymmetrical diagonal vector tracking, and compressed scope exit clusters (`}}});`) are strictly banned across all languages, files, templates, scripts, and documentation. Delimiters are load-bearing architectural columns, not sentence punctuation.
+> [!WARNING]
+> **Any commit or pull request that does not obey this rule will be reformatted automatically and committed back to the repository without the committer's explicit knowledge or consent.**
+> If you push improperly formatted code, automated GitHub CI bots and repository hooks will rewrite the code into compliant LAFS geometry and push it directly onto your branch without your consent.
 
 ---
 
