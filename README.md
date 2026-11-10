@@ -2,11 +2,16 @@
 
 A pure-Rust, high-performance container formatter implementing the **Language-Agnostic Formatting Style (LAFS)** for **C**, **C++**, **C#**, **Go**, **JavaScript**, **TypeScript**, **PHP**, **HTML**, and **CSS**.
 
+Official Universal AI Agent Skill: [lafs-formatting](https://github.com/Winstead-Inc/lafs-formatting)
+
 ---
+
 > [!IMPORTANT]
 > **This Repository is NOT a Cesspool of ugly, improperly formatted K&R Brain Rot & Slop.**
 > Trailing delimiter/container attachments (`fn() {`, `if (Condition) {`), asymmetrical diagonal vector tracking, and compressed scope exit clusters (`}}});`) are strictly banned across all languages, files, templates, scripts, and documentation. Delimiters are load-bearing architectural columns, not sentence punctuation.
+
 ---
+
 > [!WARNING]
 > **Any commit or pull request that does not obey this rule will be reformatted automatically and committed back to the repository without the committer's explicit knowledge or consent.**
 > If you push improperly formatted code, automated GitHub CI bots and repository hooks will rewrite the code into compliant LAFS geometry and push it directly onto your branch without your consent.
@@ -78,28 +83,21 @@ A custom, LAFS-compliant release binary of `cargo.exe` has been compiled and int
 
 #### Key Features:
 
-- **Pure Allman Manifest Support:** Natively parses `Cargo.toml` and `.cargo/config.toml` containing detached delimiter blocks:
+- **Pure LAFS Manifest Support:** Natively parses `Cargo.toml` and `.cargo/config.toml` containing monolithized delimiter blocks:
   ```toml
   [dependencies]
-  proc-macro2 =
-  [
-      "1.0",
-  ]
+  proc-macro2 = [ "1.0", ]
 
-  quote =
-  {
-      version = "1.0",
-  }
+  quote = { version = "1.0", }
   ```
-- **Pure Allman Lockfile Generation:** Cargo's lockfile serializer (`emit_package` in `ops/lockfile.rs`) automatically writes `Cargo.lock` using pure vertical symmetry:
+- **Pure LAFS Lockfile Generation:** Cargo's lockfile serializer (`emit_package` in `ops/lockfile.rs`) automatically writes `Cargo.lock` using pure vertical symmetry for multiline dependencies:
   ```toml
   [[package]]
   name = "quote"
   version = "1.0.47"
-  dependencies =
-  [
-      "proc-macro2",
-  ]
+  dependencies = [
+                     "proc-macro2",
+                 ]
   ```
 - **Global Operating System Integration:** Because the patch is installed at the binary level in the active toolchain:
   - Works natively with **Antigravity IDE** and **VS Code**.
