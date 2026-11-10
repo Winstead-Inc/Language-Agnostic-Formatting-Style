@@ -52,14 +52,39 @@ LAFS treats code containers (`()`, `{}`, `[]`, `<>`) as structural rooms whose b
 
 ---
 
-## Build & Installation
+## Installation & Native Binaries
 
-```powershell
+Precompiled standalone binaries with zero external runtime dependencies are automatically published on [GitHub Releases](https://github.com/Winstead-Inc/Language-Agnostic-Formatting-Style/releases):
+
+| Platform | Binary Asset | Description |
+| :--- | :--- | :--- |
+| **Windows (x86_64)** | `LAFS.exe` | Native 64-bit Windows executable |
+| **Linux (Any Distro, x86_64)** | `LAFS-linux-x86_64` | Fully static `musl` binary. Zero glibc dependency; runs on Alpine, Ubuntu, Debian, RHEL, CentOS, Fedora, Arch, NixOS, Amazon Linux |
+| **Linux (ARM64 / aarch64)** | `LAFS-linux-aarch64` | Fully static `musl` binary for 64-bit ARM (Raspberry Pi 4/5, AWS Graviton, Apple Silicon VMs) |
+| **macOS (Universal 2)** | `LAFS-darwin` | Universal binary combining Apple Silicon (`arm64`) and Intel (`x86_64`) native code |
+| **macOS (Apple Silicon)** | `LAFS-darwin-arm64` | Standalone Apple Silicon M1/M2/M3/M4 binary |
+| **macOS (Intel)** | `LAFS-darwin-x86_64` | Standalone Intel Mac binary |
+
+### Quick Start (Linux / macOS)
+
+```bash
+# Make executable
+chmod +x LAFS-linux-x86_64 # or LAFS-darwin
+
+# Move to your PATH
+mv LAFS-linux-x86_64 /usr/local/bin/lafs # or ~/.local/bin/lafs
+
+# Verify
+lafs --version
+```
+
+### Build from Source
+
+```bash
 cargo build --release
 ```
 
-The compiled binary will be located at:
-`target/release/LAFS.exe`
+The compiled binary will be located at `target/release/Language-Agnostic-Formatting-Style` (or `target/release/LAFS.exe` on Windows).
 
 ---
 

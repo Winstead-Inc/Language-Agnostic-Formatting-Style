@@ -12,8 +12,8 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
-    name: Build & Release Binary
+  build-windows:
+    name: Build Windows (x86_64)
     runs-on: windows-latest
     steps:
       - name: Checkout Code
@@ -25,32 +25,130 @@ jobs:
       - name: Build Release Binary
         run: cargo build --release
 
-      - name: Prepare Release Asset
+      - name: Stage Asset
         shell: pwsh
         run: |
           Copy-Item "target/release/Language-Agnostic-Formatting-Style.exe" "LAFS.exe"
 
+      - name: Upload Windows Asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: lafs-windows
+          path: LAFS.exe
+
+  build-linux:
+    name: Build Linux (Static musl for any distro)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install musl-tools and zigbuild
+        run: |
+          sudo apt-get update && sudo apt-get install -y musl-tools
+          python3 -m pip install --break-system-packages cargo-zigbuild ziglang || python3 -m pip install cargo-zigbuild ziglang || pip install cargo-zigbuild ziglang
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install Rust targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
+
+      - name: Build Linux x86_64 (musl static)
+        env:
+          CC_x86_64_unknown_linux_musl: musl-gcc
+        run: |
+          cargo build --release --target x86_64-unknown-linux-musl
+          cp target/x86_64-unknown-linux-musl/release/Language-Agnostic-Formatting-Style LAFS-linux-x86_64
+          chmod +x LAFS-linux-x86_64
+
+      - name: Build Linux aarch64 (musl static)
+        run: |
+          cargo zigbuild --release --target aarch64-unknown-linux-musl
+          cp target/aarch64-unknown-linux-musl/release/Language-Agnostic-Formatting-Style LAFS-linux-aarch64
+          chmod +x LAFS-linux-aarch64
+
+      - name: Upload Linux Assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: lafs-linux
+          path: |
+            LAFS-linux-x86_64
+            LAFS-linux-aarch64
+
+  build-macos:
+    name: Build macOS (Universal Apple Silicon + Intel)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Rust Toolchain & Targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+
+      - name: Build macOS Binaries
+        run: |
+          cargo build --release --target x86_64-apple-darwin
+          cargo build --release --target aarch64-apple-darwin
+
+      - name: Create Universal Binary & Stage Assets
+        run: |
+          cp target/x86_64-apple-darwin/release/Language-Agnostic-Formatting-Style LAFS-darwin-x86_64
+          cp target/aarch64-apple-darwin/release/Language-Agnostic-Formatting-Style LAFS-darwin-arm64
+          lipo -create -output LAFS-darwin \
+            target/x86_64-apple-darwin/release/Language-Agnostic-Formatting-Style \
+            target/aarch64-apple-darwin/release/Language-Agnostic-Formatting-Style
+          chmod +x LAFS-darwin LAFS-darwin-x86_64 LAFS-darwin-arm64
+
+      - name: Upload macOS Assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: lafs-macos
+          path: |
+            LAFS-darwin
+            LAFS-darwin-x86_64
+            LAFS-darwin-arm64
+
+  publish-release:
+    name: Publish Cross-Platform Release
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Inspect Dist Assets
+        run: |
+          ls -la dist/
+          chmod +x dist/LAFS-* dist/LAFS.exe || true
+
       - name: Publish Tagged Release
         if: startsWith(github.ref, 'refs/tags/')
-        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create $env:GITHUB_REF_NAME `
-            --title "$env:GITHUB_REF_NAME - LAFS" `
-            --generate-notes `
-            --latest `
-            "LAFS.exe"
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }} - LAFS" \
+            --generate-notes \
+            --latest \
+            dist/*
 
       - name: Publish Main Branch Release
         if: github.ref == 'refs/heads/main'
-        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $ReleaseTag = "v0.1.$env:GITHUB_RUN_NUMBER"
-          gh release create $ReleaseTag `
-            --title "Release $ReleaseTag - LAFS" `
-            --notes "Continuous build from commit $env:GITHUB_SHA." `
-            --latest `
-            "LAFS.exe"
+          RELEASE_TAG="v0.1.${{ github.run_number }}"
+          gh release create "$RELEASE_TAG" \
+            --title "Release $RELEASE_TAG - LAFS" \
+            --notes "Continuous cross-platform native release (Windows x86_64, Linux static musl x86_64/aarch64, macOS Universal) from commit ${{ github.sha }}." \
+            --latest \
+            dist/*
