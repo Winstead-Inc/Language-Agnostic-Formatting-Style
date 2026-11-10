@@ -46,7 +46,9 @@ impl Write for HashFile
     fn write( & mut self, data: & [u8]) -> io::Result<usize>
     {
         for chunk in data.chunks(u32::MAX as usize)
-        { unsafe { c::hashwrite(self.ptr, chunk.as_ptr() as * const c_void, chunk.len() as u32,) }; }
+        {
+            unsafe { c::hashwrite(self.ptr, chunk.as_ptr() as * const c_void, chunk.len() as u32,) };
+        }
         Ok(data.len())
     }
 

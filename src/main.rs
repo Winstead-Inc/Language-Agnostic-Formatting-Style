@@ -1,5 +1,4 @@
-#![allow(
-non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] mod batch;
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] mod batch;
 mod container_tree;
 mod emitter;
 mod formatter;
@@ -41,9 +40,7 @@ const BINARY_EXTENSIONS: & [ & str] = &
 ];
 
 const PYTHON_EXTENSIONS: & [ & str] = &
-[
-    "py", "pyw", "pyi", "pyx", "pxd", "pyd",
-];
+["py", "pyw", "pyi", "pyx", "pxd", "pyd",];
 
 const DEFAULT_SUPPORTED_EXTENSIONS: & [ & str] = &
 [
@@ -70,16 +67,30 @@ impl Terminal_Logger
     pub fn Set_Disable_Logs( & self, Disable: bool) { * self.Disable_Log_Files.lock().unwrap() = Disable; }
 
     pub fn Println( & self, Msg: & str)
-    { println ! ("{}", Msg); let mut Buf = self.Out_Buffer.lock().unwrap(); Buf.push_str(Msg); Buf.push('\n'); }
+    {
+        println!("{}", Msg);
+        let mut Buf = self.Out_Buffer.lock().unwrap();
+        Buf.push_str(Msg);
+        Buf.push('\n');
+    }
 
     pub fn Print( & self, Msg: & str)
-    { print ! ("{}", Msg); io::stdout().flush().ok(); let mut Buf = self.Out_Buffer.lock().unwrap(); Buf.push_str(Msg); }
+    {
+        print!("{}", Msg);
+        io::stdout().flush().ok();
+        let mut Buf = self.Out_Buffer.lock().unwrap();
+        Buf.push_str(Msg);
+    }
 
     pub fn Eprintln( & self, Msg: & str)
     {
         eprintln!("{}", Msg);
         { let mut ErrBuf = self.Err_Buffer.lock().unwrap(); ErrBuf.push_str(Msg); ErrBuf.push('\n'); }
-        { let mut OutBuf = self.Out_Buffer.lock().unwrap(); OutBuf.push_str(Msg); OutBuf.push('\n'); }
+        {
+            let mut OutBuf = self.Out_Buffer.lock().unwrap();
+            OutBuf.push_str(Msg);
+            OutBuf.push('\n');
+        }
     }
 
     pub fn Flush_To_Files( & self)
@@ -183,17 +194,23 @@ fn IsBinaryFile(PathTarget: & Path) -> bool
 
 fn IsDirExcluded(DirName: & str, DirPath: & Path, ExcludedPatterns: & [String]) -> bool
 {
-    if DEFAULT_EXCLUDED_DIRS.iter().any( |& D | D.eq_ignore_ascii_case(DirName)) { return true; }
+    if DEFAULT_EXCLUDED_DIRS.iter().any( | & D | D.eq_ignore_ascii_case(DirName)) { return true; }
     if DirName.to_ascii_lowercase().starts_with("old.src") { return true; }
     let LowerDir = DirName.to_ascii_lowercase();
-    if LowerDir.ends_with("-pc-windows-msvc") || LowerDir.ends_with("-pc-windows-gnu") || LowerDir.ends_with("-unknown-linux-gnu") || LowerDir.ends_with("-apple-darwin") { return true; }
+    if LowerDir.ends_with("-pc-windows-msvc") || LowerDir.ends_with("-pc-windows-gnu") || LowerDir.ends_with("-unknown-linux-gnu") || LowerDir.ends_with("-apple-darwin")
+    {
+        return true;
+    }
 
     let DirPathStr = DirPath.to_string_lossy().replace('\\', "/");
     let LowerPath = DirPathStr.to_ascii_lowercase();
     if LowerPath.starts_with("old.src") || LowerPath.contains("/old.src") { return true; }
-    if LowerPath.contains("/rustlib") || LowerPath.contains("/llvm-project") || LowerPath.contains("stable-x86_64") || LowerPath.contains("nightly-x86_64") || LowerPath.contains("beta-x86_64") { return true; }
+    if LowerPath.contains("/rustlib") || LowerPath.contains("/llvm-project") || LowerPath.contains("stable-x86_64") || LowerPath.contains("nightly-x86_64") || LowerPath.contains("beta-x86_64")
+    {
+        return true;
+    }
 
-for Pattern in ExcludedPatterns
+    for Pattern in ExcludedPatterns
     {
         let CleanPattern = Pattern.trim_matches('/').trim_matches('\\');
         if WildcardMatch(CleanPattern, DirName) || WildcardMatch(CleanPattern, & DirPathStr) || DirPathStr.ends_with(CleanPattern) || DirPathStr.contains( & format ! ("/{}/", CleanPattern))
@@ -217,14 +234,14 @@ fn IsFileEligible(PathTarget: & Path, AllTypes: bool , AllowedExtensions: & [Str
     let Ext = PathTarget.extension().unwrap_or_default().to_string_lossy().to_lowercase();
     if Ext == "log" || FileName.to_ascii_lowercase().ends_with(".log") { return false; }
     // 2. Exclude Python file types (whitespace-delimited block semantics are unsupported)
-    if PYTHON_EXTENSIONS.iter().any( |& P | P == Ext.as_str()) { return false; }
+    if PYTHON_EXTENSIONS.iter().any( | & P | P == Ext.as_str()) { return false; }
     // 3. Specific extension filter (-e / --ext / --extension)
     if ! AllowedExtensions.is_empty() { if ! AllowedExtensions.iter().any( | A | A.eq_ignore_ascii_case( & Ext)) { return false; } }
-    else if ! AllTypes && ! DEFAULT_SUPPORTED_EXTENSIONS.iter().any( |& S | S == Ext.as_str()) { return false; }
+    else if ! AllTypes && ! DEFAULT_SUPPORTED_EXTENSIONS.iter().any( | & S | S == Ext.as_str()) { return false; }
     // 4. Exclude document file types (adoc, pdf, docx, md, yml, etc.)
-    if DOCUMENT_EXTENSIONS.iter().any( |& D | D == Ext.as_str()) { return false; }
+    if DOCUMENT_EXTENSIONS.iter().any( | & D | D == Ext.as_str()) { return false; }
     // 5. Exclude known binary file types
-    if BINARY_EXTENSIONS.iter().any( |& B | B == Ext.as_str()) { return false; }
+    if BINARY_EXTENSIONS.iter().any( | & B | B == Ext.as_str()) { return false; }
     // 6. Fast binary content check for NUL bytes
     if IsBinaryFile(PathTarget) { return false; }
 
@@ -248,16 +265,16 @@ fn NormalizePathSpec(Spec: & str) -> (String, bool)
 }
 
 fn FormatFailedEntry(FilePathStr: & str, Lang: & str, Reason: & str) -> String
-{
-    format!("File: {}\nLanguage: {}\nReason: {}\n", FilePathStr, Lang, Reason.trim())
-}
+{ format ! ("File: {}\nLanguage: {}\nReason: {}\n", FilePathStr, Lang, Reason.trim()) }
 
 fn ParseFailedLine(Line: & str) -> Option< & str>
 {
     let Trimmed = Line.trim();
     if Trimmed.is_empty() { return None; }
     if Trimmed.starts_with("Language:") || Trimmed.starts_with("Reason:") || Trimmed.starts_with("Expected:") || Trimmed.starts_with("Got:") || Trimmed.starts_with("Context:") || Trimmed.starts_with("---")
-    { return None; }
+    {
+        return None;
+    }
 
     let AfterPrefix = if let Some(Stripped) = Trimmed.strip_prefix("File:") { Stripped.trim() }
     else if let Some(Stripped) = Trimmed.strip_prefix("Path:") { Stripped.trim() }
@@ -275,22 +292,17 @@ fn ParseFailedLine(Line: & str) -> Option< & str>
 fn GetDefaultFailedLogPath() -> String
 {
     if let Ok(ExePath) = std::env::current_exe()
-    {
-        if let Some(Parent) = ExePath.parent()
-        {
-            return Parent.join("failed.txt").to_string_lossy().to_string();
-        }
-    }
+    { if let Some(Parent) = ExePath.parent() { return Parent.join("failed.txt").to_string_lossy().to_string(); } }
     "failed.txt".to_string()
 }
 
-static FAILED_FILE_MUTEX: Mutex<()> = Mutex::new(());
+static FAILED_FILE_MUTEX: Mutex < () > = Mutex:: new (());
 
 fn AppendFailedEntry(Entry: & str, OutputFailedPath: & Option<String>)
 {
     let _Guard = FAILED_FILE_MUTEX.lock().unwrap_or_else( | P | P.into_inner());
     let TargetFile = OutputFailedPath.as_deref().unwrap_or("failed.txt");
-    if let Ok(mut F) = fs::OpenOptions::new().create(true).append(true).open(TargetFile)
+    if let Ok(mut F) = fs::OpenOptions:: new ().create(true).append(true).open(TargetFile)
     {
         let _ = writeln!(F, "{}\n", Entry.trim_end());
         let _ = F.flush();
@@ -298,7 +310,7 @@ fn AppendFailedEntry(Entry: & str, OutputFailedPath: & Option<String>)
     let BinaryFailedPath = GetDefaultFailedLogPath();
     if BinaryFailedPath != TargetFile
     {
-        if let Ok(mut F) = fs::OpenOptions::new().create(true).append(true).open( & BinaryFailedPath)
+        if let Ok(mut F) = fs::OpenOptions:: new ().create(true).append(true).open( & BinaryFailedPath)
         {
             let _ = writeln!(F, "{}\n", Entry.trim_end());
             let _ = F.flush();
@@ -372,10 +384,10 @@ fn IsSpecifiedFileEligible(PathTarget: & Path, AllTypes: bool , AllowedExtension
     if Ext == "log" || FileName.to_ascii_lowercase().ends_with(".log") { return false; }
 
     // 1. Exclude known binary file types or binary content
-    if BINARY_EXTENSIONS.iter().any( |& B | B == Ext.as_str()) || IsBinaryFile(PathTarget) { return false; }
+    if BINARY_EXTENSIONS.iter().any( | & B | B == Ext.as_str()) || IsBinaryFile(PathTarget) { return false; }
 
     // 2. Exclude Python file types (whitespace-delimited block semantics are unsupported)
-    if PYTHON_EXTENSIONS.iter().any( |& P | P == Ext.as_str()) { return false; }
+    if PYTHON_EXTENSIONS.iter().any( | & P | P == Ext.as_str()) { return false; }
 
     // 3. Check user exclusion patterns
     let FileName = PathTarget.file_name().unwrap_or_default().to_string_lossy();
@@ -388,41 +400,36 @@ fn IsSpecifiedFileEligible(PathTarget: & Path, AllTypes: bool , AllowedExtension
 
     // 3. Extension filter
     if ! AllowedExtensions.is_empty() { if ! AllowedExtensions.iter().any( | A | A.eq_ignore_ascii_case( & Ext)) { return false; } }
-    else if ForceLanguage == Source_Language::Generic && ! AllTypes && ! DEFAULT_SUPPORTED_EXTENSIONS.iter().any( |& S | S == Ext.as_str()) { return false; }
+    else if ForceLanguage == Source_Language::Generic && ! AllTypes && ! DEFAULT_SUPPORTED_EXTENSIONS.iter().any( | & S | S == Ext.as_str()) { return false; }
 
     true
 }
 
-fn DetectLanguageForFile(FilePathStr: &str, Content: &str) -> Source_Language
+fn DetectLanguageForFile(FilePathStr: & str, Content: & str) -> Source_Language
 {
     let ExtLang = Source_Language::FromExtension(FilePathStr);
     if ExtLang == Source_Language::C && (FilePathStr.ends_with(".h") || FilePathStr.ends_with(".H"))
-    {
-        if IsCppHeaderContent(Content)
-        {
-            return Source_Language::Cpp;
-        }
-    }
+    { if IsCppHeaderContent(Content) { return Source_Language::Cpp; } }
     ExtLang
 }
 
-fn IsCppHeaderContent(Content: &str) -> bool
+fn IsCppHeaderContent(Content: & str) -> bool
 {
-    let CheckSlice = if Content.len() > 8192 { &Content[..8192] } else { Content };
+    let CheckSlice = if Content.len() > 8192 { & Content[..8192] } else { Content };
     CheckSlice.contains("-*-C++-*-")
-        || CheckSlice.contains("-*- C++ -*-")
-        || CheckSlice.contains("-*-c++-*-")
-        || CheckSlice.contains("ft=cpp")
-        || CheckSlice.contains("extern \"C++\"")
-        || CheckSlice.contains("namespace ")
-        || CheckSlice.contains("template<")
-        || CheckSlice.contains("template <")
-        || CheckSlice.contains("nullptr")
-        || CheckSlice.contains("constexpr")
-        || CheckSlice.contains("reinterpret_cast<")
-        || CheckSlice.contains("static_cast<")
-        || CheckSlice.contains("dynamic_cast<")
-        || CheckSlice.contains("std::")
+    || CheckSlice.contains("-*- C++ -*-")
+    || CheckSlice.contains("-*-c++-*-")
+    || CheckSlice.contains("ft=cpp")
+    || CheckSlice.contains("extern \"C++\"")
+    || CheckSlice.contains("namespace ")
+    || CheckSlice.contains("template<")
+    || CheckSlice.contains("template <")
+    || CheckSlice.contains("nullptr")
+    || CheckSlice.contains("constexpr")
+    || CheckSlice.contains("reinterpret_cast<")
+    || CheckSlice.contains("static_cast<")
+    || CheckSlice.contains("dynamic_cast<")
+    || CheckSlice.contains("std::")
 }
 
 fn CollectFilesShallow(DirPath: & Path, AllTypes: bool , AllowedExtensions: & [String], ExcludedPatterns: & [String], Collected: & mut Vec<String>,)
@@ -454,7 +461,9 @@ fn CollectFilesRecursively(DirPath: & Path, AllTypes: bool , AllowedExtensions: 
             {
                 let SubName = SubPath.file_name().unwrap_or_default().to_string_lossy();
                 if ! IsDirExcluded( & SubName, & SubPath, ExcludedPatterns)
-                { CollectFilesRecursively( & SubPath, AllTypes, AllowedExtensions, ExcludedPatterns, Collected,); }
+                {
+                    CollectFilesRecursively( & SubPath, AllTypes, AllowedExtensions, ExcludedPatterns, Collected,);
+                }
             }
             else if SubPath.is_file() { if IsFileEligible( & SubPath, AllTypes, AllowedExtensions, ExcludedPatterns) { Collected.push(SubPath.to_string_lossy().to_string()); } }
         }
@@ -478,7 +487,9 @@ fn ExpandGlobPattern(Pattern: & str, AllTypes: bool , AllowedExtensions: & [Stri
                 if let Some(FileName) = P.file_name().and_then( | N | N.to_str())
                 {
                     if WildcardMatch(FilePattern, FileName) && IsFileEligible( & P, AllTypes, AllowedExtensions, ExcludedPatterns)
-                    { Collected.push(P.to_string_lossy().to_string()); }
+                    {
+                        Collected.push(P.to_string_lossy().to_string());
+                    }
                 }
             }
         }
@@ -548,7 +559,10 @@ fn Main()
                 if I < Args.len()
                 {
                     for Part in Args[I].split(',')
-                    { let Trimmed = Part.trim(); if ! Trimmed.is_empty() { SpecifiedFiles.push(Trimmed.to_string()); } }
+                    {
+                        let Trimmed = Part.trim();
+                        if ! Trimmed.is_empty() { SpecifiedFiles.push(Trimmed.to_string()); }
+                    }
                 }
                 while I + 1 < Args.len() && ! Args[I + 1].starts_with('-')
                 {
@@ -556,7 +570,10 @@ fn Main()
                     if matches!(NextArg.as_str(),"format" | "apply" | "run" | "failed" | "all" | "check") { break ; }
                     I += 1;
                     for Part in Args[I].split(',')
-                    { let Trimmed = Part.trim(); if ! Trimmed.is_empty() { SpecifiedFiles.push(Trimmed.to_string()); } }
+                    {
+                        let Trimmed = Part.trim();
+                        if ! Trimmed.is_empty() { SpecifiedFiles.push(Trimmed.to_string()); }
+                    }
                 }
             }
             "-e" | "--ext" | "--extension" | "--include-ext" =>
@@ -578,7 +595,10 @@ fn Main()
                 if I < Args.len()
                 {
                     for Part in Args[I].split(',')
-                    { let Trimmed = Part.trim(); if ! Trimmed.is_empty() { ExcludedPatterns.push(Trimmed.to_string()); } }
+                    {
+                        let Trimmed = Part.trim();
+                        if ! Trimmed.is_empty() { ExcludedPatterns.push(Trimmed.to_string()); }
+                    }
                 }
             }
             "-y" | "--yes" => { AutoYes = true; }
@@ -620,9 +640,15 @@ fn Main()
                     Config.Language = match LangStr.as_str()
                     {
                         "c" => Source_Language::C, "cpp" | "c++" => Source_Language::Cpp, "cs" | "csharp" | "c#" => Source_Language::CSharp, "js" | "javascript" => Source_Language::JavaScript, "ts" | "typescript" => Source_Language::TypeScript, "sh" | "shell" | "bash" | "zsh" | "ksh" => Source_Language::Shell, "go" => Source_Language::Go, "php" => Source_Language::Php, "html" | "htm" => Source_Language::Html, "css" => Source_Language::Css, "rs" | "rust" => Source_Language::Rust, "bat" | "cmd" => Source_Language::Batch, "toml" => Source_Language::Toml, "cargo-lock" | "cargolock" | "lock" => Source_Language::CargoLock, "kt" | "kotlin" | "kotlin-allman" | "kt-allman" | "kotlin-v1" | "kt-v1" =>
-                        { Config.Kotlin_Style = Kotlin_Style::Allman; Source_Language::Kotlin },
+                        {
+                            Config.Kotlin_Style = Kotlin_Style::Allman;
+                            Source_Language::Kotlin
+                        },
                         "kt-official" | "kotlin-official" | "kotlin-v2" | "kt-v2" =>
-                        { Config.Kotlin_Style = Kotlin_Style::Official; Source_Language::KotlinOfficial },
+                        {
+                            Config.Kotlin_Style = Kotlin_Style::Official;
+                            Source_Language::KotlinOfficial
+                        },
                         _ => Source_Language::Generic,
                     };
                 }
@@ -633,7 +659,9 @@ fn Main()
                 if I < Args.len()
                 {
                     if Args[I] == "2" || Args[I].eq_ignore_ascii_case("v2") || Args[I].eq_ignore_ascii_case("official")
-                    { Config.Kotlin_Style = Kotlin_Style::Official; }
+                    {
+                        Config.Kotlin_Style = Kotlin_Style::Official;
+                    }
                     else { Config.Kotlin_Style = Kotlin_Style::Allman; }
                 }
             }
@@ -652,7 +680,11 @@ fn Main()
             "-" => { ReadFromStdin = true; }
             "-h" | "--help" => { Logger.Set_Disable_Logs(true); PrintUsage( & Logger); return ; }
             "-v" | "--version" =>
-            { Logger.Set_Disable_Logs(true); Logger.Println("lafs 0.1.0 (Language-Agnostic Formatting Style Formatter)"); return ; }
+            {
+                Logger.Set_Disable_Logs(true);
+                Logger.Println("lafs 0.1.0 (Language-Agnostic Formatting Style Formatter)");
+                return ;
+            }
             _ =>
             {
                 if Arg.starts_with("--file=") || Arg.starts_with("--files=") || Arg.starts_with("-f=") || Arg.starts_with("--only-file=") || Arg.starts_with("--only-files=")
@@ -661,7 +693,10 @@ fn Main()
                     if let Some((_, Value)) = Arg.split_once('=')
                     {
                         for Part in Value.split(',')
-                        { let Trimmed = Part.trim(); if ! Trimmed.is_empty() { SpecifiedFiles.push(Trimmed.to_string()); } }
+                        {
+                            let Trimmed = Part.trim();
+                            if ! Trimmed.is_empty() { SpecifiedFiles.push(Trimmed.to_string()); }
+                        }
                     }
                 }
                 else if Arg.starts_with("--ext=") || Arg.starts_with("--extension=") || Arg.starts_with("-e=")
@@ -680,7 +715,10 @@ fn Main()
                     if let Some((_, Value)) = Arg.split_once('=')
                     {
                         for Part in Value.split(',')
-                        { let Trimmed = Part.trim(); if ! Trimmed.is_empty() { ExcludedPatterns.push(Trimmed.to_string()); } }
+                        {
+                            let Trimmed = Part.trim();
+                            if ! Trimmed.is_empty() { ExcludedPatterns.push(Trimmed.to_string()); }
+                        }
                     }
                 }
                 else if Arg.starts_with("--kotlin-version=") || Arg.starts_with("-kv=")
@@ -688,7 +726,9 @@ fn Main()
                     if let Some((_, Value)) = Arg.split_once('=')
                     {
                         if Value == "2" || Value.eq_ignore_ascii_case("v2") || Value.eq_ignore_ascii_case("official")
-                        { Config.Kotlin_Style = Kotlin_Style::Official; }
+                        {
+                            Config.Kotlin_Style = Kotlin_Style::Official;
+                        }
                         else { Config.Kotlin_Style = Kotlin_Style::Allman; }
                     }
                 }
@@ -715,16 +755,24 @@ fn Main()
     {
         AutoYes = true;
         let BinaryFailedPath = GetDefaultFailedLogPath();
-        let FailedLogPath = OutputFailedPath.clone().unwrap_or_else( || {
-            if Path::new ("failed.txt").exists() { "failed.txt".to_string() }
-            else if Path::new ( & BinaryFailedPath).exists() { BinaryFailedPath.clone() }
-            else { "failed.txt".to_string() }
-        });
-        let ContentResult = fs::read_to_string( & FailedLogPath).or_else( | _ | {
-            if FailedLogPath != "failed.txt" && Path::new ("failed.txt").exists() { fs::read_to_string("failed.txt") }
-            else if FailedLogPath != BinaryFailedPath && Path::new ( & BinaryFailedPath).exists() { fs::read_to_string( & BinaryFailedPath) }
-            else { Err(io::Error::new (io::ErrorKind::NotFound, "not found")) }
-        });
+        let FailedLogPath = OutputFailedPath.clone().unwrap_or_else
+        (
+            ||
+            {
+                if Path:: new ("failed.txt").exists() { "failed.txt".to_string() }
+                else if Path:: new ( & BinaryFailedPath).exists() { BinaryFailedPath.clone() }
+                else { "failed.txt".to_string() }
+            }
+        );
+        let ContentResult = fs::read_to_string( & FailedLogPath).or_else
+        (
+            | _ |
+            {
+                if FailedLogPath != "failed.txt" && Path:: new ("failed.txt").exists() { fs::read_to_string("failed.txt") }
+                else if FailedLogPath != BinaryFailedPath && Path:: new ( & BinaryFailedPath).exists() { fs::read_to_string( & BinaryFailedPath) }
+                else { Err(io::Error::new (io::ErrorKind::NotFound, "not found")) }
+            }
+        );
         match ContentResult
         {
             Ok(Content) =>
@@ -814,11 +862,15 @@ fn Main()
                 else if P.is_file()
                 {
                     if IsSpecifiedFileEligible(P, AllTypes, & AllowedExtensions, & ExcludedPatterns, Config.Language)
-                    { Candidates.push(P.to_string_lossy().to_string()); }
+                    {
+                        Candidates.push(P.to_string_lossy().to_string());
+                    }
                     else if IsBinaryFile(P) { Logger.Eprintln( & format ! ("Skipped binary file: {}", Spec)); }
                 }
                 else if CleanSpec.contains('*') || CleanSpec.contains('?')
-                { ExpandGlobPattern( & CleanSpec, AllTypes, & AllowedExtensions, & ExcludedPatterns, & mut Candidates); }
+                {
+                    ExpandGlobPattern( & CleanSpec, AllTypes, & AllowedExtensions, & ExcludedPatterns, & mut Candidates);
+                }
                 else
                 {
                     let mut SearchPool: Vec < String > = Vec:: new ();
@@ -840,7 +892,9 @@ fn Main()
             for Target in & RawTargets
             {
                 if Target.contains('*') || Target.contains('?')
-                { ExpandGlobPattern(Target, AllTypes, & AllowedExtensions, & ExcludedPatterns, & mut ScannedFiles); }
+                {
+                    ExpandGlobPattern(Target, AllTypes, & AllowedExtensions, & ExcludedPatterns, & mut ScannedFiles);
+                }
                 else
                 {
                     let (CleanTarget, TargetHadTrailingSlash) = NormalizePathSpec(Target);
@@ -851,11 +905,15 @@ fn Main()
                         else { CollectFilesRecursively(P, AllTypes, & AllowedExtensions, & ExcludedPatterns, & mut ScannedFiles); }
                     }
                     else if P.is_file() && IsSpecifiedFileEligible(P, AllTypes, & AllowedExtensions, & ExcludedPatterns, Config.Language)
-                    { ScannedFiles.push(P.to_string_lossy().to_string()); }
+                    {
+                        ScannedFiles.push(P.to_string_lossy().to_string());
+                    }
                 }
             }
             if FormatAll && RawTargets.is_empty()
-            { CollectFilesRecursively(Path::new ("."), AllTypes, & AllowedExtensions, & ExcludedPatterns, & mut ScannedFiles); }
+            {
+                CollectFilesRecursively(Path::new ("."), AllTypes, & AllowedExtensions, & ExcludedPatterns, & mut ScannedFiles);
+            }
 
             for Scanned in ScannedFiles { if SpecifiedFiles.iter().any( | Spec | MatchesSpecifiedTarget(Path::new ( & Scanned), Spec)) { Candidates.push(Scanned); } }
 
@@ -872,7 +930,9 @@ fn Main()
                         else { CollectFilesRecursively(P, AllTypes, & AllowedExtensions, & ExcludedPatterns, & mut Candidates); }
                     }
                     else if P.is_file() && IsSpecifiedFileEligible(P, AllTypes, & AllowedExtensions, & ExcludedPatterns, Config.Language)
-                    { Candidates.push(P.to_string_lossy().to_string()); }
+                    {
+                        Candidates.push(P.to_string_lossy().to_string());
+                    }
                     else
                     {
                         Logger.Eprintln( & format ! ("Specified file or directory not found in targets: {}", Spec));
@@ -890,7 +950,9 @@ fn Main()
         for Target in & RawTargets
         {
             if Target.contains('*') || Target.contains('?')
-            { ExpandGlobPattern(Target, AllTypes, & AllowedExtensions, & ExcludedPatterns, & mut TargetFiles); }
+            {
+                ExpandGlobPattern(Target, AllTypes, & AllowedExtensions, & ExcludedPatterns, & mut TargetFiles);
+            }
             else
             {
                 let (CleanTarget, HadTrailingSlash) = NormalizePathSpec(Target);
@@ -903,7 +965,9 @@ fn Main()
                 else if P.is_file()
                 {
                     if ReformatFailed || IsFileEligible(P, AllTypes, & AllowedExtensions, & ExcludedPatterns)
-                    { TargetFiles.push(P.to_string_lossy().to_string()); }
+                    {
+                        TargetFiles.push(P.to_string_lossy().to_string());
+                    }
                 }
                 else { Logger.Eprintln( & format ! ("File or directory not found: {}", Target)); }
             }
@@ -926,15 +990,19 @@ fn Main()
         else { TargetDesc.to_string() };
 
         if ! PromptConfirmation( & Logger, TotalFiles, & PromptDesc)
-        { Logger.Println("Operation cancelled by user."); Logger.Flush_To_Files(); return ; }
+        {
+            Logger.Println("Operation cancelled by user.");
+            Logger.Flush_To_Files();
+            return ;
+        }
     }
 
     if ! ReformatFailed && ! OutputToStdout
     {
         let TargetFile = OutputFailedPath.as_deref().unwrap_or("failed.txt");
-        if Path::new (TargetFile).exists() { let _ = fs::write(TargetFile, ""); }
+        if Path:: new (TargetFile).exists() { let _ = fs::write(TargetFile, ""); }
         let BinaryFailed = GetDefaultFailedLogPath();
-        if BinaryFailed != TargetFile && Path::new ( & BinaryFailed).exists() { let _ = fs::write( & BinaryFailed, ""); }
+        if BinaryFailed != TargetFile && Path:: new ( & BinaryFailed).exists() { let _ = fs::write( & BinaryFailed, ""); }
     }
 
     let StartTime = Instant::now();
@@ -951,10 +1019,13 @@ fn Main()
                 Ok(C) => C, Err(E) =>
                 {
                     if E.kind() == io::ErrorKind::InvalidData
-                    { if Verbose { Logger.Println( & format ! ("Skipped non-UTF8 / binary file: {}", FilePathStr)); } continue ; }
+                    {
+                        if Verbose { Logger.Println( & format ! ("Skipped non-UTF8 / binary file: {}", FilePathStr)); }
+                        continue;
+                    }
                     Logger.Eprintln( & format ! ("Failed to read file {}: {}", FilePathStr, E));
                     ErrorCount.fetch_add(1, Ordering::Relaxed);
-                    let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), &format!("Failed to read file: {}", E));
+                    let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), & format ! ("Failed to read file: {}", E));
                     AppendFailedEntry( & Entry, & OutputFailedPath);
                     FailedPaths.lock().unwrap().push(Entry);
                     continue;
@@ -976,7 +1047,7 @@ fn Main()
                         {
                             Logger.Println( & format ! ("Requires formatting: {}", FilePathStr));
                             ErrorCount.fetch_add(1, Ordering::Relaxed);
-                            let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), "Requires formatting");
+                            let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(),"Requires formatting");
                             AppendFailedEntry( & Entry, & OutputFailedPath);
                             FailedPaths.lock().unwrap().push(Entry);
                         }
@@ -989,7 +1060,7 @@ fn Main()
                         {
                             Logger.Eprintln( & format ! ("Failed to save file {}: {}", FilePathStr, E));
                             ErrorCount.fetch_add(1, Ordering::Relaxed);
-                            let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), &format!("Failed to save file: {}", E));
+                            let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), & format ! ("Failed to save file: {}", E));
                             AppendFailedEntry( & Entry, & OutputFailedPath);
                             FailedPaths.lock().unwrap().push(Entry);
                         }
@@ -1044,10 +1115,13 @@ fn Main()
                                 Ok(C) => C, Err(E) =>
                                 {
                                     if E.kind() == io::ErrorKind::InvalidData
-                                    { if Verbose { WorkerLogger.Println( & format ! ("Skipped non-UTF8 / binary file: {}", FilePathStr)); } continue ; }
+                                    {
+                                        if Verbose { WorkerLogger.Println( & format ! ("Skipped non-UTF8 / binary file: {}", FilePathStr)); }
+                                        continue;
+                                    }
                                     WorkerLogger.Eprintln( & format ! ("Failed to read file {}: {}", FilePathStr, E));
                                     WorkerErrorCount.fetch_add(1, Ordering::Relaxed);
-                                    let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), &format!("Failed to read file: {}", E));
+                                    let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), & format ! ("Failed to read file: {}", E));
                                     AppendFailedEntry( & Entry, & WorkerOutputFailedPath);
                                     WorkerFailedPaths.lock().unwrap().push(Entry);
                                     continue;
@@ -1065,7 +1139,7 @@ fn Main()
                                         {
                                             WorkerLogger.Eprintln( & format ! ("Failed to save file {}: {}", FilePathStr, E));
                                             WorkerErrorCount.fetch_add(1, Ordering::Relaxed);
-                                            let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), &format!("Failed to save file: {}", E));
+                                            let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), & format ! ("Failed to save file: {}", E));
                                             AppendFailedEntry( & Entry, & WorkerOutputFailedPath);
                                             WorkerFailedPaths.lock().unwrap().push(Entry);
                                         }
@@ -1123,15 +1197,13 @@ fn Main()
         else if ReformatFailed && FailedMutex.is_empty()
         {
             Logger.Println("All previously failed files were successfully formatted!");
-            if DefaultBinaryFailed != FailedFile && Path::new ( & DefaultBinaryFailed).exists() { let _ = fs::write( & DefaultBinaryFailed, ""); }
+            if DefaultBinaryFailed != FailedFile && Path:: new ( & DefaultBinaryFailed).exists() { let _ = fs::write( & DefaultBinaryFailed, ""); }
         }
         else if ! FailedMutex.is_empty()
         {
             Logger.Println( & format ! ("Failed file paths recorded to '{}'. Use 'lafs format failed' to retry.", FailedFile));
             if DefaultBinaryFailed != FailedFile
-            {
-                let _ = fs::write( & DefaultBinaryFailed, & FailedPathsStr);
-            }
+            { let _ = fs::write( & DefaultBinaryFailed, & FailedPathsStr); }
         }
     }
 
@@ -1345,10 +1417,10 @@ mod Tests
         assert_eq!(ParseFailedLine("   \n"), None);
     }
 
-    #[test]
+   #[test]
     fn Test_Default_Failed_Log_Path()
     {
         let PathStr = GetDefaultFailedLogPath();
-        assert!(PathStr.ends_with("failed.txt"), "Default failed log path must end with failed.txt");
+        assert!(PathStr.ends_with("failed.txt"),"Default failed log path must end with failed.txt");
     }
 }

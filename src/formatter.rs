@@ -1,5 +1,4 @@
-#![allow(
-non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] use crate::container_tree::Container_Tree_Builder;
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] use crate::container_tree::Container_Tree_Builder;
 use crate::emitter::Code_Emitter;
 use crate::lexer::Lexer_Scanner;
 use crate::types::Config_Settings;
@@ -22,7 +21,9 @@ impl Source_Formatter
         if Config.Language.IsBatch() { return crate::batch::Batch_Formatter::Format(Source, Config); }
 
         if matches!(Config.Language, crate::types::Source_Language::Html | crate::types::Source_Language::Php)
-        { return crate::polyglot::Polyglot_Formatter::Format(Source, Config); }
+        {
+            return crate::polyglot::Polyglot_Formatter::Format(Source, Config);
+        }
 
         let mut Scanner = Lexer_Scanner::New(Source, Config.Language);
         let Tokens = Scanner.TokenizeAll();

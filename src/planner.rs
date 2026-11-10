@@ -1,5 +1,4 @@
-#![allow(
-non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] use crate::container_tree::Container_Node;
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] use crate::container_tree::Container_Node;
 use crate::types:: { Config_Settings, Layout_State };
 
 pub struct Layout_Planner<'a> { Config: & 'a Config_Settings, }
@@ -29,7 +28,10 @@ impl <'a> Layout_Planner<'a>
         }
         // 2. Brace Grouping Second (Sole-Child Chain Compound Delimiters)
         if self.Config.Allow_Brace_Grouping && Container.IsSoleChildChain()
-        { let Chain = Container.CollectChain(); if Chain.len() >= 2 { return Layout_State::Grouped; } }
+        {
+            let Chain = Container.CollectChain();
+            if Chain.len() >= 2 { return Layout_State::Grouped; }
+        }
         // 3. Expanded Symmetry Last (Hierarchical Architecture)
         Layout_State::Expanded
     }

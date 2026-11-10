@@ -1,5 +1,4 @@
-#![allow(
-non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] use crate::types:: { Container_Kind, Source_Language, Token_Info, Token_Kind };
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] use crate::types:: { Container_Kind, Source_Language, Token_Info, Token_Kind };
 
 pub struct Lexer_Scanner<'a> { Source: & 'a str, Chars: Vec<char>, Index: usize, Line: usize, Column: usize, Language: Source_Language, }
 
@@ -10,7 +9,10 @@ impl <'a> Lexer_Scanner<'a>
     fn Peek( & self) -> Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
 
     fn PeekAhead( & self, Offset: usize) -> Option<char>
-    { let Target = self.Index + Offset; if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None } }
+    {
+        let Target = self.Index + Offset;
+        if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None }
+    }
 
     fn Advance( & mut self) -> Option<char>
     {
@@ -38,7 +40,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '#' && (PrecedingNewlines > 0 || RawTokens.is_empty())
             {
                 if self.Language.SupportsPreprocessor()
-                    || (self.Line == 1 && self.PeekAhead(1) == Some('!') && self.PeekAhead(2) != Some('['))
+                || (self.Line == 1 && self.PeekAhead(1) == Some('!') && self.PeekAhead(2) != Some('['))
                 {
                     let DirectiveText = self.ScanPreprocessor();
                     RawTokens.push(Token_Info::New(Token_Kind::Preprocessor(DirectiveText.clone()), DirectiveText, StartLine, StartCol, PrecedingNewlines,));
@@ -129,13 +131,9 @@ impl <'a> Lexer_Scanner<'a>
                 if self.Language.IsToml()
                 {
                     let StringText = if self.PeekAhead(1) == Some('\'') && self.PeekAhead(2) == Some('\'')
-                    {
-                        self.ScanTomlMultilineLiteralString()
-                    }
+                    { self.ScanTomlMultilineLiteralString() }
                     else
-                    {
-                        self.ScanTomlLiteralString()
-                    };
+                    { self.ScanTomlLiteralString() };
                     RawTokens.push(Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     continue;
@@ -221,8 +219,8 @@ impl <'a> Lexer_Scanner<'a>
             }
             // 7. Numbers
             let IsNumberStart = Ch.is_ascii_digit()
-                || (Ch == '.' && self.Language != Source_Language::Rust && self.PeekAhead(1).map_or(false, | C | C.is_ascii_digit()))
-                || (self.Language.IsToml() && (Ch == '-' || Ch == '+') && self.PeekAhead(1).map_or(false, | C | C.is_ascii_digit()));
+            || (Ch == '.' && self.Language != Source_Language::Rust && self.PeekAhead(1).map_or(false, | C | C.is_ascii_digit()))
+            || (self.Language.IsToml() && (Ch == '-' || Ch == '+') && self.PeekAhead(1).map_or(false, | C | C.is_ascii_digit()));
             if IsNumberStart
             {
                 let NumberText = self.ScanNumber();
@@ -245,7 +243,7 @@ impl <'a> Lexer_Scanner<'a>
                         if c == '"'
                         {
                             let Prefix = format!("{}r", Ch);
-                            let RawStringText = self.ScanRawRustStringWithPrefix(&Prefix, HashCount);
+                            let RawStringText = self.ScanRawRustStringWithPrefix( & Prefix, HashCount);
                             RawTokens.push(Token_Info::New(Token_Kind::String_Lit(RawStringText.clone()), RawStringText, StartLine, StartCol, PrecedingNewlines,));
                             PrecedingNewlines = 0;
                             continue;
@@ -256,7 +254,8 @@ impl <'a> Lexer_Scanner<'a>
                 // 2. "b" prefix for byte string or byte char
                 if Ch == 'b' && self.PeekAhead(1) == Some('"')
                 {
-                    self.Advance(); // 'b'
+                    self.Advance();
+                    // 'b'
                     let StringText = self.ScanStandardString();
                     let Full = format!("b{}", StringText);
                     RawTokens.push(Token_Info::New(Token_Kind::String_Lit(Full.clone()), Full, StartLine, StartCol, PrecedingNewlines,));
@@ -266,7 +265,8 @@ impl <'a> Lexer_Scanner<'a>
 
                 if Ch == 'b' && self.PeekAhead(1) == Some('\'')
                 {
-                    self.Advance(); // 'b'
+                    self.Advance();
+                    // 'b'
                     let CharText = self.ScanCharLiteral();
                     let Full = format!("b{}", CharText);
                     RawTokens.push(Token_Info::New(Token_Kind::Char_Lit(Full.clone()), Full, StartLine, StartCol, PrecedingNewlines,));
@@ -277,7 +277,8 @@ impl <'a> Lexer_Scanner<'a>
                 // 3. "c" prefix for C-string literal
                 if Ch == 'c' && self.PeekAhead(1) == Some('"')
                 {
-                    self.Advance(); // 'c'
+                    self.Advance();
+                    // 'c'
                     let StringText = self.ScanStandardString();
                     let Full = format!("c{}", StringText);
                     RawTokens.push(Token_Info::New(Token_Kind::String_Lit(Full.clone()), Full, StartLine, StartCol, PrecedingNewlines,));
@@ -307,7 +308,8 @@ impl <'a> Lexer_Scanner<'a>
             if Ch.is_alphabetic() || Ch == '_' || Ch == '$' || (self.Language == Source_Language::Css && (Ch == '@' || Ch == '#' || Ch == '.'))
             {
                 let IdentText = self.ScanIdentifier();
-                let Kind = if ! self.Language.IsToml() && IsKeyword( & IdentText) { Token_Kind::Keyword(IdentText.clone()) } else { Token_Kind::Identifier(IdentText.clone()) };
+                let Kind = if ! self.Language.IsToml() && IsKeyword( & IdentText) { Token_Kind::Keyword(IdentText.clone()) }
+                else { Token_Kind::Identifier(IdentText.clone()) };
                 RawTokens.push(Token_Info::New(Kind, IdentText, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
@@ -418,15 +420,19 @@ impl <'a> Lexer_Scanner<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '*' && self.PeekAhead(1) == Some('/')
-            { Result.push(self.Advance().unwrap()); Result.push(self.Advance().unwrap()); break ; }
+            {
+                Result.push(self.Advance().unwrap());
+                Result.push(self.Advance().unwrap());
+                break;
+            }
             Result.push(self.Advance().unwrap());
         }
         Result
     }
 
-    fn ScanRawRustStringWithPrefix(&mut self, Prefix: &str, HashCount: usize) -> String
+    fn ScanRawRustStringWithPrefix( & mut self, Prefix: & str, HashCount: usize) -> String
     {
-        let mut Result = String::new();
+        let mut Result = String:: new ();
         for _ in 0..Prefix.len() { Result.push(self.Advance().unwrap()); }
         for _ in 0..HashCount { Result.push(self.Advance().unwrap()); }
         // '#'
@@ -438,7 +444,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '"'
             {
                 let mut Match = true;
-                for i in 1..=HashCount { if self.PeekAhead(i) != Some('#') { Match = false; break ; } }
+                for i in 1..= HashCount { if self.PeekAhead(i) != Some('#') { Match = false; break ; } }
                 if Match
                 {
                     Result.push(self.Advance().unwrap());
@@ -502,16 +508,27 @@ impl <'a> Lexer_Scanner<'a>
         let mut Result = String:: new ();
         // Consume prefix like R or u8R
         while let Some(Ch) = self.Peek()
-        { if Ch == '"' { Result.push(self.Advance().unwrap()); break ; } Result.push(self.Advance().unwrap()); }
+        {
+            if Ch == '"' { Result.push(self.Advance().unwrap()); break ; }
+            Result.push(self.Advance().unwrap());
+        }
         // Extract delimiter between " and (
         let mut Delim = String:: new ();
         while let Some(Ch) = self.Peek()
-        { if Ch == '(' { Result.push(self.Advance().unwrap()); break ; } Delim.push(Ch); Result.push(self.Advance().unwrap()); }
+        {
+            if Ch == '(' { Result.push(self.Advance().unwrap()); break ; }
+            Delim.push(Ch);
+            Result.push(self.Advance().unwrap());
+        }
 
         let TargetEnd = format!("){}\"", Delim);
         while self.Index < self.Chars.len()
         {
-            if self.Source[self.Index..].starts_with( & TargetEnd) { for _ in 0..TargetEnd.len() { Result.push(self.Advance().unwrap()); } break ; }
+            if self.Source[self.Index..].starts_with( & TargetEnd)
+            {
+                for _ in 0..TargetEnd.len() { Result.push(self.Advance().unwrap()); }
+                break;
+            }
             Result.push(self.Advance().unwrap());
         }
         Result
@@ -553,40 +570,34 @@ impl <'a> Lexer_Scanner<'a>
         Result
     }
 
-    fn ScanTomlMultilineBasicString(&mut self) -> String
+    fn ScanTomlMultilineBasicString( & mut self) -> String
     {
-        let mut Result = String::new();
-        for _ in 0..3 { Result.push(self.Advance().unwrap()); } // """
+        let mut Result = String:: new ();
+        for _ in 0..3 { Result.push(self.Advance().unwrap()); }
+        // """
         let mut Escaped = false;
         while self.Index < self.Chars.len()
         {
             if Escaped
-            {
-                Result.push(self.Advance().unwrap());
-                Escaped = false;
-            }
+            { Result.push(self.Advance().unwrap()); Escaped = false; }
             else if self.Peek() == Some('\\')
-            {
-                Result.push(self.Advance().unwrap());
-                Escaped = true;
-            }
+            { Result.push(self.Advance().unwrap()); Escaped = true; }
             else if self.Peek() == Some('"') && self.PeekAhead(1) == Some('"') && self.PeekAhead(2) == Some('"')
             {
                 for _ in 0..3 { Result.push(self.Advance().unwrap()); }
                 break;
             }
             else
-            {
-                Result.push(self.Advance().unwrap());
-            }
+            { Result.push(self.Advance().unwrap()); }
         }
         Result
     }
 
-    fn ScanTomlMultilineLiteralString(&mut self) -> String
+    fn ScanTomlMultilineLiteralString( & mut self) -> String
     {
-        let mut Result = String::new();
-        for _ in 0..3 { Result.push(self.Advance().unwrap()); } // '''
+        let mut Result = String:: new ();
+        for _ in 0..3 { Result.push(self.Advance().unwrap()); }
+        // '''
         while self.Index < self.Chars.len()
         {
             if self.Peek() == Some('\'') && self.PeekAhead(1) == Some('\'') && self.PeekAhead(2) == Some('\'')
@@ -599,18 +610,16 @@ impl <'a> Lexer_Scanner<'a>
         Result
     }
 
-    fn ScanTomlLiteralString(&mut self) -> String
+    fn ScanTomlLiteralString( & mut self) -> String
     {
-        let mut Result = String::new();
-        Result.push(self.Advance().unwrap()); // '\''
+        let mut Result = String:: new ();
+        Result.push(self.Advance().unwrap());
+        // '\''
         while let Some(Ch) = self.Peek()
         {
             if Ch == '\''
-            {
-                Result.push(self.Advance().unwrap());
-                break;
-            }
-            if Ch == '\n' { break; }
+            { Result.push(self.Advance().unwrap()); break ; }
+            if Ch == '\n' { break ; }
             Result.push(self.Advance().unwrap());
         }
         Result
@@ -622,8 +631,8 @@ impl <'a> Lexer_Scanner<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch.is_alphanumeric() || Ch == '_' || Ch == '$'
-                || (self.Language == crate::types::Source_Language::Css && (Ch == '-' || Ch == '.'))
-                || (self.Language.IsToml() && Ch == '-')
+            || (self.Language == crate::types::Source_Language::Css && (Ch == '-' || Ch == '.'))
+            || (self.Language.IsToml() && Ch == '-')
             { Result.push(self.Advance().unwrap()); }
             else { break ; }
         }
@@ -637,9 +646,7 @@ impl <'a> Lexer_Scanner<'a>
 
         // Leading sign in TOML (+ or -)
         if self.Language.IsToml() && (self.Peek() == Some('-') || self.Peek() == Some('+'))
-        {
-            Result.push(self.Advance().unwrap());
-        }
+        { Result.push(self.Advance().unwrap()); }
 
         while let Some(Ch) = self.Peek()
         {
@@ -653,16 +660,11 @@ impl <'a> Lexer_Scanner<'a>
             }
 
             if (Ch == '+' || Ch == '-') && (Result.ends_with('e') || Result.ends_with('E'))
-            {
-                Result.push(self.Advance().unwrap());
-                continue;
-            }
+            { Result.push(self.Advance().unwrap()); continue ; }
 
             if Ch.is_ascii_alphanumeric() || Ch == '_' || Ch == '\''
-                || (self.Language.IsToml() && (Ch == '-' || Ch == ':'))
-            {
-                Result.push(self.Advance().unwrap());
-            }
+            || (self.Language.IsToml() && (Ch == '-' || Ch == ':'))
+            { Result.push(self.Advance().unwrap()); }
             else { break ; }
         }
         Result
@@ -670,7 +672,7 @@ impl <'a> Lexer_Scanner<'a>
 
     fn ScanOperator( & mut self) -> String
     {
-        let First = match self.Advance() { Some(c) => c, None => return String:: new (), };
+        let First = match self.Advance() { Some(c) => c, None => return String::new (), };
 
         let Next = self.Peek();
         let Next2 = self.PeekAhead(1);
@@ -680,17 +682,11 @@ impl <'a> Lexer_Scanner<'a>
             '<' =>
             {
                 if Next == Some('<')
-                {
-                    if Next2 == Some('=') { self.Advance(); self.Advance(); "<<=".to_string() }
-                    else { self.Advance(); "<<".to_string() }
-                }
+                { if Next2 == Some('=') { self.Advance(); self.Advance();"<<=".to_string() } else { self.Advance();"<<".to_string() } }
                 else if Next == Some('=')
-                {
-                    if Next2 == Some('>') { self.Advance(); self.Advance(); "<=>".to_string() }
-                    else { self.Advance(); "<=".to_string() }
-                }
-                else if Next == Some('-') { self.Advance(); "<-".to_string() }
-                else if Next == Some('>') { self.Advance(); "<>".to_string() }
+                { if Next2 == Some('>') { self.Advance(); self.Advance();"<=>".to_string() } else { self.Advance();"<=".to_string() } }
+                else if Next == Some('-') { self.Advance();"<-".to_string() }
+                else if Next == Some('>') { self.Advance();"<>".to_string() }
                 else { "<".to_string() }
             }
             '>' =>
@@ -699,91 +695,70 @@ impl <'a> Lexer_Scanner<'a>
                 {
                     if Next2 == Some('>') && (self.Language.IsJavaScriptOrTypeScript())
                     {
-                        if self.PeekAhead(2) == Some('=') { self.Advance(); self.Advance(); self.Advance(); ">>>=".to_string() }
-                        else { self.Advance(); self.Advance(); ">>>".to_string() }
+                        if self.PeekAhead(2) == Some('=') { self.Advance(); self.Advance(); self.Advance();">>>=".to_string() }
+                        else { self.Advance(); self.Advance();">>>".to_string() }
                     }
-                    else if Next2 == Some('=') { self.Advance(); self.Advance(); ">>=".to_string() }
-                    else { self.Advance(); ">>".to_string() }
+                    else if Next2 == Some('=') { self.Advance(); self.Advance();">>=".to_string() }
+                    else { self.Advance();">>".to_string() }
                 }
-                else if Next == Some('=') { self.Advance(); ">=".to_string() }
+                else if Next == Some('=') { self.Advance();">=".to_string() }
                 else { ">".to_string() }
             }
             '=' =>
             {
                 if Next == Some('=')
-                {
-                    if Next2 == Some('=') { self.Advance(); self.Advance(); "===".to_string() }
-                    else { self.Advance(); "==".to_string() }
-                }
-                else if Next == Some('>') { self.Advance(); "=>".to_string() }
+                { if Next2 == Some('=') { self.Advance(); self.Advance();"===".to_string() } else { self.Advance();"==".to_string() } }
+                else if Next == Some('>') { self.Advance();"=>".to_string() }
                 else { "=".to_string() }
             }
             '!' =>
             {
                 if Next == Some('=')
-                {
-                    if Next2 == Some('=') { self.Advance(); self.Advance(); "!==".to_string() }
-                    else { self.Advance(); "!=".to_string() }
-                }
+                { if Next2 == Some('=') { self.Advance(); self.Advance();"!==".to_string() } else { self.Advance();"!=".to_string() } }
                 else { "!".to_string() }
             }
             '&' =>
             {
                 if Next == Some('&')
-                {
-                    if Next2 == Some('=') { self.Advance(); self.Advance(); "&&=".to_string() }
-                    else { self.Advance(); "&&".to_string() }
-                }
-                else if Next == Some('=') { self.Advance(); "&=".to_string() }
+                { if Next2 == Some('=') { self.Advance(); self.Advance();"&&=".to_string() } else { self.Advance();"&&".to_string() } }
+                else if Next == Some('=') { self.Advance();"&=".to_string() }
                 else { "&".to_string() }
             }
             '|' =>
             {
                 if Next == Some('|')
-                {
-                    if Next2 == Some('=') { self.Advance(); self.Advance(); "||=".to_string() }
-                    else { self.Advance(); "||".to_string() }
-                }
-                else if Next == Some('=') { self.Advance(); "|=".to_string() }
+                { if Next2 == Some('=') { self.Advance(); self.Advance();"||=".to_string() } else { self.Advance();"||".to_string() } }
+                else if Next == Some('=') { self.Advance();"|=".to_string() }
                 else { "|".to_string() }
             }
             '+' =>
             {
-                if Next == Some('+') { self.Advance(); "++".to_string() }
-                else if Next == Some('=') { self.Advance(); "+=".to_string() }
+                if Next == Some('+') { self.Advance();"++".to_string() }
+                else if Next == Some('=') { self.Advance();"+=".to_string() }
                 else { "+".to_string() }
             }
             '-' =>
             {
-                if Next == Some('-') { self.Advance(); "--".to_string() }
-                else if Next == Some('=') { self.Advance(); "-=".to_string() }
-                else if Next == Some('>') { self.Advance(); "->".to_string() }
+                if Next == Some('-') { self.Advance();"--".to_string() }
+                else if Next == Some('=') { self.Advance();"-=".to_string() }
+                else if Next == Some('>') { self.Advance();"->".to_string() }
                 else { "-".to_string() }
             }
             '*' =>
             {
                 if Next == Some('*')
-                {
-                    if Next2 == Some('=') { self.Advance(); self.Advance(); "**=".to_string() }
-                    else { self.Advance(); "**".to_string() }
-                }
-                else if Next == Some('=') { self.Advance(); "*=".to_string() }
+                { if Next2 == Some('=') { self.Advance(); self.Advance();"**=".to_string() } else { self.Advance();"**".to_string() } }
+                else if Next == Some('=') { self.Advance();"*=".to_string() }
                 else { "*".to_string() }
             }
             '/' =>
-            {
-                if Next == Some('=') { self.Advance(); "/=".to_string() }
-                else { "/".to_string() }
-            }
+            { if Next == Some('=') { self.Advance();"/=".to_string() } else { "/".to_string() } }
             '%' =>
-            {
-                if Next == Some('=') { self.Advance(); "%=".to_string() }
-                else { "%".to_string() }
-            }
+            { if Next == Some('=') { self.Advance();"%=".to_string() } else { "%".to_string() } }
             '^' =>
             {
-                if Next == Some('^') && Next2 == Some('=') { self.Advance(); self.Advance(); "^^=".to_string() }
-                else if Next == Some('=') { self.Advance(); "^=".to_string() }
+                if Next == Some('^') && Next2 == Some('=') { self.Advance(); self.Advance();"^^=".to_string() }
+                else if Next == Some('=') { self.Advance();"^=".to_string() }
                 else { "^".to_string() }
             }
             '~' => "~".to_string(),
@@ -838,7 +813,7 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>)
                         Tokens[J].Text = ">".to_string();
                         for Offset in 1..Count
                         {
-                            Tokens.insert(J + Offset, Token_Info::New(Token_Kind::Operator(">".to_string()), ">".to_string(), Tok.Line, Tok.Column + Offset, 0));
+                            Tokens.insert(J + Offset, Token_Info::New(Token_Kind::Operator(">".to_string()),">".to_string(), Tok.Line, Tok.Column + Offset, 0));
                         }
                         Depth -= 1;
                         if Depth == 0 { MatchIndex = Some(J); break ; }

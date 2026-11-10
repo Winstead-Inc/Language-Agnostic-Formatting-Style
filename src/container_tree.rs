@@ -1,5 +1,4 @@
-#![allow(
-non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] use crate::types:: { Container_Kind, Token_Info, Token_Kind };
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] use crate::types:: { Container_Kind, Token_Info, Token_Kind };
 #[derive(Debug, Clone)]
 pub enum Syntax_Node { Token(Token_Info), Container(Container_Node), }
 
@@ -17,20 +16,16 @@ impl Container_Node
     }
 
     pub fn IsSoleChildChain( & self) -> bool
-    {
-        if self.Children.len() == 1 { matches ! (self.Children[0], Syntax_Node::Container(_)) } else { false }
-    }
+    { if self.Children.len() == 1 { matches ! (self.Children[0], Syntax_Node::Container(_)) } else { false } }
 
-    pub fn GetSoleChildContainer( & self) -> Option <& Container_Node >
+    pub fn GetSoleChildContainer( & self) -> Option< & Container_Node>
     {
         if self.Children.len() == 1
-        {
-            if let Syntax_Node::Container(ref C) = self.Children[0] { return Some(C); }
-        }
+        { if let Syntax_Node::Container(ref C) = self.Children[0] { return Some(C); } }
         None
     }
 
-    pub fn CollectChain( & self) -> Vec <& Container_Node >
+    pub fn CollectChain( & self) -> Vec< & Container_Node>
     {
         let mut Chain = vec![self];
         let mut Current = self;
@@ -61,7 +56,11 @@ impl Container_Node
             {
                 Syntax_Node::Token(T) => { Total += T.Text.len() + 1; }
                 Syntax_Node::Container(C) =>
-                { let SubSpan = C.CalculateSingleLineSpan(); if SubSpan == usize::MAX { return usize::MAX; } Total += SubSpan + 1; }
+                {
+                    let SubSpan = C.CalculateSingleLineSpan();
+                    if SubSpan == usize::MAX { return usize::MAX; }
+                    Total += SubSpan + 1;
+                }
             }
         }
 

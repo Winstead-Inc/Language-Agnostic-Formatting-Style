@@ -86,7 +86,7 @@ impl ObjectMemoryMap
 
         wrtr.write_all( & offset.to_be_bytes())?;
 
-        let order_map: BTreeMap <& ObjectID, usize > = self.to_compat.keys().enumerate().map( | (i, oid) | (oid, i)).collect();
+        let order_map: BTreeMap < & ObjectID, usize > = self.to_compat.keys().enumerate().map( | (i, oid) | (oid, i)).collect();
 
         wrtr.write_all( & PADDING[0..storage_npadding as usize])?;
         for oid in self.to_compat.keys() { wrtr.write_all( & oid.as_slice().unwrap()[0..storage_short_len])?; }
@@ -294,7 +294,11 @@ impl <'a> MmapedObjectMap<'a>
     }
 
     fn map_oid( & self, oid: & ObjectID, algo: HashAlgorithm) -> Option<ObjectID>
-    { if algo as u32 == oid.algo { return Some(oid.clone()); } let main = self.look_up_object(oid)?; self.oid_from_offset(main, algo) }
+    {
+        if algo as u32 == oid.algo { return Some(oid.clone()); }
+        let main = self.look_up_object(oid)?;
+        self.oid_from_offset(main, algo)
+    }
 
     fn oid_from_offset( & self, offset: usize, algo: HashAlgorithm) -> Option<ObjectID>
     {
@@ -378,11 +382,18 @@ impl ObjectMap
         map.to_storage.insert(compat.clone(), MappedObject { oid: storage.clone(), kind, },);
     }
 
-   #[allow(dead_code)] fn map_object( & self, oid: & ObjectID, algo: HashAlgorithm) -> Option <& MappedObject >
-    { let map = if algo == self.mem.storage { & self.mem.to_storage } else { & self.mem.to_compat }; map.get (oid) }
+   #[allow(dead_code)] fn map_object( & self, oid: & ObjectID, algo: HashAlgorithm) -> Option< & MappedObject>
+    {
+        let map = if algo == self.mem.storage { & self.mem.to_storage } else { & self.mem.to_compat };
+        map. get(oid)
+    }
 
-   #[allow(dead_code)] fn map_oid<'a, 'b: 'a>( & 'b self, oid: & 'a ObjectID, algo: HashAlgorithm,) -> Option <& 'a ObjectID >
-    { if algo as u32 == oid.algo { return Some(oid); } let entry = self.map_object(oid, algo); entry.map( | obj | & obj.oid) }
+   #[allow(dead_code)] fn map_oid<'a, 'b: 'a>( & 'b self, oid: & 'a ObjectID, algo: HashAlgorithm,) -> Option< & 'a ObjectID>
+    {
+        if algo as u32 == oid.algo { return Some(oid); }
+        let entry = self.map_object(oid, algo);
+        entry.map( | obj | & obj.oid)
+    }
 }
 
 #[cfg(test)]
@@ -400,7 +411,12 @@ mod tests
         fn new () -> Self { Self { curs: Cursor::new (Vec::new ()), hasher: CryptoHasher::new (HashAlgorithm::SHA256), } }
 
         fn finalize(mut self) -> Vec<u8>
-        { let _ = self.hasher.flush(); let mut v = self.curs.into_inner(); v.extend(self.hasher.into_vec()); v }
+        {
+            let _ = self.hasher.flush();
+            let mut v = self.curs.into_inner();
+            v.extend(self.hasher.into_vec());
+            v
+        }
     }
 
     impl Write for TrailingWriter
@@ -424,7 +440,10 @@ mod tests
     }
 
     fn sha256_oid(b: & [u8]) -> ObjectID
-    { assert_eq ! (b.len(), 32); ObjectID { hash: b.try_into().unwrap(), algo: HashAlgorithm::SHA256 as u32, } }
+    {
+        assert_eq!(b.len(), 32);
+        ObjectID { hash: b.try_into().unwrap(), algo: HashAlgorithm::SHA256 as u32, }
+    }
 
    #[allow(clippy::type_complexity)] fn test_entries() -> & 'static[( & 'static str, & 'static[u8], & 'static[u8], MapType, bool)]
     {
@@ -568,8 +587,8 @@ mod tests
         let map = test_map(false);
         let entries = test_entries();
 
-        let s256 = sha256_oid(entries[0] .2);
-        let s1 = sha1_oid(entries[0] .1);
+        let s256 = sha256_oid(entries[0].2);
+        let s1 = sha1_oid(entries[0].1);
 
         let missing_oid = ObjectID { hash: [0xffu8; 32], algo: HashAlgorithm::SHA256 as u32, };
 
@@ -595,7 +614,7 @@ mod tests
     {
         let map = test_map(false);
 
-        let funcs: & [ & dyn Fn(HashAlgorithm) -> & 'static ObjectID] = & [ &| h: HashAlgorithm | h.empty_tree(), &| h: HashAlgorithm | h.empty_blob(), &| h: HashAlgorithm | h.null_oid(),];
+        let funcs: & [ & dyn Fn(HashAlgorithm) -> & 'static ObjectID] = & [ & | h: HashAlgorithm | h.empty_tree(), & | h: HashAlgorithm | h.empty_blob(), & | h: HashAlgorithm | h.null_oid(),];
 
         for f in funcs
         {

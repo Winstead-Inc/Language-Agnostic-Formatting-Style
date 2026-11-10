@@ -1,5 +1,4 @@
-#![allow(
-non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
 use crate::types:: { Config_Settings, Container_Kind, Layout_State, Token_Info, Token_Kind };
 
 pub struct Shell_Formatter;
@@ -18,7 +17,9 @@ impl Shell_Formatter
         let Formatted = Emitter.Emit( & Nodes);
         // Safety gate verification
         if let Err(VerifyErr) = VerifyShellTokenEquivalence(Source, & Formatted)
-        { return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr)); }
+        {
+            return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr));
+        }
 
         Ok(Formatted)
     }
@@ -35,7 +36,10 @@ impl <'a> Shell_Lexer<'a>
     fn Peek( & self) -> Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
 
     fn PeekAhead( & self, Offset: usize) -> Option<char>
-    { let Target = self.Index + Offset; if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None } }
+    {
+        let Target = self.Index + Offset;
+        if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None }
+    }
 
     fn Advance( & mut self) -> Option<char>
     {
@@ -75,10 +79,19 @@ impl <'a> Shell_Lexer<'a>
             }
             // Horizontal whitespace
             if Ch == ' ' || Ch == '\t' || Ch == '\r'
-            { let WS = self.Advance().unwrap(); if AtLineStart && (WS == ' ' || WS == '\t') { CurrentLeadingWhitespace.push(WS); } continue ; }
+            {
+                let WS = self.Advance().unwrap();
+                if AtLineStart && (WS == ' ' || WS == '\t') { CurrentLeadingWhitespace.push(WS); }
+                continue;
+            }
 
             let TokenIndent = if AtLineStart
-            { AtLineStart = false; let Indent = CurrentLeadingWhitespace.clone(); CurrentLeadingWhitespace.clear(); Indent }
+            {
+                AtLineStart = false;
+                let Indent = CurrentLeadingWhitespace.clone();
+                CurrentLeadingWhitespace.clear();
+                Indent
+            }
             else { String::new () };
             // Comments
             if Ch == '#'
@@ -94,7 +107,10 @@ impl <'a> Shell_Lexer<'a>
                 self.Advance();
                 self.Advance();
                 self.Advance();
-                RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator("<<<".to_string()), "<<<".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,));
+                RawTokens.push
+                (
+                    Token_Info::NewWithIndent(Token_Kind::Operator("<<<".to_string()),"<<<".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
+                );
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -152,7 +168,10 @@ impl <'a> Shell_Lexer<'a>
                 if let Some(NextCh) = self.Peek()
                 {
                     if ! NextCh.is_whitespace() && NextCh != ';' && NextCh != '&' && NextCh != '|' && NextCh != ')' && NextCh != '('
-                    { let RestWord = self.ScanWord(); StrText.push_str( & RestWord); }
+                    {
+                        let RestWord = self.ScanWord();
+                        StrText.push_str( & RestWord);
+                    }
                 }
                 RawTokens.push(Token_Info::NewWithIndent(Token_Kind::String_Lit(StrText.clone()), StrText, StartLine, StartCol, PrecedingNewlines, TokenIndent,));
                 PrecedingNewlines = 0;
@@ -165,7 +184,10 @@ impl <'a> Shell_Lexer<'a>
                 if let Some(NextCh) = self.Peek()
                 {
                     if ! NextCh.is_whitespace() && NextCh != ';' && NextCh != '&' && NextCh != '|' && NextCh != ')' && NextCh != '('
-                    { let RestWord = self.ScanWord(); StrText.push_str( & RestWord); }
+                    {
+                        let RestWord = self.ScanWord();
+                        StrText.push_str( & RestWord);
+                    }
                 }
                 RawTokens.push(Token_Info::NewWithIndent(Token_Kind::String_Lit(StrText.clone()), StrText, StartLine, StartCol, PrecedingNewlines, TokenIndent,));
                 PrecedingNewlines = 0;
@@ -323,7 +345,11 @@ impl <'a> Shell_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '\\'
-            { Result.push(self.Advance().unwrap()); if self.Peek().is_some() { Result.push(self.Advance().unwrap()); } continue ; }
+            {
+                Result.push(self.Advance().unwrap());
+                if self.Peek().is_some() { Result.push(self.Advance().unwrap()); }
+                continue;
+            }
             if Ch == '$' && self.PeekAhead(1) == Some('(')
             {
                 Result.push(self.Advance().unwrap());
@@ -424,11 +450,20 @@ impl <'a> Shell_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '\\'
-            { Result.push(self.Advance().unwrap()); if self.Peek().is_some() { Result.push(self.Advance().unwrap()); } continue ; }
+            {
+                Result.push(self.Advance().unwrap());
+                if self.Peek().is_some() { Result.push(self.Advance().unwrap()); }
+                continue;
+            }
             if Ch == '\'' { let Str = self.ScanSingleQuotedString(); Result.push_str( & Str); continue ; }
             if Ch == '"' { let Str = self.ScanDoubleQuotedString(); Result.push_str( & Str); continue ; }
             if Ch == '$' && self.PeekAhead(1) == Some('{')
-            { Result.push(self.Advance().unwrap()); Result.push(self.Advance().unwrap()); Depth += 1; continue ; }
+            {
+                Result.push(self.Advance().unwrap());
+                Result.push(self.Advance().unwrap());
+                Depth += 1;
+                continue;
+            }
             if Ch == '}' { Result.push(self.Advance().unwrap()); Depth -= 1; if Depth == 0 { break ; } continue ; }
             Result.push(self.Advance().unwrap());
         }
@@ -441,7 +476,9 @@ impl <'a> Shell_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == ' ' || Ch == '\t' || Ch == '\r' || Ch == '\n' || Ch == ';' || Ch == '|' || Ch == '&' || Ch == '(' || Ch == ')' || Ch == '<' || Ch == '>'
-            { break ; }
+            {
+                break;
+            }
             // Comment marker # only breaks at start of word (allowing $#, C#, foo#bar)
             if Ch == '#' && Result.is_empty() { break ; }
             // Standalone braces { and } (command grouping and function bodies)
@@ -465,7 +502,11 @@ impl <'a> Shell_Lexer<'a>
             if Ch == '"' { let Str = self.ScanDoubleQuotedString(); Result.push_str( & Str); continue ; }
 
             if Ch == '\\'
-            { Result.push(self.Advance().unwrap()); if self.Peek().is_some() { Result.push(self.Advance().unwrap()); } continue ; }
+            {
+                Result.push(self.Advance().unwrap());
+                if self.Peek().is_some() { Result.push(self.Advance().unwrap()); }
+                continue;
+            }
 
             Result.push(self.Advance().unwrap());
         }
@@ -500,22 +541,22 @@ impl Shell_Container
 
     pub fn IsSoleChildChain( & self) -> bool
     {
-        let NonTrivia: Vec <& Shell_Syntax_Node > = self.Children.iter().filter( | Node | match Node { Shell_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Shell_Syntax_Node::Container(_) => true, })
+        let NonTrivia: Vec < & Shell_Syntax_Node > = self.Children.iter().filter( | Node | match Node { Shell_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Shell_Syntax_Node::Container(_) => true, })
         .collect();
 
         if NonTrivia.len() == 1 { matches ! (NonTrivia[0], Shell_Syntax_Node::Container(_)) } else { false }
     }
 
-    pub fn GetSoleChildContainer( & self) -> Option <& Shell_Container >
+    pub fn GetSoleChildContainer( & self) -> Option< & Shell_Container>
     {
-        let NonTrivia: Vec <& Shell_Syntax_Node > = self.Children.iter().filter( | Node | match Node { Shell_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Shell_Syntax_Node::Container(_) => true, })
+        let NonTrivia: Vec < & Shell_Syntax_Node > = self.Children.iter().filter( | Node | match Node { Shell_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Shell_Syntax_Node::Container(_) => true, })
         .collect();
 
         if NonTrivia.len() == 1 { if let Shell_Syntax_Node::Container(C) = NonTrivia[0] { return Some(C); } }
         None
     }
 
-    pub fn CollectChain( & self) -> Vec <& Shell_Container >
+    pub fn CollectChain( & self) -> Vec< & Shell_Container>
     {
         let mut Chain = vec![self];
         let mut Current = self;
@@ -563,7 +604,10 @@ impl Shell_Container
         for Child in & self.Children
         {
             if let Shell_Syntax_Node::Container(Sub) = Child
-            { let SubDepth = Sub.CalculateBlockDepth(); if SubDepth > MaxChildDepth { MaxChildDepth = SubDepth; } }
+            {
+                let SubDepth = Sub.CalculateBlockDepth();
+                if SubDepth > MaxChildDepth { MaxChildDepth = SubDepth; }
+            }
         }
         1 + MaxChildDepth
     }
@@ -592,7 +636,9 @@ impl Shell_Container_Builder
     fn FindLineIndent( & self, TokenIdx: usize) -> String
     {
         if TokenIdx == 0 || TokenIdx >= self.Tokens.len()
-        { return self.Tokens.get (TokenIdx).map( | T | T.Leading_Whitespace.clone()).unwrap_or_default(); }
+        {
+            return self.Tokens. get(TokenIdx).map( | T | T.Leading_Whitespace.clone()).unwrap_or_default();
+        }
         // Case 1: Open delimiter is on the same line as declaration (e.g. `foo() {`)
         if self.Tokens[TokenIdx].Preceding_Newlines == 0
         {
@@ -658,14 +704,21 @@ impl Shell_Container_Builder
                     {
                         let NextToken = & self.Tokens[self.Index];
                         if NextToken.Preceding_Newlines == 0 && (NextToken.Text == ";" || NextToken.Text == ";;")
-                        { Container.Tail_Glue.push(NextToken.clone()); self.Index += 1; }
+                        {
+                            Container.Tail_Glue.push(NextToken.clone());
+                            self.Index += 1;
+                        }
                         else { break ; }
                     }
                     break;
                 }
                 Token_Kind::Open_Delim(_) => { if let Some(ChildNode) = self.ParseNextNode() { Container.Children.push(ChildNode); } }
                 Token_Kind::Comment_Line(_) =>
-                { Container.Has_Forced_Break = true; Container.Children.push(Shell_Syntax_Node::Token(CurrentToken)); self.Index += 1; }
+                {
+                    Container.Has_Forced_Break = true;
+                    Container.Children.push(Shell_Syntax_Node::Token(CurrentToken));
+                    self.Index += 1;
+                }
                 _ =>
                 {
                     if CurrentToken.Text == ";" || CurrentToken.Preceding_Newlines > 0 { StatementCount += 1; }
@@ -701,7 +754,10 @@ impl <'a> Shell_Layout_Planner<'a>
         }
         // 2. Compound Delimiters (Sole-Child Chain)
         if self.Config.Allow_Brace_Grouping && Container.IsSoleChildChain()
-        { let Chain = Container.CollectChain(); if Chain.len() >= 2 { return Layout_State::Grouped; } }
+        {
+            let Chain = Container.CollectChain();
+            if Chain.len() >= 2 { return Layout_State::Grouped; }
+        }
         // 3. Expanded Symmetry (Hierarchical Architecture)
         Layout_State::Expanded
     }
@@ -714,7 +770,11 @@ impl <'a> Shell_Emitter<'a>
     pub fn New(Config: & 'a Config_Settings) -> Self { Shell_Emitter { Config, Planner: Shell_Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, } }
 
     pub fn Emit(mut self, Nodes: & [Shell_Syntax_Node]) -> String
-    { self.EmitNodeList(Nodes, 0); if ! self.Output.ends_with('\n') { self.Output.push('\n'); } self.Output }
+    {
+        self.EmitNodeList(Nodes, 0);
+        if ! self.Output.ends_with('\n') { self.Output.push('\n'); }
+        self.Output
+    }
 
     fn WriteNewline( & mut self)
     {
@@ -742,7 +802,10 @@ impl <'a> Shell_Emitter<'a>
     fn EmitSpace( & mut self)
     {
         if self.Line_Has_Content && self.Current_Line_Len > 0 && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
-        { self.Output.push(' '); self.Current_Line_Len += 1; }
+        {
+            self.Output.push(' ');
+            self.Current_Line_Len += 1;
+        }
     }
 
     fn EmitNodeList( & mut self, Nodes: & [Shell_Syntax_Node], Level: usize)
@@ -829,7 +892,7 @@ impl <'a> Shell_Emitter<'a>
             }
         }
 
-        self.EmitRaw(&Container.Open_Token.Text);
+        self.EmitRaw( & Container.Open_Token.Text);
         if Container.Kind == Container_Kind::Brace || Container.Kind == Container_Kind::Bracket { self.EmitSpace(); }
 
         let mut PrevNeedsSpace = false;
@@ -845,7 +908,11 @@ impl <'a> Shell_Emitter<'a>
                     PrevNeedsSpace = true;
                 }
                 Shell_Syntax_Node::Container(Sub) =>
-                { if PrevNeedsSpace { self.EmitSpace(); } self.EmitMonolith(Sub, Level); PrevNeedsSpace = true; }
+                {
+                    if PrevNeedsSpace { self.EmitSpace(); }
+                    self.EmitMonolith(Sub, Level);
+                    PrevNeedsSpace = true;
+                }
             }
         }
 
@@ -884,7 +951,7 @@ impl <'a> Shell_Emitter<'a>
         // OLAFS Detached Delimiter Symmetry
         if Container.Kind == Container_Kind::Paren && self.Output.ends_with('$')
         {
-            self.EmitRaw(&Container.Open_Token.Text);
+            self.EmitRaw( & Container.Open_Token.Text);
             let FirstChildOnSameLine = Container.Children.first().map_or
             (
                 false, | Node | match Node { Shell_Syntax_Node::Token(T) => T.Preceding_Newlines == 0, Shell_Syntax_Node::Container(C) => C.Open_Token.Preceding_Newlines == 0, }
@@ -895,7 +962,7 @@ impl <'a> Shell_Emitter<'a>
         {
             self.EnsureNewline();
             if ! Container.Decl_Indent.is_empty() { self.EmitRaw( & Container.Decl_Indent); } else { self.EmitIndent(Level); }
-            self.EmitRaw(&Container.Open_Token.Text);
+            self.EmitRaw( & Container.Open_Token.Text);
             self.WriteNewline();
         }
 
@@ -924,10 +991,10 @@ pub fn VerifyShellTokenEquivalence(OriginalSource: & str, FormattedSource: & str
     let mut FormattedScanner = Shell_Lexer::New(FormattedSource);
     let FormattedTokens = FormattedScanner.TokenizeAll();
 
-    let OrigSignificant: Vec <& str > = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
+    let OrigSignificant: Vec < & str > = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
     .collect();
 
-    let FormSignificant: Vec <& str > = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
+    let FormSignificant: Vec < & str > = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
     .collect();
 
     if OrigSignificant.len() != FormSignificant.len()
@@ -936,12 +1003,7 @@ pub fn VerifyShellTokenEquivalence(OriginalSource: & str, FormattedSource: & str
     }
 
     for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate()
-    {
-        if Orig != Form
-        {
-            return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form));
-        }
-    }
+    { if Orig != Form { return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); } }
 
     Ok(())
 }

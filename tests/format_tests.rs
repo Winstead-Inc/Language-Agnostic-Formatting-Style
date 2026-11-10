@@ -356,8 +356,8 @@ fn Test_Rust_Raw_String_Delimiter_Alignment()
     Config.Language = Source_Language::Rust;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("        r#\"\n            #[macro_use]"), "Opening r#\" and content must be aligned, got:\n{}", Formatted);
-    assert!(Formatted.contains("        \"#,\n"), "Closing \"# must align on exact same column as r#\", got:\n{}", Formatted);
+    assert!(Formatted.contains("        r#\"\n            #[macro_use]"),"Opening r#\" and content must be aligned, got:\n{}", Formatted);
+    assert!(Formatted.contains("        \"#,\n"),"Closing \"# must align on exact same column as r#\", got:\n{}", Formatted);
 }
 
 #[test]
@@ -414,23 +414,24 @@ fn Test_C_Preprocessor_Macro_Allman_Style()
     GetECGroup(_group, group); \
 } while (0)
 "#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::C;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed for C preprocessor macros");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed for C preprocessor macros");
 
     // Verify Allman style formatting:
     // 1. do is detached from {
-    assert!(Formatted.contains("#define GetPKeyEC(obj, pkey) do \\\n{ \\"),
-        "do and open brace must be detached into Allman style, got:\n{}", Formatted);
+    assert!(Formatted.contains("#define GetPKeyEC(obj, pkey) do \\\n{ \\"),"do and open brace must be detached into Allman style, got:\n{}", Formatted);
     // 2. if is detached from {
-    assert!(Formatted.contains("    if (EVP_PKEY_base_id(pkey) != EVP_PKEY_EC) \\\n    { \\"),
-        "if and open brace must be detached into Allman style, got:\n{}", Formatted);
+    assert!
+    (
+        Formatted.contains("    if (EVP_PKEY_base_id(pkey) != EVP_PKEY_EC) \\\n    { \\"),
+        "if and open brace must be detached into Allman style, got:\n{}", Formatted
+    );
     // 3. closing brace of do while
-    assert!(Formatted.contains("} while (0)"),
-        "Closing brace and while (0) must be present, got:\n{}", Formatted);
+    assert!(Formatted.contains("} while (0)"),"Closing brace and while (0) must be present, got:\n{}", Formatted);
 
     // 4. Verify idempotence
-    let SecondPass = Source_Formatter::Format(&Formatted, &Config).expect("Second pass failed");
+    let SecondPass = Source_Formatter::Format( & Formatted, & Config).expect("Second pass failed");
     assert_eq!(Formatted, SecondPass, "Formatting must be idempotent");
 }

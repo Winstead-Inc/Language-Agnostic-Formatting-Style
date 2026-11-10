@@ -22,7 +22,7 @@ pub const GIT_MAX_RAWSZ: usize = 32;
 #[derive(Debug, Copy, Clone)]
 pub struct InvalidHashAlgorithm(pub u32);
 
-impl Display for InvalidHashAlgorithm { fn fmt( & self, f: & mut fmt::Formatter<'_>) -> fmt::Result { write ! (f, "invalid hash algorithm {}", self .0) } }
+impl Display for InvalidHashAlgorithm { fn fmt( & self, f: & mut fmt::Formatter<'_>) -> fmt::Result { write ! (f, "invalid hash algorithm {}", self.0) } }
 
 impl Error for InvalidHashAlgorithm {}
 /// A binary object ID.
@@ -50,12 +50,12 @@ impl ObjectID
     /// If the algorithm set internally is not valid, this function panics.
     pub fn algo( & self) -> Result<HashAlgorithm, InvalidHashAlgorithm> { HashAlgorithm::from_u32(self.algo).ok_or(InvalidHashAlgorithm(self.algo)) }
 
-    pub fn as_slice( & self) -> Result <& [u8], InvalidHashAlgorithm >
+    pub fn as_slice( & self) -> Result< & [u8], InvalidHashAlgorithm>
     {
         match HashAlgorithm::from_u32(self.algo) { Some(algo) => Ok( & self.hash[0..algo.raw_len()]), None => Err(InvalidHashAlgorithm(self.algo)), }
     }
 
-    pub fn as_mut_slice( & mut self) -> Result <& mut [u8], InvalidHashAlgorithm >
+    pub fn as_mut_slice( & mut self) -> Result< & mut [u8], InvalidHashAlgorithm>
     {
         match HashAlgorithm::from_u32(self.algo) { Some(algo) => Ok( & mut self.hash[0..algo.raw_len()]), None => Err(InvalidHashAlgorithm(self.algo)), }
     }
@@ -65,7 +65,11 @@ impl Display for ObjectID
 {
     /// Format this object ID as a hex object ID.
     fn fmt( & self, f: & mut fmt::Formatter<'_>) -> fmt::Result
-    { let hash = self.as_slice().unwrap(); for x in hash { write ! (f, "{:02x}", x)?; } Ok(()) }
+    {
+        let hash = self.as_slice().unwrap();
+        for x in hash { write ! (f, "{:02x}", x)?; }
+        Ok(())
+    }
 }
 
 impl Debug for ObjectID
@@ -82,7 +86,7 @@ impl Debug for ObjectID
     {
         let hash = match self.as_slice() { Ok(hash) => hash, Err(_) => & self.hash, };
         for x in hash { write ! (f, "{:02x}", x)?; }
-        match self.algo() { Ok(algo) => write ! (f, ":{}", algo.name()), Err(e) => write ! (f, ":invalid-hash-algo-{}", e .0), }
+        match self.algo() { Ok(algo) => write ! (f, ":{}", algo.name()), Err(e) => write ! (f, ":invalid-hash-algo-{}", e.0), }
     }
 }
 /// A trait to implement hashing with a cryptographic algorithm.
@@ -112,7 +116,11 @@ impl CryptoHasher
     /// with a collision-detecting implementation of SHA-1, then this function will use that
     /// implementation and detect any attempts at a collision.
     pub fn new (algo: HashAlgorithm) -> Self
-    { let ctx = unsafe { c::git_hash_alloc() }; unsafe { c::git_hash_init(ctx, algo.hash_algo_ptr()) }; Self { algo, ctx } }
+    {
+        let ctx = unsafe { c::git_hash_alloc() };
+        unsafe { c::git_hash_init(ctx, algo.hash_algo_ptr()) };
+        Self { algo, ctx }
+    }
 }
 
 impl CryptoDigest for CryptoHasher
@@ -273,13 +281,13 @@ mod tests
             (HashAlgorithm::SHA1.empty_blob(),"e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391:sha1",),
             (HashAlgorithm::SHA1.empty_tree(),"4b825dc642cb6eb9a060e54bf8d69288fbee4904", "4b825dc642cb6eb9a060e54bf8d69288fbee4904:sha1",),
             (
-                HashAlgorithm::SHA256.null_oid(),"0000000000000000000000000000000000000000000000000000000000000000", "0000000000000000000000000000000000000000000000000000000000000000:sha256",
+                HashAlgorithm::SHA256.null_oid(), "0000000000000000000000000000000000000000000000000000000000000000", "0000000000000000000000000000000000000000000000000000000000000000:sha256",
             ),
             (
-                HashAlgorithm::SHA256.empty_blob(),"473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813", "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813:sha256",
+                HashAlgorithm::SHA256.empty_blob(), "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813", "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813:sha256",
             ),
             (
-                HashAlgorithm::SHA256.empty_tree(),"6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321", "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321:sha256",
+                HashAlgorithm::SHA256.empty_tree(), "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321", "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321:sha256",
             ),
         ];
         for (oid, display, debug) in entries { assert_eq ! (format ! ("{}", oid), * display); assert_eq ! (format ! ("{:?}", oid), * debug); }

@@ -1,5 +1,4 @@
-#![allow(
-non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
 use crate::types:: { Config_Settings, Container_Kind, Kotlin_Style, Layout_State, Source_Language, Token_Info, Token_Kind, };
 
 pub struct Kotlin_Formatter;
@@ -22,7 +21,9 @@ impl Kotlin_Formatter
 
         // Safety gate verification
         if let Err(VerifyErr) = VerifyKotlinTokenEquivalence(Source, & Formatted)
-        { return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr)); }
+        {
+            return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr));
+        }
 
         Ok(Formatted)
     }
@@ -123,7 +124,7 @@ impl Kotlin_Container
 
     pub fn IsSoleChildChain( & self) -> bool
     {
-        let NonCommentChildren: Vec <& Kotlin_Syntax_Node > = self
+        let NonCommentChildren: Vec < & Kotlin_Syntax_Node > = self
         .Children
         .iter()
         .filter( | Node | match Node { Kotlin_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Kotlin_Syntax_Node::Container(_) => true, })
@@ -133,9 +134,9 @@ impl Kotlin_Container
         else { false }
     }
 
-    pub fn GetSoleChildContainer( & self) -> Option <& Kotlin_Container >
+    pub fn GetSoleChildContainer( & self) -> Option< & Kotlin_Container>
     {
-        let NonCommentChildren: Vec <& Kotlin_Syntax_Node > = self
+        let NonCommentChildren: Vec < & Kotlin_Syntax_Node > = self
         .Children
         .iter()
         .filter( | Node | match Node { Kotlin_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Kotlin_Syntax_Node::Container(_) => true, })
@@ -145,12 +146,16 @@ impl Kotlin_Container
         None
     }
 
-    pub fn CollectChain( & self) -> Vec <& Kotlin_Container >
+    pub fn CollectChain( & self) -> Vec< & Kotlin_Container>
     {
         let mut Chain = vec![self];
         let mut Current = self;
         while let Some(Child) = Current.GetSoleChildContainer()
-        { if Current.Kind == Container_Kind::Angle || Child.Kind == Container_Kind::Angle { break ; } Chain.push(Child); Current = Child; }
+        {
+            if Current.Kind == Container_Kind::Angle || Child.Kind == Container_Kind::Angle { break ; }
+            Chain.push(Child);
+            Current = Child;
+        }
         Chain
     }
 
@@ -194,7 +199,10 @@ impl Kotlin_Container
         for Child in & self.Children
         {
             if let Kotlin_Syntax_Node::Container(Sub) = Child
-            { let SubDepth = Sub.CalculateBlockDepth(); if SubDepth > MaxChildDepth { MaxChildDepth = SubDepth; } }
+            {
+                let SubDepth = Sub.CalculateBlockDepth();
+                if SubDepth > MaxChildDepth { MaxChildDepth = SubDepth; }
+            }
         }
         1 + MaxChildDepth
     }
@@ -216,7 +224,10 @@ impl <'a> Kotlin_Lexer<'a>
     fn Peek( & self) -> Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
 
     fn PeekAhead( & self, Offset: usize) -> Option<char>
-    { let Target = self.Index + Offset; if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None } }
+    {
+        let Target = self.Index + Offset;
+        if Target < self.Chars.len() { Some(self.Chars[Target]) } else { None }
+    }
 
     fn Advance( & mut self) -> Option<char>
     {
@@ -563,9 +574,18 @@ impl <'a> Kotlin_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '/' && self.PeekAhead(1) == Some('*')
-            { Result.push(self.Advance().unwrap()); Result.push(self.Advance().unwrap()); Depth += 1; }
+            {
+                Result.push(self.Advance().unwrap());
+                Result.push(self.Advance().unwrap());
+                Depth += 1;
+            }
             else if Ch == '*' && self.PeekAhead(1) == Some('/')
-            { Result.push(self.Advance().unwrap()); Result.push(self.Advance().unwrap()); Depth -= 1; if Depth == 0 { break ; } }
+            {
+                Result.push(self.Advance().unwrap());
+                Result.push(self.Advance().unwrap());
+                Depth -= 1;
+                if Depth == 0 { break ; }
+            }
             else { Result.push(self.Advance().unwrap()); }
         }
         Result
@@ -598,7 +618,10 @@ impl <'a> Kotlin_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '\\'
-            { Result.push(self.Advance().unwrap()); if let Some(_) = self.Peek() { Result.push(self.Advance().unwrap()); } }
+            {
+                Result.push(self.Advance().unwrap());
+                if let Some(_) = self.Peek() { Result.push(self.Advance().unwrap()); }
+            }
             else if Ch == '"' { Result.push(self.Advance().unwrap()); break ; }
             else { Result.push(self.Advance().unwrap()); }
         }
@@ -629,7 +652,10 @@ impl <'a> Kotlin_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch == '\\'
-            { Result.push(self.Advance().unwrap()); if let Some(_) = self.Peek() { Result.push(self.Advance().unwrap()); } }
+            {
+                Result.push(self.Advance().unwrap());
+                if let Some(_) = self.Peek() { Result.push(self.Advance().unwrap()); }
+            }
             else if Ch == '\'' { Result.push(self.Advance().unwrap()); break ; }
             else if Ch == '\n' || Ch == '\r' { break ; }
             else { Result.push(self.Advance().unwrap()); }
@@ -834,14 +860,21 @@ impl Kotlin_Container_Builder
                     {
                         let NextToken = & self.Tokens[self.Index];
                         if NextToken.Preceding_Newlines == 0 && (NextToken.Text == ";" || NextToken.Text == ",")
-                        { Container.Tail_Glue.push(NextToken.clone()); self.Index += 1; }
+                        {
+                            Container.Tail_Glue.push(NextToken.clone());
+                            self.Index += 1;
+                        }
                         else { break ; }
                     }
                     break;
                 }
                 Token_Kind::Open_Delim(_) => { if let Some(ChildNode) = self.ParseNextNode() { Container.Children.push(ChildNode); } }
                 Token_Kind::Comment_Line(_) =>
-                { Container.Has_Forced_Break = true; Container.Children.push(Kotlin_Syntax_Node::Token(CurrentToken)); self.Index += 1; }
+                {
+                    Container.Has_Forced_Break = true;
+                    Container.Children.push(Kotlin_Syntax_Node::Token(CurrentToken));
+                    self.Index += 1;
+                }
                 _ =>
                 {
                     if CurrentToken.Text == ";" { StatementCount += 1; }
@@ -904,7 +937,9 @@ impl Kotlin_Container_Builder
                 if let Some(T) = Prev1
                 {
                     if matches!(T.Kind, Token_Kind::Identifier(_)) || T.Text == ")" || T.Text == "]" || T.Text == ">"
-                    { return Kotlin_Container_Role::Call_Arguments; }
+                    {
+                        return Kotlin_Container_Role::Call_Arguments;
+                    }
                 }
 
                 Kotlin_Container_Role::Parenthesized_Expression
@@ -1027,7 +1062,10 @@ impl <'a> Kotlin_Layout_Planner<'a>
 
         // 2. Container Grouping Architecture (Sole-Child Chain Compound Delimiters)
         if self.Config.Allow_Brace_Grouping && Container.IsSoleChildChain()
-        { let Chain = Container.CollectChain(); if Chain.len() >= 2 { return Layout_State::Grouped; } }
+        {
+            let Chain = Container.CollectChain();
+            if Chain.len() >= 2 { return Layout_State::Grouped; }
+        }
 
         // 3. Expanded Symmetry (Hierarchical Architecture)
         Layout_State::Expanded
@@ -1052,7 +1090,11 @@ impl <'a> Kotlin_Emitter<'a>
     }
 
     pub fn Emit(mut self, Nodes: & [Kotlin_Syntax_Node]) -> String
-    { self.EmitNodeList(Nodes, 0); if ! self.Output.ends_with('\n') { self.Output.push('\n'); } self.Output }
+    {
+        self.EmitNodeList(Nodes, 0);
+        if ! self.Output.ends_with('\n') { self.Output.push('\n'); }
+        self.Output
+    }
 
     fn WriteNewline( & mut self)
     {
@@ -1145,7 +1187,9 @@ impl <'a> Kotlin_Emitter<'a>
                         // Keep on same line for `:`, `.`, `?.`, `::`, `,`, `;` or hugging trailing lambda
                     }
                     else if C.Tail_Glue.iter().any( | G | G.Text == ";") || C.Kind == Container_Kind::Brace || C.Kind == Container_Kind::Paren
-                    { self.EnsureNewline(); }
+                    {
+                        self.EnsureNewline();
+                    }
                 }
             }
 
@@ -1165,7 +1209,11 @@ impl <'a> Kotlin_Emitter<'a>
         }
 
         if let Token_Kind::Comment_Block(CommentText) = & Token.Kind
-        { if ! self.Line_Has_Content { self.EmitIndent(Level); } else { self.EmitSpace(); } self.EmitRaw(CommentText); return ; }
+        {
+            if ! self.Line_Has_Content { self.EmitIndent(Level); } else { self.EmitSpace(); }
+            self.EmitRaw(CommentText);
+            return ;
+        }
 
         if Token.IsTrivia() { return ; }
 
@@ -1200,7 +1248,9 @@ impl <'a> Kotlin_Emitter<'a>
         else if let Token_Kind::Operator(Op) = & Token.Kind
         {
             if matches!(Op.as_str(),"=" | "==" | "===" | "!=" | "!==" | "<=" | ">=" | "&&" | "||" | "+=" | "-=" | "*=" | "/=" | "%=" | "+" | "-" | "*" | "/" | "%" | "->" | "?:")
-            { self.EmitSpace(); }
+            {
+                self.EmitSpace();
+            }
         }
     }
 
@@ -1424,13 +1474,13 @@ pub fn VerifyKotlinTokenEquivalence(OriginalSource: & str, FormattedSource: & st
     let mut FormattedScanner = Kotlin_Lexer::New(FormattedSource);
     let FormattedTokens = FormattedScanner.TokenizeAll();
 
-    let OrigSignificant: Vec <& str > = OriginalTokens
+    let OrigSignificant: Vec < & str > = OriginalTokens
     .iter()
     .filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
     .map( | T | T.Text.as_str())
     .collect();
 
-    let FormSignificant: Vec <& str > = FormattedTokens
+    let FormSignificant: Vec < & str > = FormattedTokens
     .iter()
     .filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
     .map( | T | T.Text.as_str())

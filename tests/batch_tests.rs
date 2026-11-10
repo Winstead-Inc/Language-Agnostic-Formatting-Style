@@ -98,28 +98,28 @@ set ERRORLEVEL=1
 exit /b %ERRORLEVEL%
 "#;
 
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Batch;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
 
     // Assert LF line endings only
-    assert!(!Formatted.contains("\r\n"), "Batch formatter must emit LF line endings, got CRLF");
+    assert!( ! Formatted.contains("\r\n"),"Batch formatter must emit LF line endings, got CRLF");
 
     // Assert caret bridge on if-else closure
-    assert!(Formatted.contains(") ^\nelse ("), "Expected ') ^\\nelse (' in formatted output:\n{}", Formatted);
+    assert!(Formatted.contains(") ^\nelse ("),"Expected ') ^\\nelse (' in formatted output:\n{}", Formatted);
 
     // Assert delimiter column alignment for if and else
-    assert!(Formatted.contains("if \"%_arg:~0,2%\"==\"-J\" ("), "Expected header");
-    assert!(Formatted.contains("                       ) ^"), "Expected closing paren aligned at col 23:\n{}", Formatted);
-    assert!(Formatted.contains("else (\n         "), "Expected else child indented at col 9:\n{}", Formatted);
-    assert!(Formatted.contains("     )\nshift"), "Expected closing paren of else at col 5:\n{}", Formatted);
+    assert!(Formatted.contains("if \"%_arg:~0,2%\"==\"-J\" ("),"Expected header");
+    assert!(Formatted.contains("                       ) ^"),"Expected closing paren aligned at col 23:\n{}", Formatted);
+    assert!(Formatted.contains("else (\n         "),"Expected else child indented at col 9:\n{}", Formatted);
+    assert!(Formatted.contains("     )\nshift"),"Expected closing paren of else at col 5:\n{}", Formatted);
 
     // Assert Monolith formatting for short inlines
     assert!(Formatted.contains("if \"!_version!\"==\"\" ( set _java_major_version=1 ) else ( set _java_major_version=!_version:~1! )"));
 
     // Assert idempotence
-    let SecondPass = Source_Formatter::Format(&Formatted, &Config).expect("Second pass failed");
+    let SecondPass = Source_Formatter::Format( & Formatted, & Config).expect("Second pass failed");
     assert_eq!(Formatted, SecondPass, "Batch formatting must be 100% idempotent!");
 }
 
@@ -133,11 +133,11 @@ else (
          echo no
      )
 "#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Batch;
 
-    let FirstPass = Source_Formatter::Format(Input, &Config).expect("First pass failed");
-    let SecondPass = Source_Formatter::Format(&FirstPass, &Config).expect("Second pass failed");
+    let FirstPass = Source_Formatter::Format(Input, & Config).expect("First pass failed");
+    let SecondPass = Source_Formatter::Format( & FirstPass, & Config).expect("Second pass failed");
     assert_eq!(FirstPass, SecondPass, "Must be idempotent");
 }
 
@@ -148,12 +148,12 @@ fn Test_Batch_For_Loop_Alignment()
     for /f "tokens=1" %%j in ("%%i") do ( set V=%%j )
 )
 "#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Batch;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
-    let ColOpen = "for /f \"tokens=3\" %%i in ('java -version') do".len() + 1; // 45
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    let ColOpen = "for /f \"tokens=3\" %%i in ('java -version') do".len() + 1;
+    // 45
     let ExpectedClose = format!("{})", " ".repeat(ColOpen));
-    assert!(Formatted.contains(&ExpectedClose), "Closing paren must align with opening paren at col {}:\n{}", ColOpen, Formatted);
+    assert!(Formatted.contains( & ExpectedClose),"Closing paren must align with opening paren at col {}:\n{}", ColOpen, Formatted);
 }
-

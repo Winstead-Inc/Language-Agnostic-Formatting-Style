@@ -243,6 +243,6 @@ fn Test_JS_One_Liner_If_Parenthesis_Monolith()
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("if (index.indexOf(queries[0]) == - 1)"), "Expected monolithic if paren, got:\n{}", Formatted);
-    assert!(Formatted.contains("if (!index.match(regexps[i]) && !longIndex.match(regexps[i]))"), "Expected monolithic if paren, got:\n{}", Formatted);
+    assert!(Formatted.contains("if (index.indexOf(queries[0]) == - 1)"),"Expected monolithic if paren, got:\n{}", Formatted);
+    assert!(Formatted.contains("if (!index.match(regexps[i]) && !longIndex.match(regexps[i]))"),"Expected monolithic if paren, got:\n{}", Formatted);
 }
