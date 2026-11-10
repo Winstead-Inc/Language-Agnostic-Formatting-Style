@@ -18,18 +18,15 @@ impl Container_Node
 
     pub fn IsSoleChildChain( & self) -> bool
     {
-        let NonCommentChildren: Vec <& Syntax_Node > = self.Children.iter().filter( | Node | match Node { Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Syntax_Node::Container(_) => true, })
-        .collect();
-
-        if NonCommentChildren.len() == 1 { matches ! (NonCommentChildren[0], Syntax_Node::Container(_)) } else { false }
+        if self.Children.len() == 1 { matches ! (self.Children[0], Syntax_Node::Container(_)) } else { false }
     }
 
     pub fn GetSoleChildContainer( & self) -> Option <& Container_Node >
     {
-        let NonCommentChildren: Vec <& Syntax_Node > = self.Children.iter().filter( | Node | match Node { Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Syntax_Node::Container(_) => true, })
-        .collect();
-
-        if NonCommentChildren.len() == 1 { if let Syntax_Node::Container(C) = NonCommentChildren[0] { return Some(C); } }
+        if self.Children.len() == 1
+        {
+            if let Syntax_Node::Container(ref C) = self.Children[0] { return Some(C); }
+        }
         None
     }
 

@@ -1,7 +1,7 @@
 #![allow(
 non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Source_Language { C, Cpp, CSharp, JavaScript, TypeScript, Shell, Go, Php, Html, Css, Rust, Kotlin, KotlinOfficial, Generic, }
+pub enum Source_Language { C, Cpp, CSharp, JavaScript, TypeScript, Shell, Go, Php, Html, Css, Rust, Kotlin, KotlinOfficial, Batch, Generic, }
 
 impl Source_Language
 {
@@ -21,6 +21,7 @@ impl Source_Language
         if Lower.ends_with(".html") || Lower.ends_with(".htm") { return Source_Language::Html; }
         if Lower.ends_with(".css") { return Source_Language::Css; }
         if Lower.ends_with(".kt") || Lower.ends_with(".kts") { return Source_Language::Kotlin; }
+        if Lower.ends_with(".bat") || Lower.ends_with(".cmd") { return Source_Language::Batch; }
         Source_Language::Generic
     }
 
@@ -32,20 +33,28 @@ impl Source_Language
         )
     }
 
+    pub fn SupportsPreprocessor( & self) -> bool
+    {
+        matches!(self, Source_Language::C | Source_Language::Cpp | Source_Language::CSharp)
+    }
+
     pub fn IsJavaScriptOrTypeScript( & self) -> bool { matches ! (self, Source_Language::JavaScript | Source_Language::TypeScript) }
 
     pub fn IsShell( & self) -> bool { matches ! (self, Source_Language::Shell) }
 
     pub fn IsKotlin( & self) -> bool { matches ! (self, Source_Language::Kotlin | Source_Language::KotlinOfficial) }
 
+    pub fn IsBatch( & self) -> bool { matches ! (self, Source_Language::Batch) }
+
     pub fn DefaultExtensions( & self) -> & 'static[ & 'static str]
     {
         match self
         {
-            Source_Language::C => & ["c", "h"], Source_Language::Cpp => & ["cpp", "hpp", "cc", "cxx", "hh", "hxx", "inl", "cu"], Source_Language::CSharp => & ["cs"],
+            Source_Language::C => & ["c", "h"], Source_Language::Cpp => & ["cpp", "hpp", "cc", "cxx", "hh", "hxx", "inl", "cu", "h"], Source_Language::CSharp => & ["cs"],
             Source_Language::JavaScript => & ["js", "mjs", "cjs", "jsx"], Source_Language::TypeScript => & ["ts", "tsx", "mts", "cts"], Source_Language::Shell => & ["sh", "bash", "zsh", "ksh"],
             Source_Language::Go => & ["go"], Source_Language::Php => & ["php"], Source_Language::Html => & ["html", "htm"], Source_Language::Css => & ["css"], Source_Language::Rust => & ["rs"],
             Source_Language::Kotlin | Source_Language::KotlinOfficial => & ["kt", "kts"],
+            Source_Language::Batch => & ["bat", "cmd"],
             Source_Language::Generic => & [],
         }
     }
@@ -54,7 +63,7 @@ impl Source_Language
     {
         match self
         {
-            Source_Language::C => "c", Source_Language::Cpp => "cpp", Source_Language::CSharp => "cs", Source_Language::JavaScript => "js", Source_Language::TypeScript => "ts", Source_Language::Shell => "sh", Source_Language::Go => "go", Source_Language::Php => "php", Source_Language::Html => "html", Source_Language::Css => "css", Source_Language::Rust => "rs", Source_Language::Kotlin => "kt", Source_Language::KotlinOfficial => "kt-official", Source_Language::Generic => "generic",
+            Source_Language::C => "c", Source_Language::Cpp => "cpp", Source_Language::CSharp => "cs", Source_Language::JavaScript => "js", Source_Language::TypeScript => "ts", Source_Language::Shell => "sh", Source_Language::Go => "go", Source_Language::Php => "php", Source_Language::Html => "html", Source_Language::Css => "css", Source_Language::Rust => "rs", Source_Language::Kotlin => "kt", Source_Language::KotlinOfficial => "kt-official", Source_Language::Batch => "bat", Source_Language::Generic => "generic",
         }
     }
 }

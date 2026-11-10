@@ -19,6 +19,8 @@ impl Source_Formatter
 
         if Config.Language.IsKotlin() { return crate::kotlin::Kotlin_Formatter::Format(Source, Config); }
 
+        if Config.Language.IsBatch() { return crate::batch::Batch_Formatter::Format(Source, Config); }
+
         if matches!(Config.Language, crate::types::Source_Language::Html | crate::types::Source_Language::Php)
         { return crate::polyglot::Polyglot_Formatter::Format(Source, Config); }
 

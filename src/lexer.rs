@@ -35,12 +35,16 @@ impl <'a> Lexer_Scanner<'a>
             // 2. Horizontal Whitespace
             if Ch == ' ' || Ch == '\t' || Ch == '\r' { self.Advance(); continue ; }
             // 3. Preprocessor Directive
-            if Ch == '#' && StartCol == 0
+            if Ch == '#' && (PrecedingNewlines > 0 || RawTokens.is_empty())
             {
-                let DirectiveText = self.ScanPreprocessor();
-                RawTokens.push(Token_Info::New(Token_Kind::Preprocessor(DirectiveText.clone()), DirectiveText, StartLine, StartCol, PrecedingNewlines,));
-                PrecedingNewlines = 0;
-                continue;
+                if self.Language.SupportsPreprocessor()
+                    || (self.Line == 1 && self.PeekAhead(1) == Some('!') && self.PeekAhead(2) != Some('['))
+                {
+                    let DirectiveText = self.ScanPreprocessor();
+                    RawTokens.push(Token_Info::New(Token_Kind::Preprocessor(DirectiveText.clone()), DirectiveText, StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                    continue;
+                }
             }
             // 4. Comments
             if Ch == '/' && self.PeekAhead(1) == Some('/')
@@ -114,25 +118,35 @@ impl <'a> Lexer_Scanner<'a>
 
             if Ch == '\''
             {
-                if let Some(NextCh) = self.PeekAhead(1)
+                if self.Language == Source_Language::Rust
                 {
-                    if (NextCh.is_alphabetic() || NextCh == '_') && self.PeekAhead(2) != Some('\'')
+                    if let Some(NextCh) = self.PeekAhead(1)
                     {
-                        // It's a Rust lifetime!
-                        self.Advance();
-                        // consume '\''
-                        let IdentText = self.ScanIdentifier();
-                        let LifetimeText = format!("'{}", IdentText);
-                        RawTokens.push(Token_Info::New(Token_Kind::Identifier(LifetimeText.clone()), LifetimeText, StartLine, StartCol, PrecedingNewlines,));
-                        PrecedingNewlines = 0;
-                        continue;
+                        if (NextCh.is_alphabetic() || NextCh == '_') && self.PeekAhead(2) != Some('\'')
+                        {
+                            // It's a Rust lifetime!
+                            self.Advance();
+                            // consume '\''
+                            let IdentText = self.ScanIdentifier();
+                            let LifetimeText = format!("'{}", IdentText);
+                            RawTokens.push(Token_Info::New(Token_Kind::Identifier(LifetimeText.clone()), LifetimeText, StartLine, StartCol, PrecedingNewlines,));
+                            PrecedingNewlines = 0;
+                            continue;
+                        }
                     }
-                }
 
-                let CharText = self.ScanCharLiteral();
-                RawTokens.push(Token_Info::New(Token_Kind::Char_Lit(CharText.clone()), CharText, StartLine, StartCol, PrecedingNewlines,));
-                PrecedingNewlines = 0;
-                continue;
+                    let CharText = self.ScanCharLiteral();
+                    RawTokens.push(Token_Info::New(Token_Kind::Char_Lit(CharText.clone()), CharText, StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                    continue;
+                }
+                else
+                {
+                    let StringText = self.ScanCharLiteral();
+                    RawTokens.push(Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                    continue;
+                }
             }
             // 6. Delimiters
             if Ch == '('
@@ -183,7 +197,9 @@ impl <'a> Lexer_Scanner<'a>
                 continue;
             }
             // 7. Numbers
-            if Ch.is_ascii_digit() || (Ch == '.' && self.PeekAhead(1).map_or(false, | C | C.is_ascii_digit()))
+            let IsNumberStart = Ch.is_ascii_digit()
+                || (Ch == '.' && self.Language != Source_Language::Rust && self.PeekAhead(1).map_or(false, | C | C.is_ascii_digit()));
+            if IsNumberStart
             {
                 let NumberText = self.ScanNumber();
                 RawTokens.push(Token_Info::New(Token_Kind::Number(NumberText.clone()), NumberText, StartLine, StartCol, PrecedingNewlines,));
@@ -395,7 +411,9 @@ impl <'a> Lexer_Scanner<'a>
         {
             if Escaped { Result.push(self.Advance().unwrap()); Escaped = false; }
             else if Ch == '\\' { Result.push(self.Advance().unwrap()); Escaped = true; }
-            else if Ch == '\'' { Result.push(self.Advance().unwrap()); break ; } else { Result.push(self.Advance().unwrap()); }
+            else if Ch == '\'' { Result.push(self.Advance().unwrap()); break ; }
+            else if Ch == '\n' { break ; }
+            else { Result.push(self.Advance().unwrap()); }
         }
         Result
     }
@@ -471,10 +489,23 @@ impl <'a> Lexer_Scanner<'a>
     fn ScanNumber( & mut self) -> String
     {
         let mut Result = String:: new ();
+        let mut HasDecimal = false;
+
         while let Some(Ch) = self.Peek()
         {
-            if Ch == '.' && self.PeekAhead(1) == Some('.') { break ; }
-            if Ch.is_ascii_alphanumeric() || Ch == '.' || Ch == '_' || Ch == '\'' { Result.push(self.Advance().unwrap()); }
+            if Ch == '.'
+            {
+                if HasDecimal { break ; }
+                if ! self.PeekAhead(1).map_or(false, | c | c.is_ascii_digit()) { break ; }
+                HasDecimal = true;
+                Result.push(self.Advance().unwrap());
+                continue;
+            }
+
+            if Ch.is_ascii_alphanumeric() || Ch == '_' || Ch == '\''
+            {
+                Result.push(self.Advance().unwrap());
+            }
             else { break ; }
         }
         Result
@@ -482,11 +513,125 @@ impl <'a> Lexer_Scanner<'a>
 
     fn ScanOperator( & mut self) -> String
     {
-        let mut Result = String:: new ();
-        let OpChars = "=+-*/%&|^!~<>:";
-        while let Some(Ch) = self.Peek() { if OpChars.contains(Ch) { Result.push(self.Advance().unwrap()); } else { break ; } }
-        if Result.is_empty() { Result.push(self.Advance().unwrap()); }
-        Result
+        let First = match self.Advance() { Some(c) => c, None => return String:: new (), };
+
+        let Next = self.Peek();
+        let Next2 = self.PeekAhead(1);
+
+        match First
+        {
+            '<' =>
+            {
+                if Next == Some('<')
+                {
+                    if Next2 == Some('=') { self.Advance(); self.Advance(); "<<=".to_string() }
+                    else { self.Advance(); "<<".to_string() }
+                }
+                else if Next == Some('=')
+                {
+                    if Next2 == Some('>') { self.Advance(); self.Advance(); "<=>".to_string() }
+                    else { self.Advance(); "<=".to_string() }
+                }
+                else if Next == Some('-') { self.Advance(); "<-".to_string() }
+                else if Next == Some('>') { self.Advance(); "<>".to_string() }
+                else { "<".to_string() }
+            }
+            '>' =>
+            {
+                if Next == Some('>')
+                {
+                    if Next2 == Some('>') && (self.Language.IsJavaScriptOrTypeScript())
+                    {
+                        if self.PeekAhead(2) == Some('=') { self.Advance(); self.Advance(); self.Advance(); ">>>=".to_string() }
+                        else { self.Advance(); self.Advance(); ">>>".to_string() }
+                    }
+                    else if Next2 == Some('=') { self.Advance(); self.Advance(); ">>=".to_string() }
+                    else { self.Advance(); ">>".to_string() }
+                }
+                else if Next == Some('=') { self.Advance(); ">=".to_string() }
+                else { ">".to_string() }
+            }
+            '=' =>
+            {
+                if Next == Some('=')
+                {
+                    if Next2 == Some('=') { self.Advance(); self.Advance(); "===".to_string() }
+                    else { self.Advance(); "==".to_string() }
+                }
+                else if Next == Some('>') { self.Advance(); "=>".to_string() }
+                else { "=".to_string() }
+            }
+            '!' =>
+            {
+                if Next == Some('=')
+                {
+                    if Next2 == Some('=') { self.Advance(); self.Advance(); "!==".to_string() }
+                    else { self.Advance(); "!=".to_string() }
+                }
+                else { "!".to_string() }
+            }
+            '&' =>
+            {
+                if Next == Some('&')
+                {
+                    if Next2 == Some('=') { self.Advance(); self.Advance(); "&&=".to_string() }
+                    else { self.Advance(); "&&".to_string() }
+                }
+                else if Next == Some('=') { self.Advance(); "&=".to_string() }
+                else { "&".to_string() }
+            }
+            '|' =>
+            {
+                if Next == Some('|')
+                {
+                    if Next2 == Some('=') { self.Advance(); self.Advance(); "||=".to_string() }
+                    else { self.Advance(); "||".to_string() }
+                }
+                else if Next == Some('=') { self.Advance(); "|=".to_string() }
+                else { "|".to_string() }
+            }
+            '+' =>
+            {
+                if Next == Some('+') { self.Advance(); "++".to_string() }
+                else if Next == Some('=') { self.Advance(); "+=".to_string() }
+                else { "+".to_string() }
+            }
+            '-' =>
+            {
+                if Next == Some('-') { self.Advance(); "--".to_string() }
+                else if Next == Some('=') { self.Advance(); "-=".to_string() }
+                else if Next == Some('>') { self.Advance(); "->".to_string() }
+                else { "-".to_string() }
+            }
+            '*' =>
+            {
+                if Next == Some('*')
+                {
+                    if Next2 == Some('=') { self.Advance(); self.Advance(); "**=".to_string() }
+                    else { self.Advance(); "**".to_string() }
+                }
+                else if Next == Some('=') { self.Advance(); "*=".to_string() }
+                else { "*".to_string() }
+            }
+            '/' =>
+            {
+                if Next == Some('=') { self.Advance(); "/=".to_string() }
+                else { "/".to_string() }
+            }
+            '%' =>
+            {
+                if Next == Some('=') { self.Advance(); "%=".to_string() }
+                else { "%".to_string() }
+            }
+            '^' =>
+            {
+                if Next == Some('^') && Next2 == Some('=') { self.Advance(); self.Advance(); "^^=".to_string() }
+                else if Next == Some('=') { self.Advance(); "^=".to_string() }
+                else { "^".to_string() }
+            }
+            '~' => "~".to_string(),
+            _ => First.to_string(),
+        }
     }
 }
 
@@ -527,13 +672,17 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>)
                 {
                     if Tokens[J].Text == "<" { Depth += 1; }
                     else if Tokens[J].Text == ">" { Depth -= 1; if Depth == 0 { MatchIndex = Some(J); break ; } }
-                    else if Tokens[J].Text == ">>" && Depth >= 1
+                    else if Tokens[J].Text.chars().all( | c | c == '>') && Tokens[J].Text.len() > 1 && Depth >= 1
                     {
-                        // Closer splitting per LAFS edge-cases §A.1
+                        // Closer splitting per LAFS edge-cases §A.1 (handles >>, >>>, >>>>)
+                        let Count = Tokens[J].Text.len();
                         let Tok = Tokens[J].clone();
                         Tokens[J].Kind = Token_Kind::Operator(">".to_string());
                         Tokens[J].Text = ">".to_string();
-                        Tokens.insert(J + 1, Token_Info::New(Token_Kind::Operator(">".to_string()),">".to_string(), Tok.Line, Tok.Column + 1, 0,),);
+                        for Offset in 1..Count
+                        {
+                            Tokens.insert(J + Offset, Token_Info::New(Token_Kind::Operator(">".to_string()), ">".to_string(), Tok.Line, Tok.Column + Offset, 0));
+                        }
                         Depth -= 1;
                         if Depth == 0 { MatchIndex = Some(J); break ; }
                     }

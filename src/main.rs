@@ -1,5 +1,6 @@
 #![allow(
-non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] mod container_tree;
+non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] mod batch;
+mod container_tree;
 mod emitter;
 mod formatter;
 mod go;
@@ -26,6 +27,7 @@ use types:: { Config_Settings, Kotlin_Style, Source_Language };
 const DEFAULT_EXCLUDED_DIRS: & [ & str] = &
 [
     ".git", ".svn", ".hg", "target", "bin", "obj", "node_modules", "dist", "build", ".vs", ".vscode", ".idea", ".gradle", "venv", ".env", "vendor", "__pycache__",
+    "stable-x86_64-pc-windows-msvc", "rustlib", "llvm-project", "nightly-x86_64-pc-windows-msvc", "beta-x86_64-pc-windows-msvc",
 ];
 
 const DOCUMENT_EXTENSIONS: & [ & str] = &
@@ -38,9 +40,14 @@ const BINARY_EXTENSIONS: & [ & str] = &
     "exe", "dll", "so", "dylib", "obj", "o", "a", "lib", "bin", "iso", "img", "zip", "tar", "gz", "tgz", "7z", "rar", "bz2", "xz", "zst", "png", "jpg", "jpeg", "gif", "webp", "ico", "bmp", "tiff", "tif", "psd", "ai", "svgz", "mp3", "mp4", "wav", "ogg", "mkv", "avi", "mov", "flv", "webm", "m4a", "flac", "woff", "woff2", "ttf", "eot", "otf", "pyc", "pyo", "class", "pdb", "idb", "suo", "db", "sqlite", "sqlite3", "lock", "lockb",
 ];
 
+const PYTHON_EXTENSIONS: & [ & str] = &
+[
+    "py", "pyw", "pyi", "pyx", "pxd", "pyd",
+];
+
 const DEFAULT_SUPPORTED_EXTENSIONS: & [ & str] = &
 [
-    "c", "h", "cpp", "hpp", "cc", "cxx", "hh", "hxx", "inl", "cu", "cs", "rs", "java", "kt", "kts", "scala", "js", "mjs", "cjs", "jsx", "ts", "tsx", "mts", "cts", "go", "dart", "php", "py", "swift", "m", "mm", "sh", "bash", "zsh", "ksh", "json", "jsonc", "json5", "toml", "css", "scss", "less", "sql", "graphql", "proto", "html", "htm",
+    "c", "h", "cpp", "hpp", "cc", "cxx", "hh", "hxx", "inl", "cu", "cs", "rs", "java", "kt", "kts", "scala", "js", "mjs", "cjs", "jsx", "ts", "tsx", "mts", "cts", "go", "dart", "php", "swift", "m", "mm", "sh", "bash", "zsh", "ksh", "json", "jsonc", "json5", "toml", "css", "scss", "less", "sql", "graphql", "proto", "html", "htm", "bat", "cmd",
 ];
 
 #[derive(Clone)]
@@ -178,12 +185,15 @@ fn IsDirExcluded(DirName: & str, DirPath: & Path, ExcludedPatterns: & [String]) 
 {
     if DEFAULT_EXCLUDED_DIRS.iter().any( |& D | D.eq_ignore_ascii_case(DirName)) { return true; }
     if DirName.to_ascii_lowercase().starts_with("old.src") { return true; }
+    let LowerDir = DirName.to_ascii_lowercase();
+    if LowerDir.ends_with("-pc-windows-msvc") || LowerDir.ends_with("-pc-windows-gnu") || LowerDir.ends_with("-unknown-linux-gnu") || LowerDir.ends_with("-apple-darwin") { return true; }
 
     let DirPathStr = DirPath.to_string_lossy().replace('\\', "/");
     let LowerPath = DirPathStr.to_ascii_lowercase();
     if LowerPath.starts_with("old.src") || LowerPath.contains("/old.src") { return true; }
+    if LowerPath.contains("/rustlib") || LowerPath.contains("/llvm-project") || LowerPath.contains("stable-x86_64") || LowerPath.contains("nightly-x86_64") || LowerPath.contains("beta-x86_64") { return true; }
 
-    for Pattern in ExcludedPatterns
+for Pattern in ExcludedPatterns
     {
         let CleanPattern = Pattern.trim_matches('/').trim_matches('\\');
         if WildcardMatch(CleanPattern, DirName) || WildcardMatch(CleanPattern, & DirPathStr) || DirPathStr.ends_with(CleanPattern) || DirPathStr.contains( & format ! ("/{}/", CleanPattern))
@@ -206,14 +216,16 @@ fn IsFileEligible(PathTarget: & Path, AllTypes: bool , AllowedExtensions: & [Str
 
     let Ext = PathTarget.extension().unwrap_or_default().to_string_lossy().to_lowercase();
     if Ext == "log" || FileName.to_ascii_lowercase().ends_with(".log") { return false; }
-    // 2. Specific extension filter (-e / --ext / --extension)
+    // 2. Exclude Python file types (whitespace-delimited block semantics are unsupported)
+    if PYTHON_EXTENSIONS.iter().any( |& P | P == Ext.as_str()) { return false; }
+    // 3. Specific extension filter (-e / --ext / --extension)
     if ! AllowedExtensions.is_empty() { if ! AllowedExtensions.iter().any( | A | A.eq_ignore_ascii_case( & Ext)) { return false; } }
     else if ! AllTypes && ! DEFAULT_SUPPORTED_EXTENSIONS.iter().any( |& S | S == Ext.as_str()) { return false; }
-    // 3. Exclude document file types (adoc, pdf, docx, md, yml, etc.)
+    // 4. Exclude document file types (adoc, pdf, docx, md, yml, etc.)
     if DOCUMENT_EXTENSIONS.iter().any( |& D | D == Ext.as_str()) { return false; }
-    // 4. Exclude known binary file types
+    // 5. Exclude known binary file types
     if BINARY_EXTENSIONS.iter().any( |& B | B == Ext.as_str()) { return false; }
-    // 5. Fast binary content check for NUL bytes
+    // 6. Fast binary content check for NUL bytes
     if IsBinaryFile(PathTarget) { return false; }
 
     true
@@ -235,17 +247,63 @@ fn NormalizePathSpec(Spec: & str) -> (String, bool)
     (S, HadTrailingSlash)
 }
 
+fn FormatFailedEntry(FilePathStr: & str, Lang: & str, Reason: & str) -> String
+{
+    format!("File: {}\nLanguage: {}\nReason: {}\n", FilePathStr, Lang, Reason.trim())
+}
+
 fn ParseFailedLine(Line: & str) -> Option< & str>
 {
     let Trimmed = Line.trim();
     if Trimmed.is_empty() { return None; }
-    let LineWithoutReason = if let Some(Idx) = Trimmed.find(" Reason:") { & Trimmed[..Idx] }
+    if Trimmed.starts_with("Language:") || Trimmed.starts_with("Reason:") || Trimmed.starts_with("Expected:") || Trimmed.starts_with("Got:") || Trimmed.starts_with("Context:") || Trimmed.starts_with("---")
+    { return None; }
+
+    let AfterPrefix = if let Some(Stripped) = Trimmed.strip_prefix("File:") { Stripped.trim() }
+    else if let Some(Stripped) = Trimmed.strip_prefix("Path:") { Stripped.trim() }
     else { Trimmed };
+
+    let LineWithoutReason = if let Some(Idx) = AfterPrefix.find(" Reason:") { & AfterPrefix[..Idx] }
+    else { AfterPrefix };
     let FilePath = if let Some(Idx) = LineWithoutReason.rfind(" (")
     { if LineWithoutReason.ends_with(')') { & LineWithoutReason[..Idx] } else { LineWithoutReason } }
     else { LineWithoutReason };
     let CleanPath = FilePath.trim();
     if ! CleanPath.is_empty() { Some(CleanPath) } else { None }
+}
+
+fn GetDefaultFailedLogPath() -> String
+{
+    if let Ok(ExePath) = std::env::current_exe()
+    {
+        if let Some(Parent) = ExePath.parent()
+        {
+            return Parent.join("failed.txt").to_string_lossy().to_string();
+        }
+    }
+    "failed.txt".to_string()
+}
+
+static FAILED_FILE_MUTEX: Mutex<()> = Mutex::new(());
+
+fn AppendFailedEntry(Entry: & str, OutputFailedPath: & Option<String>)
+{
+    let _Guard = FAILED_FILE_MUTEX.lock().unwrap_or_else( | P | P.into_inner());
+    let TargetFile = OutputFailedPath.as_deref().unwrap_or("failed.txt");
+    if let Ok(mut F) = fs::OpenOptions::new().create(true).append(true).open(TargetFile)
+    {
+        let _ = writeln!(F, "{}\n", Entry.trim_end());
+        let _ = F.flush();
+    }
+    let BinaryFailedPath = GetDefaultFailedLogPath();
+    if BinaryFailedPath != TargetFile
+    {
+        if let Ok(mut F) = fs::OpenOptions::new().create(true).append(true).open( & BinaryFailedPath)
+        {
+            let _ = writeln!(F, "{}\n", Entry.trim_end());
+            let _ = F.flush();
+        }
+    }
 }
 
 fn MatchesSpecifiedFile(Candidate: & Path, Spec: & str) -> bool
@@ -316,7 +374,10 @@ fn IsSpecifiedFileEligible(PathTarget: & Path, AllTypes: bool , AllowedExtension
     // 1. Exclude known binary file types or binary content
     if BINARY_EXTENSIONS.iter().any( |& B | B == Ext.as_str()) || IsBinaryFile(PathTarget) { return false; }
 
-    // 2. Check user exclusion patterns
+    // 2. Exclude Python file types (whitespace-delimited block semantics are unsupported)
+    if PYTHON_EXTENSIONS.iter().any( |& P | P == Ext.as_str()) { return false; }
+
+    // 3. Check user exclusion patterns
     let FileName = PathTarget.file_name().unwrap_or_default().to_string_lossy();
     let PathStr = PathTarget.to_string_lossy().replace('\\', "/");
     for Pattern in ExcludedPatterns
@@ -330,6 +391,38 @@ fn IsSpecifiedFileEligible(PathTarget: & Path, AllTypes: bool , AllowedExtension
     else if ForceLanguage == Source_Language::Generic && ! AllTypes && ! DEFAULT_SUPPORTED_EXTENSIONS.iter().any( |& S | S == Ext.as_str()) { return false; }
 
     true
+}
+
+fn DetectLanguageForFile(FilePathStr: &str, Content: &str) -> Source_Language
+{
+    let ExtLang = Source_Language::FromExtension(FilePathStr);
+    if ExtLang == Source_Language::C && (FilePathStr.ends_with(".h") || FilePathStr.ends_with(".H"))
+    {
+        if IsCppHeaderContent(Content)
+        {
+            return Source_Language::Cpp;
+        }
+    }
+    ExtLang
+}
+
+fn IsCppHeaderContent(Content: &str) -> bool
+{
+    let CheckSlice = if Content.len() > 8192 { &Content[..8192] } else { Content };
+    CheckSlice.contains("-*-C++-*-")
+        || CheckSlice.contains("-*- C++ -*-")
+        || CheckSlice.contains("-*-c++-*-")
+        || CheckSlice.contains("ft=cpp")
+        || CheckSlice.contains("extern \"C++\"")
+        || CheckSlice.contains("namespace ")
+        || CheckSlice.contains("template<")
+        || CheckSlice.contains("template <")
+        || CheckSlice.contains("nullptr")
+        || CheckSlice.contains("constexpr")
+        || CheckSlice.contains("reinterpret_cast<")
+        || CheckSlice.contains("static_cast<")
+        || CheckSlice.contains("dynamic_cast<")
+        || CheckSlice.contains("std::")
 }
 
 fn CollectFilesShallow(DirPath: & Path, AllTypes: bool , AllowedExtensions: & [String], ExcludedPatterns: & [String], Collected: & mut Vec<String>,)
@@ -394,7 +487,7 @@ fn ExpandGlobPattern(Pattern: & str, AllTypes: bool , AllowedExtensions: & [Stri
 
 fn PromptConfirmation(Logger: & Terminal_Logger, Count: usize, TargetDesc: & str) -> bool
 {
-    Logger.Print( & format ! ("Found {} files in '{}'. Apply LAFS formatting and save in-place? [y/N]: ", Count, TargetDesc));
+    Logger.Print( & format ! ("Found {} files in '{}'. Apply LAFS formatting and save in-place? [Y/N]: ", Count, TargetDesc));
 
     let mut Input = String:: new ();
     if io::stdin().read_line( & mut Input).is_ok() { let Trimmed = Input.trim().to_lowercase(); matches ! (Trimmed.as_str(),"y" | "yes") } else { false }
@@ -425,7 +518,7 @@ fn Main()
     {
         if io::stdin().is_terminal()
         {
-            Logger.Print("No target files specified. Format all files in current directory and subdirectories? [y/N]: ");
+            Logger.Print("No target files specified. Format all files in current directory and subdirectories? [Y/N]: ");
             let mut Input = String:: new ();
             if io::stdin().read_line( & mut Input).is_ok()
             {
@@ -621,8 +714,18 @@ fn Main()
     if ReformatFailed
     {
         AutoYes = true;
-        let FailedLogPath = OutputFailedPath.clone().unwrap_or_else( || "failed.txt".to_string());
-        match fs::read_to_string( & FailedLogPath)
+        let BinaryFailedPath = GetDefaultFailedLogPath();
+        let FailedLogPath = OutputFailedPath.clone().unwrap_or_else( || {
+            if Path::new ("failed.txt").exists() { "failed.txt".to_string() }
+            else if Path::new ( & BinaryFailedPath).exists() { BinaryFailedPath.clone() }
+            else { "failed.txt".to_string() }
+        });
+        let ContentResult = fs::read_to_string( & FailedLogPath).or_else( | _ | {
+            if FailedLogPath != "failed.txt" && Path::new ("failed.txt").exists() { fs::read_to_string("failed.txt") }
+            else if FailedLogPath != BinaryFailedPath && Path::new ( & BinaryFailedPath).exists() { fs::read_to_string( & BinaryFailedPath) }
+            else { Err(io::Error::new (io::ErrorKind::NotFound, "not found")) }
+        });
+        match ContentResult
         {
             Ok(Content) =>
             {
@@ -651,7 +754,7 @@ fn Main()
             let LangTag = if Config.Language != Source_Language::Generic { format ! ("{{{}}} ", Config.Language.ShortName()) }
             else if ! AllowedExtensions.is_empty() { format ! ("{{{}}} ", AllowedExtensions.join(", ")) } else { String::new () };
 
-            Logger.Print( & format ! ("No target files specified. Format all {}files in current directory and subdirectories? [y/N]: ", LangTag));
+            Logger.Print( & format ! ("No target files specified. Format all {}files in current directory and subdirectories? [Y/N]: ", LangTag));
             let mut Input = String:: new ();
             if io::stdin().read_line( & mut Input).is_ok()
             {
@@ -826,6 +929,14 @@ fn Main()
         { Logger.Println("Operation cancelled by user."); Logger.Flush_To_Files(); return ; }
     }
 
+    if ! ReformatFailed && ! OutputToStdout
+    {
+        let TargetFile = OutputFailedPath.as_deref().unwrap_or("failed.txt");
+        if Path::new (TargetFile).exists() { let _ = fs::write(TargetFile, ""); }
+        let BinaryFailed = GetDefaultFailedLogPath();
+        if BinaryFailed != TargetFile && Path::new ( & BinaryFailed).exists() { let _ = fs::write( & BinaryFailed, ""); }
+    }
+
     let StartTime = Instant::now();
     let ThreadCount = if OutputToStdout || CheckOnly || TotalFiles <= 1 { 1 }
     else { CustomThreads.unwrap_or_else( || std::thread::available_parallelism().map_or(4, | n | n.get ())) };
@@ -843,13 +954,15 @@ fn Main()
                     { if Verbose { Logger.Println( & format ! ("Skipped non-UTF8 / binary file: {}", FilePathStr)); } continue ; }
                     Logger.Eprintln( & format ! ("Failed to read file {}: {}", FilePathStr, E));
                     ErrorCount.fetch_add(1, Ordering::Relaxed);
-                    FailedPaths.lock().unwrap().push(format ! ("{} ({}) Reason: Failed to read file: {}", FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), E));
+                    let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), &format!("Failed to read file: {}", E));
+                    AppendFailedEntry( & Entry, & OutputFailedPath);
+                    FailedPaths.lock().unwrap().push(Entry);
                     continue;
                 }
             };
 
             let mut FileConfig = Config.clone();
-            if FileConfig.Language == Source_Language::Generic { FileConfig.Language = Source_Language::FromExtension(FilePathStr); }
+            if FileConfig.Language == Source_Language::Generic { FileConfig.Language = DetectLanguageForFile(FilePathStr, & FileContent); }
 
             match Source_Formatter::Format( & FileContent, & FileConfig)
             {
@@ -863,7 +976,9 @@ fn Main()
                         {
                             Logger.Println( & format ! ("Requires formatting: {}", FilePathStr));
                             ErrorCount.fetch_add(1, Ordering::Relaxed);
-                            FailedPaths.lock().unwrap().push(format ! ("{} ({}) Reason: Requires formatting", FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName()));
+                            let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), "Requires formatting");
+                            AppendFailedEntry( & Entry, & OutputFailedPath);
+                            FailedPaths.lock().unwrap().push(Entry);
                         }
                         else if Verbose { Logger.Println( & format ! ("Clean: {}", FilePathStr)); }
                     }
@@ -874,7 +989,9 @@ fn Main()
                         {
                             Logger.Eprintln( & format ! ("Failed to save file {}: {}", FilePathStr, E));
                             ErrorCount.fetch_add(1, Ordering::Relaxed);
-                            FailedPaths.lock().unwrap().push(format ! ("{} ({}) Reason: Failed to save file: {}", FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), E));
+                            let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), &format!("Failed to save file: {}", E));
+                            AppendFailedEntry( & Entry, & OutputFailedPath);
+                            FailedPaths.lock().unwrap().push(Entry);
                         }
                         else { Logger.Println( & format ! ("Formatted & Saved: {}", FilePathStr)); FormattedCount.fetch_add(1, Ordering::Relaxed); }
                     }
@@ -888,7 +1005,10 @@ fn Main()
                 {
                     Logger.Eprintln( & format ! ("Error formatting {}: {}", FilePathStr, ErrMessage));
                     ErrorCount.fetch_add(1, Ordering::Relaxed);
-                    FailedPaths.lock().unwrap().push(format ! ("{} ({}) Reason: {}", FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), ErrMessage.trim()));
+                    let CleanErr = ErrMessage.trim();
+                    let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), CleanErr);
+                    AppendFailedEntry( & Entry, & OutputFailedPath);
+                    FailedPaths.lock().unwrap().push(Entry);
                 }
             }
         }
@@ -909,6 +1029,7 @@ fn Main()
                     let WorkerCurrentIndex = CurrentIndex.clone();
                     let WorkerConfig = Config.clone();
                     let WorkerTargetFiles = & TargetFiles;
+                    let WorkerOutputFailedPath = OutputFailedPath.clone();
 
                     Scope.spawn
                     (
@@ -926,12 +1047,14 @@ fn Main()
                                     { if Verbose { WorkerLogger.Println( & format ! ("Skipped non-UTF8 / binary file: {}", FilePathStr)); } continue ; }
                                     WorkerLogger.Eprintln( & format ! ("Failed to read file {}: {}", FilePathStr, E));
                                     WorkerErrorCount.fetch_add(1, Ordering::Relaxed);
-                                    WorkerFailedPaths.lock().unwrap().push(format ! ("{} ({}) Reason: Failed to read file: {}", FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), E));
+                                    let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), &format!("Failed to read file: {}", E));
+                                    AppendFailedEntry( & Entry, & WorkerOutputFailedPath);
+                                    WorkerFailedPaths.lock().unwrap().push(Entry);
                                     continue;
                                 }
                             };
                             let mut FileConfig = WorkerConfig.clone();
-                            if FileConfig.Language == Source_Language::Generic { FileConfig.Language = Source_Language::FromExtension(FilePathStr); }
+                            if FileConfig.Language == Source_Language::Generic { FileConfig.Language = DetectLanguageForFile(FilePathStr, & FileContent); }
                             match Source_Formatter::Format( & FileContent, & FileConfig)
                             {
                                 Ok(Formatted) =>
@@ -942,7 +1065,9 @@ fn Main()
                                         {
                                             WorkerLogger.Eprintln( & format ! ("Failed to save file {}: {}", FilePathStr, E));
                                             WorkerErrorCount.fetch_add(1, Ordering::Relaxed);
-                                            WorkerFailedPaths.lock().unwrap().push(format ! ("{} ({}) Reason: Failed to save file: {}", FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), E));
+                                            let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), &format!("Failed to save file: {}", E));
+                                            AppendFailedEntry( & Entry, & WorkerOutputFailedPath);
+                                            WorkerFailedPaths.lock().unwrap().push(Entry);
                                         }
                                         else
                                         {
@@ -960,7 +1085,10 @@ fn Main()
                                 {
                                     WorkerLogger.Eprintln( & format ! ("Error formatting {}: {}", FilePathStr, ErrMessage));
                                     WorkerErrorCount.fetch_add(1, Ordering::Relaxed);
-                                    WorkerFailedPaths.lock().unwrap().push(format ! ("{} ({}) Reason: {}", FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), ErrMessage.trim()));
+                                    let CleanErr = ErrMessage.trim();
+                                    let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), CleanErr);
+                                    AppendFailedEntry( & Entry, & WorkerOutputFailedPath);
+                                    WorkerFailedPaths.lock().unwrap().push(Entry);
                                 }
                             }
                         }
@@ -980,7 +1108,8 @@ fn Main()
         Logger.Println( & format ! ("Summary: {} formatted and saved, {} already clean, {} errors ({:.2?}, {} threads).", FCount, CCount, ECount, Elapsed, ThreadCount));
     }
 
-    if OutputFailedPath.is_none() && ECount > 0 && ! OutputToStdout && ! CheckOnly { OutputFailedPath = Some("failed.txt".to_string()); }
+    let DefaultBinaryFailed = GetDefaultFailedLogPath();
+    if OutputFailedPath.is_none() && ECount > 0 && ! OutputToStdout { OutputFailedPath = Some("failed.txt".to_string()); }
 
     if let Some(FailedFile) = OutputFailedPath
     {
@@ -988,10 +1117,22 @@ fn Main()
         let FailedMutex = FailedPaths.lock().unwrap();
         for Path in FailedMutex.iter() { FailedPathsStr.push_str(Path); FailedPathsStr.push('\n'); }
         if let Err(E) = fs::write( & FailedFile, & FailedPathsStr)
-        { Logger.Eprintln( & format ! ("Failed to write failed paths to {}: {}", FailedFile, E)); }
-        else if ReformatFailed && FailedMutex.is_empty() { Logger.Println("All previously failed files were successfully formatted!"); }
+        {
+            Logger.Eprintln( & format ! ("Failed to write failed paths to {}: {}", FailedFile, E));
+        }
+        else if ReformatFailed && FailedMutex.is_empty()
+        {
+            Logger.Println("All previously failed files were successfully formatted!");
+            if DefaultBinaryFailed != FailedFile && Path::new ( & DefaultBinaryFailed).exists() { let _ = fs::write( & DefaultBinaryFailed, ""); }
+        }
         else if ! FailedMutex.is_empty()
-        { Logger.Println( & format ! ("Failed file paths recorded to '{}'. Use 'lafs format failed' to retry.", FailedFile)); }
+        {
+            Logger.Println( & format ! ("Failed file paths recorded to '{}'. Use 'lafs format failed' to retry.", FailedFile));
+            if DefaultBinaryFailed != FailedFile
+            {
+                let _ = fs::write( & DefaultBinaryFailed, & FailedPathsStr);
+            }
+        }
     }
 
     Logger.Flush_To_Files();
@@ -1050,6 +1191,19 @@ mod Tests
         assert!( ! IsFileEligible(Path::new ("archive.zip"), true, & EmptyExts, & Excludes));
         assert!( ! IsFileEligible(Path::new ("photo.png"), true, & EmptyExts, & Excludes));
         assert!( ! IsFileEligible(Path::new ("video.mp4"), true, & EmptyExts, & Excludes));
+    }
+
+   #[test] fn Test_Python_Extension_Filter()
+    {
+        let EmptyExts: Vec < String > = Vec:: new ();
+        let Excludes: Vec < String > = Vec:: new ();
+        assert!( ! IsFileEligible(Path::new ("script.py"), true, & EmptyExts, & Excludes));
+        assert!( ! IsFileEligible(Path::new ("module.pyw"), true, & EmptyExts, & Excludes));
+        assert!( ! IsFileEligible(Path::new ("types.pyi"), false, & EmptyExts, & Excludes));
+        assert!( ! IsFileEligible(Path::new ("ext.pyx"), false, & EmptyExts, & Excludes));
+        assert!( ! IsFileEligible(Path::new ("def.pxd"), false, & EmptyExts, & Excludes));
+        assert!( ! IsSpecifiedFileEligible(Path::new ("publish.py"), false, & EmptyExts, & Excludes, Source_Language::Generic));
+        assert!( ! IsSpecifiedFileEligible(Path::new ("setup.py"), true, & EmptyExts, & Excludes, Source_Language::Generic));
     }
 
    #[test] fn Test_Directory_Exclusion()
@@ -1184,6 +1338,17 @@ mod Tests
         assert_eq!(ParseFailedLine("C:\\path\\cross_compile.rs (rs)"), Some("C:\\path\\cross_compile.rs"));
         assert_eq!(ParseFailedLine("C:\\path\\cross_compile.rs"), Some("C:\\path\\cross_compile.rs"));
         assert_eq!(ParseFailedLine("C:\\path\\nonexistent.rs (Not Found) Reason: Specified file or directory not found"), Some("C:\\path\\nonexistent.rs"));
+        assert_eq!(ParseFailedLine("File: C:\\path\\cross_compile.rs"), Some("C:\\path\\cross_compile.rs"));
+        assert_eq!(ParseFailedLine("File: C:\\path\\cross_compile.rs (rs)"), Some("C:\\path\\cross_compile.rs"));
+        assert_eq!(ParseFailedLine("Language: rs"), None);
+        assert_eq!(ParseFailedLine("Reason: Token mismatch"), None);
         assert_eq!(ParseFailedLine("   \n"), None);
+    }
+
+    #[test]
+    fn Test_Default_Failed_Log_Path()
+    {
+        let PathStr = GetDefaultFailedLogPath();
+        assert!(PathStr.ends_with("failed.txt"), "Default failed log path must end with failed.txt");
     }
 }

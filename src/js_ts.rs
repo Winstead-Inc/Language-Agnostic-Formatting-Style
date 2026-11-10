@@ -459,6 +459,29 @@ fn IsJSKeyword(Text: & str) -> bool
     )
 }
 
+fn OutputEndsWithControlKeyword(Output: & str) -> bool
+{
+    let ControlKeywords =
+    [
+        "if", "while", "for", "switch", "catch", "with", "return", "throw", "yield", "await", "case", "typeof", "void", "delete", "instanceof", "in", "of",
+    ];
+
+    for Kw in ControlKeywords
+    {
+        if Output.ends_with(Kw)
+        {
+            let PrefixLen = Output.len() - Kw.len();
+            if PrefixLen == 0 { return true; }
+            if let Some(Ch) = Output[..PrefixLen].chars().last()
+            {
+                if ! Ch.is_alphanumeric() && Ch != '_' && Ch != '$' { return true; }
+            }
+        }
+    }
+
+    false
+}
+
 fn ResolveJSAngleBrackets(Tokens: & mut [Token_Info])
 {
     let Len = Tokens.len();
@@ -583,7 +606,7 @@ impl JS_Container
             if let JS_Syntax_Node::Container(Sub) = Child
             { let SubDepth = Sub.CalculateBlockDepth(); if SubDepth > MaxChildDepth { MaxChildDepth = SubDepth; } }
         }
-        1 + MaxChildDepth
+        if self.Kind == Container_Kind::Brace { 1 + MaxChildDepth } else { MaxChildDepth }
     }
 
     pub fn CountTotalContainers( & self) -> usize
@@ -634,7 +657,7 @@ impl JS_Container_Builder
         {
             let CurrentToken = self.Tokens[self.Index].clone();
 
-            if CurrentToken.Preceding_Newlines > 0 { Container.Has_Forced_Break = true; }
+            if CurrentToken.Text.contains('\n') { Container.Has_Forced_Break = true; }
 
             match & CurrentToken.Kind
             {
@@ -855,8 +878,15 @@ impl <'a> JS_Emitter<'a>
         {
             if ! self.Output.ends_with(' ')
             {
-                let LastChar = self.Output.chars().last();
-                if let Some(Ch) = LastChar { if ! Ch.is_alphanumeric() && Ch != '_' && Ch != '$' && Ch != ')' && Ch != ']' && Ch != '.' { self.EmitSpace(); } }
+                if OutputEndsWithControlKeyword( & self.Output)
+                {
+                    self.EmitSpace();
+                }
+                else
+                {
+                    let LastChar = self.Output.chars().last();
+                    if let Some(Ch) = LastChar { if ! Ch.is_alphanumeric() && Ch != '_' && Ch != '$' && Ch != ')' && Ch != ']' && Ch != '.' { self.EmitSpace(); } }
+                }
             }
         }
 

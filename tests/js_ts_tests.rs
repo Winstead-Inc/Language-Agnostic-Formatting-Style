@@ -124,7 +124,7 @@ enum Status_Code {
 }"#;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::TypeScript;
-    Config.Canvas_Width = 40;
+    Config.Canvas_Width = 30;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("interface User_Profile\n{\n"));
@@ -142,7 +142,7 @@ else {
 }"#;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
-    Config.Canvas_Width = 40;
+    Config.Canvas_Width = 15;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     let Expected = "if (Condition)\n{\n    DoAlpha();\n}\nelse\n{\n    DoBeta();\n}";
@@ -218,4 +218,31 @@ fn Test_JS_Nullish_Coalescing_Chained_And_Ternary()
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("A ?? B ?? C"),"Got: {}", Formatted);
+}
+
+#[test]
+fn Test_JS_One_Liner_If_Parenthesis_Monolith()
+{
+    let Input = r#"function matchPassContains(index, longIndex, queries, regexps)
+{
+    if
+    (
+        index.indexOf(queries[0]) == - 1
+    )
+    return false;
+    for (var i = 1, l = regexps.length; i < l; i ++)
+    {
+        if
+        (
+            ! index.match(regexps[i]) && ! longIndex.match(regexps[i])
+        )
+        return false;
+    };
+    return true;
+}"#;
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::JavaScript;
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!(Formatted.contains("if (index.indexOf(queries[0]) == - 1)"), "Expected monolithic if paren, got:\n{}", Formatted);
+    assert!(Formatted.contains("if (!index.match(regexps[i]) && !longIndex.match(regexps[i]))"), "Expected monolithic if paren, got:\n{}", Formatted);
 }

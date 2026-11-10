@@ -305,7 +305,13 @@ impl <'a> Code_Emitter<'a>
 
         // 2. Preprocessor directives must always sit on their own line
         if let Token_Kind::Preprocessor(DirectiveText) = & Token.Kind
-        { self.EnsureNewline(); self.EmitRaw(DirectiveText); self.WriteNewline(); return ; }
+        {
+            self.EnsureNewline();
+            let FormattedDirective = Self::FormatPreprocessorDirective(DirectiveText, self.Config.Language);
+            self.EmitRaw(&FormattedDirective);
+            self.WriteNewline();
+            return;
+        }
 
         // 3. Line comment
         if let Token_Kind::Comment_Line(CommentText) = & Token.Kind
@@ -359,7 +365,13 @@ impl <'a> Code_Emitter<'a>
                     self.EmitSpace();
                 }
                 else if Op == "::" || Op == "->" || Op == "?."
-                { if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } self.EmitRaw(Op); }
+                {
+                    if self.Output.ends_with(' ') && ! self.Output.ends_with("-> ") && ! self.Output.ends_with("> ") && ! self.Output.ends_with(": ")
+                        && ! self.Output.ends_with("return ") && ! self.Output.ends_with("using ") && ! self.Output.ends_with("case ")
+                        && ! self.Output.ends_with("new ") && ! self.Output.ends_with("delete ")
+                    { self.Output.pop(); self.Current_Line_Len -= 1; }
+                    self.EmitRaw(Op);
+                }
                 else if Op == "++" || Op == "--" || Op == "!" || Op == "~" || Op == ".." || Op == "..=" || Op == "..." || Op == "#"
                 {
                     if (Op == ".." || Op == "..=" || Op == "..." || Op == "#") && self.Output.ends_with(' ')
@@ -389,6 +401,16 @@ impl <'a> Code_Emitter<'a>
                 if self.Line_Has_Content && self.Current_Line_Len > 0 && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n') && ! self.Output.ends_with('.')
                 && ! self.Output.ends_with("->") && ! self.Output.ends_with("::") && ! self.Output.ends_with("-") { self.EmitSpace(); }
                 self.EmitRaw(Num);
+            }
+            Token_Kind::String_Lit(Text) =>
+            {
+                if self.Line_Has_Content && self.Current_Line_Len > 0 && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n') && ! self.Output.ends_with('.')
+                && ! self.Output.ends_with("->") && ! self.Output.ends_with("::") && ! self.Output.ends_with('(') && ! self.Output.ends_with('[')
+                {
+                    self.EmitSpace();
+                }
+                let Realigned = Self::RealignMultilineString(Text, self.Current_Line_Len);
+                self.EmitRaw( & Realigned);
             }
             _ => { self.EmitRaw( & Token.Text); }
         }
@@ -456,7 +478,13 @@ impl <'a> Code_Emitter<'a>
                             self.EmitSpace();
                         }
                         else
-                        { if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } self.EmitRaw( & T.Text); }
+                        {
+                            if self.Output.ends_with(' ') && ! self.Output.ends_with("-> ") && ! self.Output.ends_with("> ") && ! self.Output.ends_with(": ")
+                                && ! self.Output.ends_with("return ") && ! self.Output.ends_with("using ") && ! self.Output.ends_with("case ")
+                                && ! self.Output.ends_with("new ") && ! self.Output.ends_with("delete ")
+                            { self.Output.pop(); self.Current_Line_Len -= 1; }
+                            self.EmitRaw( & T.Text);
+                        }
                     }
                     else if let Token_Kind::Operator(ref Op) = T.Kind
                     {
@@ -481,12 +509,15 @@ impl <'a> Code_Emitter<'a>
 
         if Container.Kind == Container_Kind::Brace && ! Container.Children.is_empty() && ! self.Output.ends_with(' ') { self.EmitRaw(" "); }
 
-        if (Container.Kind == Container_Kind::Paren || Container.Kind == Container_Kind::Bracket || Container.Kind == Container_Kind::Angle) && self.Output.ends_with(' ')
-        { self.Output.pop(); self.Current_Line_Len -= 1; }
+        if Container.Close_Token.is_some()
+        {
+            if (Container.Kind == Container_Kind::Paren || Container.Kind == Container_Kind::Bracket || Container.Kind == Container_Kind::Angle) && self.Output.ends_with(' ')
+            { self.Output.pop(); self.Current_Line_Len -= 1; }
 
-        self.EmitRaw(Container.Kind.CloseGlyph());
+            self.EmitRaw(Container.Kind.CloseGlyph());
 
-        for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
+            for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
+        }
     }
 
     fn EmitGrouped( & mut self, Container: & Container_Node, Level: usize)
@@ -524,15 +555,396 @@ impl <'a> Code_Emitter<'a>
         self.WriteNewline();
         // 3. Inner children indented at Level + 1
         self.EmitNodeList( & Container.Children, Level + 1);
-        self.EnsureNewline();
-        // Remove trailing empty line right before closer
-        if self.Output.ends_with("\n\n") { self.Output.pop(); }
-        // 4. Closing delimiter sits on its own line at Level indent (Translational symmetry)
-        self.EmitIndent(Level);
-        self.EmitRaw(Container.Kind.CloseGlyph());
-        // 5. Tail glue (';', ',') sits right after closing delimiter
-        for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
-        // In C/C++, a closing brace of a function, struct, or block is followed by a newline
-        self.WriteNewline();
+        if Container.Close_Token.is_some()
+        {
+            self.EnsureNewline();
+            // Remove trailing empty line right before closer
+            if self.Output.ends_with("\n\n") { self.Output.pop(); }
+            // 4. Closing delimiter sits on its own line at Level indent (Translational symmetry)
+            self.EmitIndent(Level);
+            self.EmitRaw(Container.Kind.CloseGlyph());
+            // 5. Tail glue (';', ',') sits right after closing delimiter
+            for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
+            // In C/C++, a closing brace of a function, struct, or block is followed by a newline
+            self.WriteNewline();
+        }
+    }
+
+
+
+    fn RealignMultilineString(Text: & str, TargetIndent: usize) -> String
+    {
+        if ! Text.contains('\n') { return Text.to_string(); }
+
+        let Newline = if Text.contains("\r\n") { "\r\n" } else { "\n" };
+        let RawLines: Vec < & str > = Text.split('\n').collect();
+        if RawLines.len() < 2 { return Text.to_string(); }
+
+        let Line0 = RawLines[0].trim_end_matches('\r');
+        let Line0Trimmed = Line0.trim();
+        let LastLine = RawLines[RawLines.len() - 1].trim_end_matches('\r');
+        let LastTrimmed = LastLine.trim();
+
+        let (IsOpenDelimOnly, ExpectedClose) = if Line0Trimmed.starts_with("r#") || Line0Trimmed.starts_with("br#") || Line0Trimmed.starts_with("cr#")
+        {
+            let HashCount = Line0Trimmed.chars().filter( | c | * c == '#').count();
+            let Close = format ! ("\"{}", "#".repeat(HashCount));
+            (Line0Trimmed.ends_with('"'), Close)
+        }
+        else if Line0Trimmed == "r\"" || Line0Trimmed == "br\"" || Line0Trimmed == "cr\""
+        {
+            (true, "\"".to_string())
+        }
+        else if Line0Trimmed.starts_with("\"\"\"")
+        {
+            let QuoteCount = Line0Trimmed.chars().take_while( | c | * c == '"').count();
+            (Line0Trimmed.len() == QuoteCount, "\"".repeat(QuoteCount))
+        }
+        else if Line0Trimmed == "\""
+        {
+            (true, "\"".to_string())
+        }
+        else if Line0Trimmed == "`"
+        {
+            (true, "`".to_string())
+        }
+        else
+        {
+            (false, String:: new ())
+        };
+
+        if ! IsOpenDelimOnly || ExpectedClose.is_empty() || ! LastTrimmed.ends_with( & ExpectedClose)
+        {
+            return Text.to_string();
+        }
+
+        let OrigClosingIndent = LastLine.len() - LastLine.trim_start().len();
+        if OrigClosingIndent == 0 { return Text.to_string(); }
+
+        let Shift: isize = TargetIndent as isize - OrigClosingIndent as isize;
+        if Shift == 0 { return Text.to_string(); }
+
+        let mut Result = String::with_capacity(Text.len() + 64);
+        Result.push_str(Line0);
+
+        for (Idx, RawLine) in RawLines[1..].iter().enumerate()
+        {
+            let LineIdx = Idx + 1;
+            let Clean = RawLine.trim_end_matches('\r');
+            Result.push_str(Newline);
+
+            if Clean.trim().is_empty() { continue ; }
+
+            if LineIdx == RawLines.len() - 1
+            {
+                Result.push_str( & " ".repeat(TargetIndent));
+                Result.push_str(Clean.trim_start());
+            }
+            else
+            {
+                let Leading = Clean.len() - Clean.trim_start().len();
+                let NewLeading = (Leading as isize + Shift).max(0) as usize;
+                Result.push_str( & " ".repeat(NewLeading));
+                Result.push_str(Clean.trim_start());
+            }
+        }
+
+        Result
+    }
+
+    pub fn FormatPreprocessorDirective(Directive: &str, Language: Source_Language) -> String
+    {
+        if !Language.SupportsPreprocessor()
+            || !Directive.contains('\n')
+            || !Directive.contains('\\')
+            || (!Directive.contains('{') && !Directive.contains('}'))
+        {
+            return Directive.to_string();
+        }
+
+        let Newline = if Directive.contains("\r\n") { "\r\n" } else { "\n" };
+        let RawLines: Vec<&str> = Directive.split('\n').collect();
+
+        // 1. Strip trailing backslashes and whitespace, record original indent
+        struct MacroRawEntry
+        {
+            Text: String,
+            Original_Indent: usize,
+        }
+
+        let mut Entries: Vec<MacroRawEntry> = Vec::new();
+
+        for RawLine in RawLines
+        {
+            let Trimmed = RawLine.trim_end_matches('\r').trim_end();
+            let HasContinuation = Trimmed.ends_with('\\');
+            let Content = if HasContinuation
+            {
+                Trimmed[..Trimmed.len() - 1].trim_end()
+            }
+            else
+            {
+                Trimmed
+            };
+
+            if Content.trim().is_empty()
+            {
+                continue;
+            }
+
+            let OrigIndent = Content.chars().take_while(|c| *c == ' ').count()
+                + Content.chars().take_while(|c| *c == '\t').count() * 4;
+
+            let SplitParts = Self::SplitMacroLine(Content);
+            for (Idx, Part) in SplitParts.into_iter().enumerate()
+            {
+                let PartIndent = if Idx == 0 { OrigIndent } else { OrigIndent };
+                Entries.push(MacroRawEntry {
+                    Text: Part,
+                    Original_Indent: PartIndent,
+                });
+            }
+        }
+
+        if Entries.is_empty()
+        {
+            return Directive.to_string();
+        }
+
+        // 2. Indent according to Allman block nesting
+        let mut ResultLines: Vec<String> = Vec::new();
+        let mut Indent_Stack: Vec<usize> = Vec::new();
+        let mut Last_Statement_Indent: usize = 0;
+        let mut Unbraced_Body = false;
+
+        for Entry in &Entries
+        {
+            let Trimmed = Entry.Text.trim();
+            if Trimmed.is_empty()
+            {
+                ResultLines.push(String::new());
+                continue;
+            }
+
+            if Trimmed.starts_with('}')
+            {
+                Unbraced_Body = false;
+                let Close_Indent = if !Indent_Stack.is_empty()
+                {
+                    Indent_Stack.pop().unwrap()
+                }
+                else
+                {
+                    0
+                };
+                ResultLines.push(format!("{}{}", " ".repeat(Close_Indent), Trimmed));
+                Last_Statement_Indent = Close_Indent;
+                continue;
+            }
+
+            if Trimmed == "{" || Trimmed.starts_with("{ ") || Trimmed.starts_with("{\t")
+            {
+                Unbraced_Body = false;
+                let Brace_Indent = if Indent_Stack.is_empty()
+                {
+                    0
+                }
+                else
+                {
+                    Last_Statement_Indent
+                };
+                Indent_Stack.push(Brace_Indent);
+                ResultLines.push(format!("{}{}", " ".repeat(Brace_Indent), Trimmed));
+                continue;
+            }
+
+            if Indent_Stack.is_empty()
+            {
+                ResultLines.push(Trimmed.to_string());
+                Last_Statement_Indent = 0;
+                Unbraced_Body = false;
+            }
+            else
+            {
+                let Base_Indent = Indent_Stack.last().unwrap() + 4;
+                let Actual_Indent = if Unbraced_Body
+                {
+                    Base_Indent + 4
+                }
+                else
+                {
+                    Base_Indent
+                };
+                Last_Statement_Indent = Actual_Indent;
+                ResultLines.push(format!("{}{}", " ".repeat(Actual_Indent), Trimmed));
+
+                // Check if this statement is an unbraced control header (if, else, while, for)
+                let IsControlHeader = Trimmed.starts_with("if ") || Trimmed.starts_with("if(")
+                    || Trimmed.starts_with("else ") || Trimmed == "else"
+                    || Trimmed.starts_with("while ") || Trimmed.starts_with("while(")
+                    || Trimmed.starts_with("for ") || Trimmed.starts_with("for(");
+
+                if IsControlHeader && !Trimmed.ends_with(';') && !Trimmed.ends_with('{')
+                {
+                    Unbraced_Body = true;
+                }
+                else if Trimmed.ends_with(';')
+                {
+                    Unbraced_Body = false;
+                }
+            }
+        }
+
+        while ResultLines.len() > 1 && ResultLines.last().map_or(false, |L| L.trim().is_empty())
+        {
+            ResultLines.pop();
+        }
+
+        // 3. Append continuation backslashes
+        let Total = ResultLines.len();
+        let mut Formatted = String::new();
+        for (Idx, Line) in ResultLines.iter().enumerate()
+        {
+            if Idx > 0
+            {
+                Formatted.push_str(Newline);
+            }
+            let LineTrimmed = Line.trim_end();
+            if Idx + 1 < Total
+            {
+                Formatted.push_str(LineTrimmed);
+                Formatted.push_str(" \\");
+            }
+            else
+            {
+                Formatted.push_str(LineTrimmed);
+            }
+        }
+
+        Formatted
+    }
+
+    fn SplitMacroLine(Line: &str) -> Vec<String>
+    {
+        let Trimmed = Line.trim();
+        if Trimmed == "{" || Trimmed == "}" || Trimmed.starts_with("} while")
+        {
+            return vec![Line.to_string()];
+        }
+
+        if let Some(BraceIdx) = Self::FindUnquotedBrace(Line)
+        {
+            let Before = Line[..BraceIdx].trim_end();
+            let After = Line[BraceIdx + 1..].trim();
+
+            if Before.is_empty()
+            {
+                return vec![Line.to_string()];
+            }
+
+            let BeforeTrim = Before.trim_start();
+            if BeforeTrim.starts_with("} else")
+            {
+                let ElsePart = BeforeTrim[1..].trim_start();
+                let mut Parts = vec!["}".to_string(), ElsePart.to_string()];
+                if After.is_empty()
+                {
+                    Parts.push("{".to_string());
+                }
+                else
+                {
+                    Parts.push(format!("{{ {}", After));
+                }
+                return Parts;
+            }
+
+            let mut Parts = vec![Before.to_string()];
+            if After.is_empty()
+            {
+                Parts.push("{".to_string());
+            }
+            else
+            {
+                Parts.push(format!("{{ {}", After));
+            }
+            return Parts;
+        }
+
+        vec![Line.to_string()]
+    }
+
+    fn FindUnquotedBrace(Line: &str) -> Option<usize>
+    {
+        let Chars: Vec<char> = Line.chars().collect();
+        let mut InString = false;
+        let mut InChar = false;
+        let mut InComment = false;
+        let mut I = 0;
+        let Len = Chars.len();
+
+        while I < Len
+        {
+            let Ch = Chars[I];
+
+            if InString
+            {
+                if Ch == '\\' && I + 1 < Len { I += 2; continue; }
+                if Ch == '"' { InString = false; }
+                I += 1;
+                continue;
+            }
+
+            if InChar
+            {
+                if Ch == '\\' && I + 1 < Len { I += 2; continue; }
+                if Ch == '\'' { InChar = false; }
+                I += 1;
+                continue;
+            }
+
+            if InComment
+            {
+                if Ch == '*' && I + 1 < Len && Chars[I + 1] == '/'
+                {
+                    InComment = false;
+                    I += 2;
+                    continue;
+                }
+                I += 1;
+                continue;
+            }
+
+            if Ch == '"' { InString = true; I += 1; continue; }
+            if Ch == '\'' { InChar = true; I += 1; continue; }
+            if Ch == '/' && I + 1 < Len && Chars[I + 1] == '*' { InComment = true; I += 2; continue; }
+            if Ch == '/' && I + 1 < Len && Chars[I + 1] == '/' { break; }
+
+            if Ch == '{'
+            {
+                let mut AfterIsWhitespaceOrComment = true;
+                let mut J = I + 1;
+                while J < Len
+                {
+                    if Chars[J] == '/' && J + 1 < Len && (Chars[J + 1] == '/' || Chars[J + 1] == '*')
+                    {
+                        break;
+                    }
+                    if !Chars[J].is_whitespace()
+                    {
+                        AfterIsWhitespaceOrComment = false;
+                        break;
+                    }
+                    J += 1;
+                }
+                if AfterIsWhitespaceOrComment
+                {
+                    return Some(I);
+                }
+            }
+
+            I += 1;
+        }
+
+        None
     }
 }

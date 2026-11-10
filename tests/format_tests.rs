@@ -334,3 +334,103 @@ fn Test_Rust_Function_Return_Type_Arrow_Spacing()
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("fn disabled() -> bool"),"Function return type arrow must preserve spaces around ->, got: {}", Formatted);
 }
+
+#[test]
+fn Test_Rust_Raw_String_Delimiter_Alignment()
+{
+    let Input = r##"fn test() {
+    let p = project()
+        .file(
+            "src/main.rs",
+            r#"
+                #[macro_use]
+                extern crate noop;
+
+                fn main() {}
+            "#,
+        )
+        .build();
+}
+"##;
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::Rust;
+
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!(Formatted.contains("        r#\"\n            #[macro_use]"), "Opening r#\" and content must be aligned, got:\n{}", Formatted);
+    assert!(Formatted.contains("        \"#,\n"), "Closing \"# must align on exact same column as r#\", got:\n{}", Formatted);
+}
+
+#[test]
+fn Test_C_Preprocessor_Conditional_Braces()
+{
+    let Input = r#"void test() {
+#ifdef OPTION_A
+    while (cond_a) {
+#else
+    while (cond_b) {
+        do_b();
+#endif
+        common_work();
+    }
+}
+"#;
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::C;
+
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting C preprocessor conditional braces failed");
+    assert!(Formatted.contains("common_work();"));
+}
+
+#[test]
+fn Test_C_Preprocessor_Macro_Allman_Style()
+{
+    let Input = r#"#define GetPKeyEC(obj, pkey) do { \
+    GetPKey((obj), (pkey)); \
+    if (EVP_PKEY_base_id(pkey) != EVP_PKEY_EC) { \
+        ossl_raise(rb_eRuntimeError, "THIS IS NOT A EC PKEY!"); \
+    } \
+} while (0)
+#define GetEC(obj, key) do { \
+    EVP_PKEY *_pkey; \
+    GetPKeyEC(obj, _pkey); \
+    (key) = EVP_PKEY_get0_EC_KEY(_pkey); \
+    if ((key) == NULL) \
+        ossl_raise(ePKeyError, "failed to get EC_KEY from EVP_PKEY"); \
+} while (0)
+
+#define GetECGroup(obj, group) do { \
+    TypedData_Get_Struct(obj, EC_GROUP, &ossl_ec_group_type, group); \
+    if ((group) == NULL) \
+        ossl_raise(eEC_GROUP, "EC_GROUP is not initialized"); \
+} while (0)
+
+#define GetECPoint(obj, point) do { \
+    TypedData_Get_Struct(obj, EC_POINT, &ossl_ec_point_type, point); \
+    if ((point) == NULL) \
+        ossl_raise(eEC_POINT, "EC_POINT is not initialized"); \
+} while (0)
+#define GetECPointGroup(obj, group) do { \
+    VALUE _group = rb_attr_get(obj, id_i_group); \
+    GetECGroup(_group, group); \
+} while (0)
+"#;
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::C;
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed for C preprocessor macros");
+
+    // Verify Allman style formatting:
+    // 1. do is detached from {
+    assert!(Formatted.contains("#define GetPKeyEC(obj, pkey) do \\\n{ \\"),
+        "do and open brace must be detached into Allman style, got:\n{}", Formatted);
+    // 2. if is detached from {
+    assert!(Formatted.contains("    if (EVP_PKEY_base_id(pkey) != EVP_PKEY_EC) \\\n    { \\"),
+        "if and open brace must be detached into Allman style, got:\n{}", Formatted);
+    // 3. closing brace of do while
+    assert!(Formatted.contains("} while (0)"),
+        "Closing brace and while (0) must be present, got:\n{}", Formatted);
+
+    // 4. Verify idempotence
+    let SecondPass = Source_Formatter::Format(&Formatted, &Config).expect("Second pass failed");
+    assert_eq!(Formatted, SecondPass, "Formatting must be idempotent");
+}

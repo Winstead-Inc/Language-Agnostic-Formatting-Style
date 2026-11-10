@@ -88,6 +88,16 @@ impl <'a> Shell_Lexer<'a>
                 PrecedingNewlines = 0;
                 continue;
             }
+            // Herestring: <<<
+            if Ch == '<' && self.PeekAhead(1) == Some('<') && self.PeekAhead(2) == Some('<')
+            {
+                self.Advance();
+                self.Advance();
+                self.Advance();
+                RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator("<<<".to_string()), "<<<".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,));
+                PrecedingNewlines = 0;
+                continue;
+            }
             // Heredoc: << or <<-
             if Ch == '<' && self.PeekAhead(1) == Some('<')
             {
@@ -517,7 +527,7 @@ impl Shell_Container
     {
         if self.Has_Forced_Break { return usize::MAX; }
 
-        let mut Total = self.Kind.OpenGlyph().len() + self.Kind.CloseGlyph().len();
+        let mut Total = self.Open_Token.Text.len() + self.Close_Token.as_ref().map_or(self.Kind.CloseGlyph().len(), | T | T.Text.len());
         for Glue in & self.Tail_Glue { Total += Glue.Text.len(); }
 
         let mut PrevNeedsSpace = matches!(self.Kind, Container_Kind::Brace | Container_Kind::Bracket);
@@ -819,7 +829,7 @@ impl <'a> Shell_Emitter<'a>
             }
         }
 
-        self.EmitRaw(Container.Kind.OpenGlyph());
+        self.EmitRaw(&Container.Open_Token.Text);
         if Container.Kind == Container_Kind::Brace || Container.Kind == Container_Kind::Bracket { self.EmitSpace(); }
 
         let mut PrevNeedsSpace = false;
@@ -843,7 +853,7 @@ impl <'a> Shell_Emitter<'a>
         {
             if (Container.Kind == Container_Kind::Brace || Container.Kind == Container_Kind::Bracket) && ! self.Output.ends_with(' ') { self.EmitSpace(); }
 
-            self.EmitRaw(Container.Kind.CloseGlyph());
+            self.EmitRaw(Container.Close_Token.as_ref().map_or(Container.Kind.CloseGlyph(), | T | T.Text.as_str()));
             for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
         }
     }
@@ -851,8 +861,8 @@ impl <'a> Shell_Emitter<'a>
     fn EmitGrouped( & mut self, Container: & Shell_Container, Level: usize)
     {
         let Chain = Container.CollectChain();
-        let OpenRun: String = Chain.iter().map( | C | C.Kind.OpenGlyph()).collect();
-        let CloseRun: String = Chain.iter().rev().map( | C | C.Kind.CloseGlyph()).collect();
+        let OpenRun: String = Chain.iter().map( | C | C.Open_Token.Text.as_str()).collect();
+        let CloseRun: String = Chain.iter().rev().map( | C | C.Close_Token.as_ref().map_or(C.Kind.CloseGlyph(), | T | T.Text.as_str())).collect();
 
         self.EnsureNewline();
         if ! Container.Decl_Indent.is_empty() { self.EmitRaw( & Container.Decl_Indent); } else { self.EmitIndent(Level); }
@@ -874,7 +884,7 @@ impl <'a> Shell_Emitter<'a>
         // OLAFS Detached Delimiter Symmetry
         if Container.Kind == Container_Kind::Paren && self.Output.ends_with('$')
         {
-            self.EmitRaw(Container.Kind.OpenGlyph());
+            self.EmitRaw(&Container.Open_Token.Text);
             let FirstChildOnSameLine = Container.Children.first().map_or
             (
                 false, | Node | match Node { Shell_Syntax_Node::Token(T) => T.Preceding_Newlines == 0, Shell_Syntax_Node::Container(C) => C.Open_Token.Preceding_Newlines == 0, }
@@ -885,7 +895,7 @@ impl <'a> Shell_Emitter<'a>
         {
             self.EnsureNewline();
             if ! Container.Decl_Indent.is_empty() { self.EmitRaw( & Container.Decl_Indent); } else { self.EmitIndent(Level); }
-            self.EmitRaw(Container.Kind.OpenGlyph());
+            self.EmitRaw(&Container.Open_Token.Text);
             self.WriteNewline();
         }
 
@@ -899,7 +909,7 @@ impl <'a> Shell_Emitter<'a>
                 self.EnsureNewline();
                 if ! Container.Decl_Indent.is_empty() { self.EmitRaw( & Container.Decl_Indent); } else { self.EmitIndent(Level); }
             }
-            self.EmitRaw(Container.Kind.CloseGlyph());
+            self.EmitRaw(Container.Close_Token.as_ref().map_or(Container.Kind.CloseGlyph(), | T | T.Text.as_str()));
             for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
             if ! CloseOnSameLine { self.WriteNewline(); }
         }
@@ -925,7 +935,13 @@ pub fn VerifyShellTokenEquivalence(OriginalSource: & str, FormattedSource: & str
         return Err(format ! ("Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
     }
 
-    for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate() { if Orig != Form { return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); } }
+    for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate()
+    {
+        if Orig != Form
+        {
+            return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form));
+        }
+    }
 
     Ok(())
 }
