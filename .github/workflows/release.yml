@@ -40,18 +40,20 @@ jobs:
           gh release create $env:GITHUB_REF_NAME `
             --title "$env:GITHUB_REF_NAME - Language-Agnostic Formatting Style (LAFS)" `
             --generate-notes `
+            --latest `
             "Language-Agnostic Formatting Style.exe" `
             "LAFS.exe"
 
-      - name: Publish Rolling Latest Release
+      - name: Publish Main Branch Release
         if: github.ref == 'refs/heads/main'
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete latest --cleanup-tag -y 2>$null
-          gh release create latest `
-            --title "Latest Release" `
-            --notes "Continuous build from main branch." `
+          $ReleaseTag = "v0.1.$env:GITHUB_RUN_NUMBER"
+          gh release create $ReleaseTag `
+            --title "Release $ReleaseTag - Language-Agnostic Formatting Style (LAFS)" `
+            --notes "Continuous build from commit $env:GITHUB_SHA." `
+            --latest `
             "Language-Agnostic Formatting Style.exe" `
             "LAFS.exe"
