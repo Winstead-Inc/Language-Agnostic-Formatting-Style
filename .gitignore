@@ -1,4 +1,8 @@
 /target/
 **/*.rs.bk
 *.log
+*.exe
+!LAFS.exe
+*.txt
+!failed.txt
 /old.src*/

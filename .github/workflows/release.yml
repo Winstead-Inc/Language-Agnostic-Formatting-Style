@@ -118,6 +118,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+          fetch-depth: 0
 
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
@@ -129,6 +132,20 @@ jobs:
         run: |
           ls -la dist/
           chmod +x dist/LAFS-* dist/LAFS.exe || true
+
+      - name: Stage Release Binary to Repository Root
+        run: |
+          cp dist/LAFS.exe ./LAFS.exe
+
+      - name: Commit and Push Root Binary
+        if: github.ref == 'refs/heads/main'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update root binary LAFS.exe [skip ci]"
+          file_pattern: "LAFS.exe"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
+          commit_author: "LAFS Bot <actions@github.com>"
 
       - name: Publish Tagged Release
         if: startsWith(github.ref, 'refs/tags/')
