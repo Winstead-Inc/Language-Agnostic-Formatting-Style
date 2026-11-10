@@ -10,7 +10,7 @@ impl JS_TS_Formatter
         let mut Lexer = JS_Lexer::New(Source, Config.Language);
         let Tokens = Lexer.TokenizeAll();
 
-        let mut Builder = JS_Container_Builder::New(Tokens);
+        let mut Builder = JS_Container_Builder::New(Tokens, Config.Column_Anchored_Hybrid);
         let Nodes = Builder.BuildTree();
 
         let Emitter = JS_Emitter::New(Config);
@@ -779,11 +779,19 @@ impl JS_Container
     }
 }
 
-pub struct JS_Container_Builder { Tokens: Vec<Token_Info>, Index: usize, }
+pub struct JS_Container_Builder
+{
+    Tokens: Vec<Token_Info>,
+    Index: usize,
+    Enable_CAH: bool,
+}
 
 impl JS_Container_Builder
 {
-    pub fn New(Tokens: Vec<Token_Info>) -> Self { JS_Container_Builder { Tokens, Index: 0 } }
+    pub fn New(Tokens: Vec<Token_Info>, Enable_CAH: bool) -> Self
+    {
+        JS_Container_Builder { Tokens, Index: 0, Enable_CAH }
+    }
 
     pub fn BuildTree( & mut self) -> Vec<JS_Syntax_Node>
     {
@@ -791,7 +799,7 @@ impl JS_Container_Builder
         let mut LastSignificantWasReturn = false;
         while self.Index < self.Tokens.len()
         {
-            if let Some(Node) = self.ParseNextNode(LastSignificantWasReturn)
+            if let Some(Node) = self.ParseNextNode(self.Enable_CAH && LastSignificantWasReturn)
             {
                 match & Node
                 {
@@ -862,7 +870,7 @@ impl JS_Container_Builder
                 }
                 Token_Kind::Open_Delim(_) =>
                 {
-                    if let Some(ChildNode) = self.ParseNextNode(LastSignificantWasReturn) { Container.Children.push(ChildNode); }
+                    if let Some(ChildNode) = self.ParseNextNode(self.Enable_CAH && LastSignificantWasReturn) { Container.Children.push(ChildNode); }
                     LastSignificantWasReturn = false;
                 }
                 Token_Kind::Comment_Line(_) =>
@@ -923,11 +931,30 @@ impl <'a> JS_Layout_Planner<'a>
     }
 }
 
-pub struct JS_Emitter<'a> { Config: & 'a Config_Settings, Planner: JS_Layout_Planner<'a>, Output: String, Current_Line_Len: usize, Line_Has_Content: bool , }
+pub struct JS_Emitter<'a>
+{
+    Config: & 'a Config_Settings,
+    Planner: JS_Layout_Planner<'a>,
+    Output: String,
+    Current_Line_Len: usize,
+    Line_Has_Content: bool,
+    Base_Column_Offsets: Vec<usize>,
+}
 
 impl <'a> JS_Emitter<'a>
 {
-    pub fn New(Config: & 'a Config_Settings) -> Self { JS_Emitter { Config, Planner: JS_Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, } }
+    pub fn New(Config: & 'a Config_Settings) -> Self
+    {
+        JS_Emitter
+        {
+            Config,
+            Planner: JS_Layout_Planner::New(Config),
+            Output: String::new (),
+            Current_Line_Len: 0,
+            Line_Has_Content: false,
+            Base_Column_Offsets: Vec::new (),
+        }
+    }
 
     pub fn Emit(mut self, Nodes: & [JS_Syntax_Node]) -> String
     {
@@ -950,7 +977,15 @@ impl <'a> JS_Emitter<'a>
     {
         if ! self.Line_Has_Content
         {
-            let IndentStr = self.Config.IndentString(Level);
+            let IndentStr = if let Some(& BaseCol) = self.Base_Column_Offsets.last()
+            {
+                let Additional = Level * self.Config.Indent_Width;
+                " ".repeat(BaseCol + Additional)
+            }
+            else
+            {
+                self.Config.IndentString(Level)
+            };
             self.Output.push_str( & IndentStr);
             self.Current_Line_Len = IndentStr.len();
             self.Line_Has_Content = true;
@@ -1164,8 +1199,10 @@ impl <'a> JS_Emitter<'a>
             self.EmitRaw( & OpenRun);
             self.WriteNewline();
 
+            self.Base_Column_Offsets.push(OpenCol);
             if let Some(Innermost) = Chain.last()
-            { self.EmitNodeList( & Innermost.Children, Level + 1); }
+            { self.EmitNodeList( & Innermost.Children, 1); }
+            self.Base_Column_Offsets.pop();
 
             self.EnsureNewline();
             let CloseIndent = " ".repeat(OpenCol);
@@ -1208,7 +1245,9 @@ impl <'a> JS_Emitter<'a>
             self.EmitRaw(OpenGlyph);
             self.WriteNewline();
 
-            self.EmitNodeList( & Container.Children, Level + 1);
+            self.Base_Column_Offsets.push(OpenCol);
+            self.EmitNodeList( & Container.Children, 1);
+            self.Base_Column_Offsets.pop();
 
             self.EnsureNewline();
             let CloseIndent = " ".repeat(OpenCol);

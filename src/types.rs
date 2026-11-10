@@ -143,7 +143,17 @@ pub enum Kotlin_Style
 #[derive(Debug, Clone)]
 pub struct Config_Settings
 {
-    pub Canvas_Width: usize, pub Indent_Width: usize, pub Use_Tabs: bool, pub Max_Statements_In_Monolith: usize, pub Max_Block_Depth: usize, pub Max_Containers_In_Monolith: usize, pub Max_Blank_Lines: usize, pub Language: Source_Language, pub Allow_Brace_Grouping: bool, pub Kotlin_Style: Kotlin_Style,
+    pub Canvas_Width: usize,
+    pub Indent_Width: usize,
+    pub Use_Tabs: bool,
+    pub Max_Statements_In_Monolith: usize,
+    pub Max_Block_Depth: usize,
+    pub Max_Containers_In_Monolith: usize,
+    pub Max_Blank_Lines: usize,
+    pub Language: Source_Language,
+    pub Allow_Brace_Grouping: bool,
+    pub Kotlin_Style: Kotlin_Style,
+    pub Column_Anchored_Hybrid: bool,
 }
 
 impl Default for Config_Settings
@@ -152,7 +162,17 @@ impl Default for Config_Settings
     {
         Config_Settings
         {
-            Canvas_Width: 160, Indent_Width: 4, Use_Tabs: false, Max_Statements_In_Monolith: 4, Max_Block_Depth: 2, Max_Containers_In_Monolith: 12, Max_Blank_Lines: 1, Language: Source_Language::Generic, Allow_Brace_Grouping: true, Kotlin_Style: Kotlin_Style::Allman,
+            Canvas_Width: 160,
+            Indent_Width: 4,
+            Use_Tabs: false,
+            Max_Statements_In_Monolith: 4,
+            Max_Block_Depth: 2,
+            Max_Containers_In_Monolith: 12,
+            Max_Blank_Lines: 1,
+            Language: Source_Language::Generic,
+            Allow_Brace_Grouping: true,
+            Kotlin_Style: Kotlin_Style::Allman,
+            Column_Anchored_Hybrid: true,
         }
     }
 }

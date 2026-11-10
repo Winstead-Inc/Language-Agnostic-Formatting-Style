@@ -41,6 +41,11 @@ impl Source_Formatter
         if Config.Language == crate::types::Source_Language::Css
         { return crate::languages::css::CSS_Formatter::Format(Source, Config); }
 
+        if Config.Language == crate::types::Source_Language::Css
+        {
+            return crate::languages::css::CSS_Formatter::Format(Source, Config);
+        }
+
         let mut Scanner = Lexer_Scanner::New(Source, Config.Language);
         let Tokens = Scanner.TokenizeAll();
 

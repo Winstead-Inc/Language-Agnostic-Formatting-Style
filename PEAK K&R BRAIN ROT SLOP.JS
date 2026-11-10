@@ -40,7 +40,7 @@ export const GLOBAL_SPECTRUM_CONFIG = Object.freeze
         Telemetry_Spectrum_Code.CrimsonFault,
         Telemetry_Spectrum_Code.EmeraldPass
     ]
-    as const ,
+    as const,
     thresholds: { low: 0x00_71_00_FF, high: 0x00_FF_17_44 }
 })
 satisfies Readonly < { maxRetries: number; palette: readonly Telemetry_Spectrum_Code[]; thresholds: { low: number; high: number; }; }
@@ -146,8 +146,8 @@ const TPayload extends { readonly packetId: string; readonly spectrum: Telemetry
                 {
                     const computedMask = this.# internalSecretMask ^ 0x00_3D_5A_FE;
                     return [
-                        computedMask,[ { reGroupedDeepInner: ( () =>[ ( { coreValue: computedMask * 2, accentHex: '#C77DFF', status: 'ACTIVE_#00E676' })])() }]
-                    ];
+                                computedMask,[ { reGroupedDeepInner: ( () =>[ ( { coreValue: computedMask * 2, accentHex: '#C77DFF', status: 'ACTIVE_#00E676' })])() }]
+                           ];
                 }
             )
             ()
@@ -157,7 +157,9 @@ const TPayload extends { readonly packetId: string; readonly spectrum: Telemetry
       precision highp float;
       uniform vec4 uPrimaryAccent;
       void main(void) {
-        vec4 baseColor = vec4(${
+        vec4 baseColor = 
+        vec4
+        (${
             (
                 () =>
                 {
@@ -263,6 +265,6 @@ const TPayload extends { readonly packetId: string; readonly spectrum: Telemetry
             }
             </ div>
             </ section>
-        );
+               );
     }
 }
