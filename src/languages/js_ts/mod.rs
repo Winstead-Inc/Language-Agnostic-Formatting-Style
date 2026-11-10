@@ -27,11 +27,44 @@ impl JS_TS_Formatter
     pub fn IsFormatted(Source: & str, Config: & Config_Settings) -> bool { match Self::Format(Source, Config) { Ok(Formatted) => Formatted == Source, Err(_) => false, } }
 }
 
-pub struct JS_Lexer<'a> { Source: & 'a str, Chars: Vec<char>, Index: usize, Line: usize, Column: usize, Language: Source_Language, Expects_Expression: bool , }
-
-impl <'a> JS_Lexer<'a>
+#[derive(Debug, Clone)]
+struct Template_Context
 {
-    pub fn New(Source: & 'a str, Language: Source_Language) -> Self { JS_Lexer { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, Language, Expects_Expression: true, } }
+    Brace_Depth: usize,
+}
+
+pub struct JS_Lexer<'a>
+{
+    Source: &'a str,
+    Chars: Vec<char>,
+    Index: usize,
+    Line: usize,
+    Column: usize,
+    Language: Source_Language,
+    Expects_Expression: bool,
+    Template_Stack: Vec<Template_Context>,
+    In_JSX_Tag_Header: usize,
+    JSX_Brace_Depth: usize,
+}
+
+impl<'a> JS_Lexer<'a>
+{
+    pub fn New(Source: &'a str, Language: Source_Language) -> Self
+    {
+        JS_Lexer
+        {
+            Source,
+            Chars: Source.chars().collect(),
+            Index: 0,
+            Line: 1,
+            Column: 0,
+            Language,
+            Expects_Expression: true,
+            Template_Stack: Vec::new(),
+            In_JSX_Tag_Header: 0,
+            JSX_Brace_Depth: 0,
+        }
+    }
 
     fn Peek( & self) -> Option<char> { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
 
@@ -90,13 +123,25 @@ impl <'a> JS_Lexer<'a>
                     continue;
                 }
             }
-            // 5. Template Literals (Backticks)
+            // 5. Template Literals (Backticks) with ${...} chunking
             if Ch == '`'
             {
-                let TemplateText = self.ScanTemplateLiteral();
-                RawTokens.push(Token_Info::New(Token_Kind::Template_Lit(TemplateText.clone()), TemplateText, StartLine, StartCol, PrecedingNewlines,));
-                PrecedingNewlines = 0;
-                self.Expects_Expression = false;
+                let (ChunkText, HasInterp) = self.ScanTemplateStart();
+                if ! ChunkText.is_empty()
+                {
+                    RawTokens.push(Token_Info::New(Token_Kind::Template_Lit(ChunkText.clone()), ChunkText, StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                }
+                if HasInterp
+                {
+                    self.Template_Stack.push(Template_Context { Brace_Depth: 0 });
+                    RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace), "${".to_string(), self.Line, self.Column, 0,));
+                    self.Expects_Expression = true;
+                }
+                else
+                {
+                    self.Expects_Expression = false;
+                }
                 continue;
             }
             // 6. Strings (Single and Double Quotes)
@@ -131,6 +176,14 @@ impl <'a> JS_Lexer<'a>
             if Ch == '{'
             {
                 self.Advance();
+                if let Some(Ctx) = self.Template_Stack.last_mut()
+                {
+                    Ctx.Brace_Depth += 1;
+                }
+                if self.In_JSX_Tag_Header > 0
+                {
+                    self.JSX_Brace_Depth += 1;
+                }
                 RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace), "{".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
@@ -139,11 +192,58 @@ impl <'a> JS_Lexer<'a>
 
             if Ch == '}'
             {
-                self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines,));
-                PrecedingNewlines = 0;
-                self.Expects_Expression = false;
-                continue;
+                if let Some(Ctx) = self.Template_Stack.last_mut()
+                {
+                    if Ctx.Brace_Depth > 0
+                    {
+                        Ctx.Brace_Depth -= 1;
+                        self.Advance();
+                        if self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth > 0
+                        {
+                            self.JSX_Brace_Depth -= 1;
+                        }
+                        RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                        PrecedingNewlines = 0;
+                        self.Expects_Expression = false;
+                        continue;
+                    }
+                    else
+                    {
+                        self.Template_Stack.pop();
+                        self.Advance();
+                        RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                        PrecedingNewlines = 0;
+
+                        let (ResumeChunk, HasAnotherInterp) = self.ScanTemplateResume();
+                        if ! ResumeChunk.is_empty()
+                        {
+                            RawTokens.push(Token_Info::New(Token_Kind::Template_Lit(ResumeChunk.clone()), ResumeChunk, self.Line, self.Column, 0,));
+                        }
+                        if HasAnotherInterp
+                        {
+                            self.Template_Stack.push(Template_Context { Brace_Depth: 0 });
+                            RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace), "${".to_string(), self.Line, self.Column, 0,));
+                            self.Expects_Expression = true;
+                        }
+                        else
+                        {
+                            self.Expects_Expression = false;
+                        }
+                        continue;
+                    }
+                }
+                else
+                {
+                    self.Advance();
+                    if self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth > 0
+                    {
+                        self.JSX_Brace_Depth -= 1;
+                    }
+                    RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                    self.Expects_Expression = false;
+                    continue;
+                }
             }
 
             if Ch == '['
@@ -168,6 +268,17 @@ impl <'a> JS_Lexer<'a>
             {
                 let NumberText = self.ScanNumber();
                 RawTokens.push(Token_Info::New(Token_Kind::Number(NumberText.clone()), NumberText, StartLine, StartCol, PrecedingNewlines,));
+                PrecedingNewlines = 0;
+                self.Expects_Expression = false;
+                continue;
+            }
+            // 8.5. ECMAScript Private Identifier (#ident)
+            if Ch == '#' && self.PeekAhead(1).map_or(false, | C | C.is_alphabetic() || C == '_')
+            {
+                self.Advance();
+                let IdentText = self.ScanIdentifier();
+                let FullIdent = format ! ("#{}", IdentText);
+                RawTokens.push(Token_Info::New(Token_Kind::Identifier(FullIdent.clone()), FullIdent, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
                 continue;
@@ -231,7 +342,20 @@ impl <'a> JS_Lexer<'a>
                 self.Expects_Expression = matches!(Ch, ';' | ',' | ':' | '?');
                 continue;
             }
-            // 11. Operators
+            // 11. Operators and JSX
+            if Ch == '<'
+            {
+                self.Advance();
+                if self.Expects_Expression && self.Peek().map_or(false, | C | C.is_ascii_alphabetic() || C == '>')
+                {
+                    self.In_JSX_Tag_Header += 1;
+                }
+                RawTokens.push(Token_Info::New(Token_Kind::Operator("<".to_string()), "<".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                PrecedingNewlines = 0;
+                self.Expects_Expression = true;
+                continue;
+            }
+
             let OpText = self.ScanOperator();
             RawTokens.push(Token_Info::New(Token_Kind::Operator(OpText.clone()), OpText.clone(), StartLine, StartCol, PrecedingNewlines,));
             PrecedingNewlines = 0;
@@ -296,13 +420,11 @@ impl <'a> JS_Lexer<'a>
         Result
     }
 
-    fn ScanTemplateLiteral( & mut self) -> String
+    fn ScanTemplateStart( & mut self) -> (String, bool)
     {
         let mut Result = String:: new ();
         Result.push(self.Advance().unwrap());
         // '`'
-
-        let mut InterpolationDepth = 0;
 
         while let Some(Ch) = self.Peek()
         {
@@ -312,27 +434,48 @@ impl <'a> JS_Lexer<'a>
                 if self.Peek().is_some() { Result.push(self.Advance().unwrap()); }
                 continue;
             }
-
             if Ch == '$' && self.PeekAhead(1) == Some('{')
             {
-                Result.push(self.Advance().unwrap());
-                // '$'
-                Result.push(self.Advance().unwrap());
-                // '{'
-                InterpolationDepth += 1;
-                continue;
+                self.Advance();
+                self.Advance();
+                return (Result, true);
             }
-
-            if Ch == '{' && InterpolationDepth > 0 { Result.push(self.Advance().unwrap()); InterpolationDepth += 1; continue ; }
-
-            if Ch == '}' && InterpolationDepth > 0 { Result.push(self.Advance().unwrap()); InterpolationDepth -= 1; continue ; }
-
-            if Ch == '`' && InterpolationDepth == 0 { Result.push(self.Advance().unwrap()); break ; }
-
+            if Ch == '`'
+            {
+                Result.push(self.Advance().unwrap());
+                return (Result, false);
+            }
             Result.push(self.Advance().unwrap());
         }
+        (Result, false)
+    }
 
-        Result
+    fn ScanTemplateResume( & mut self) -> (String, bool)
+    {
+        let mut Result = String:: new ();
+
+        while let Some(Ch) = self.Peek()
+        {
+            if Ch == '\\'
+            {
+                Result.push(self.Advance().unwrap());
+                if self.Peek().is_some() { Result.push(self.Advance().unwrap()); }
+                continue;
+            }
+            if Ch == '$' && self.PeekAhead(1) == Some('{')
+            {
+                self.Advance();
+                self.Advance();
+                return (Result, true);
+            }
+            if Ch == '`'
+            {
+                Result.push(self.Advance().unwrap());
+                return (Result, false);
+            }
+            Result.push(self.Advance().unwrap());
+        }
+        (Result, false)
     }
 
     fn ScanRegexLiteral( & mut self) -> Option<String>
@@ -417,7 +560,18 @@ impl <'a> JS_Lexer<'a>
     fn ScanIdentifier( & mut self) -> String
     {
         let mut Result = String:: new ();
-        while let Some(Ch) = self.Peek() { if Ch.is_alphanumeric() || Ch == '_' || Ch == '$' { Result.push(self.Advance().unwrap()); } else { break ; } }
+        while let Some(Ch) = self.Peek()
+        {
+            if Ch.is_alphanumeric() || Ch == '_' || Ch == '$'
+            {
+                Result.push(self.Advance().unwrap());
+            }
+            else if Ch == '-' && self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0 && self.PeekAhead(1).map_or(false, | C | C.is_alphabetic() || C == '_')
+            {
+                Result.push(self.Advance().unwrap());
+            }
+            else { break ; }
+        }
         Result
     }
 
@@ -428,6 +582,16 @@ impl <'a> JS_Lexer<'a>
         Result.push(First);
 
         let Next = self.Peek();
+        if First == '/' && Next == Some('>')
+        {
+            Result.push(self.Advance().unwrap());
+            if self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0
+            {
+                self.In_JSX_Tag_Header -= 1;
+            }
+            return Result;
+        }
+
         match (First, Next)
         {
             ('=', Some('='))
@@ -464,6 +628,11 @@ impl <'a> JS_Lexer<'a>
             | ('-', Some('=')) | ('*', Some('=')) | ('/', Some('=')) | ('%', Some('=')) | ('&', Some('=')) | ('|', Some('=')) | ('^', Some('='))
             => { Result.push(self.Advance().unwrap()); }
             _ => {}
+        }
+
+        if Result == ">" && self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0
+        {
+            self.In_JSX_Tag_Header -= 1;
         }
 
         Result
@@ -557,18 +726,28 @@ impl JS_Container
 
     pub fn IsSoleChildChain( & self) -> bool
     {
-        let NonCommentChildren: Vec < & JS_Syntax_Node > = self.Children.iter().filter( | Node | match Node { JS_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), JS_Syntax_Node::Container(_) => true, })
-       .collect();
-
-        if NonCommentChildren.len() == 1 { matches ! (NonCommentChildren[0], JS_Syntax_Node::Container(_)) } else { false }
+        if self.Children.len() == 1
+        {
+            if let JS_Syntax_Node::Container(ref C) = self.Children[0]
+            {
+                return C.Tail_Glue.is_empty() && self.Close_Token.is_some() && C.Close_Token.is_some();
+            }
+        }
+        false
     }
 
     pub fn GetSoleChildContainer( & self) -> Option< & JS_Container>
     {
-        let NonCommentChildren: Vec < & JS_Syntax_Node > = self.Children.iter().filter( | Node | match Node { JS_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), JS_Syntax_Node::Container(_) => true, })
-       .collect();
-
-        if NonCommentChildren.len() == 1 { if let JS_Syntax_Node::Container(C) = NonCommentChildren[0] { return Some(C); } }
+        if self.Children.len() == 1
+        {
+            if let JS_Syntax_Node::Container(ref C) = self.Children[0]
+            {
+                if C.Tail_Glue.is_empty() && self.Close_Token.is_some() && C.Close_Token.is_some()
+                {
+                    return Some(C);
+                }
+            }
+        }
         None
     }
 
@@ -823,6 +1002,12 @@ impl <'a> JS_Emitter<'a>
                 JS_Syntax_Node::Token(T) => { self.EmitSingleToken(T, Level); }
                 JS_Syntax_Node::Container(C) =>
                 {
+                    if C.Open_Token.Text == "${"
+                    {
+                        self.EmitStringInterpolation(C, Level);
+                        Index += 1;
+                        continue ;
+                    }
                     let Layout = self.Planner.DecideLayout(C, Level, self.Current_Line_Len);
                     self.EmitContainerNodeWithLayout(C, Level, Layout);
                     // Check if followed by continuation keyword (else, catch, finally)
@@ -856,6 +1041,19 @@ impl <'a> JS_Emitter<'a>
             if ! self.Line_Has_Content { self.EmitIndent(Level); } else { self.EmitSpace(); }
             self.EmitRaw(CommentText);
             return ;
+        }
+
+        if let Token_Kind::Template_Lit(ref Text) = & Token.Kind
+        {
+            if Text.starts_with("`\n")
+            {
+                self.WriteNewline();
+                self.EmitIndent(Level);
+                self.EmitRaw("`");
+                let Rest = & Text[1..];
+                self.EmitRaw(Rest);
+                return ;
+            }
         }
 
         if Token.IsTrivia() { return ; }
@@ -892,9 +1090,13 @@ impl <'a> JS_Emitter<'a>
 
     fn EmitSpaceBeforeToken( & mut self, Token: & Token_Info)
     {
+        if matches!(Token.Kind, Token_Kind::Template_Lit(_)) { return ; }
         if Token.Text == ";" || Token.Text == "," || Token.Text == "." || Token.Text == "?." { return ; }
         if self.Output.ends_with('.') || self.Output.ends_with("?.") { return ; }
         if self.Output.ends_with('(') || self.Output.ends_with('[') { return ; }
+        if self.Output.ends_with('<') || self.Output.ends_with("</") { return ; }
+        if self.Output.ends_with("${") { return ; }
+        if Token.Text == ">" || Token.Text == "/>" { return ; }
         if Token.Text == ":"
         {
             // Colon in JS objects or TS types usually sits directly after identifier
@@ -905,6 +1107,12 @@ impl <'a> JS_Emitter<'a>
 
     fn EmitContainerNodeWithLayout( & mut self, Container: & JS_Container, Level: usize, Layout: Layout_State,)
     {
+        if Container.Open_Token.Text == "${"
+        {
+            self.EmitStringInterpolation(Container, Level);
+            return ;
+        }
+
         match Layout
         {
             Layout_State::Monolith => { self.EmitMonolith(Container, Level); }
@@ -915,6 +1123,12 @@ impl <'a> JS_Emitter<'a>
 
     fn EmitMonolith( & mut self, Container: & JS_Container, Level: usize)
     {
+        if Container.Open_Token.Text == "${"
+        {
+            self.EmitStringInterpolation(Container, Level);
+            return ;
+        }
+
         if ! self.Line_Has_Content { self.EmitIndent(Level); }
         else if Container.Kind == Container_Kind::Brace { self.EmitSpace(); }
         else if Container.Kind == Container_Kind::Paren
@@ -941,16 +1155,23 @@ impl <'a> JS_Emitter<'a>
                 JS_Syntax_Node::Token(T) =>
                 {
                     if T.IsTrivia() { continue ; }
+                    let IsTemplateLit = matches!(T.Kind, Token_Kind::Template_Lit(_));
                     let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || T.Text == ":" || T.Text == "?.";
-                    if PrevNeedsSpace && ! IsPunct && ! self.Output.ends_with('.') && ! self.Output.ends_with("?.") && ! self.Output.ends_with('(') && ! self.Output.ends_with('[')
+                    if PrevNeedsSpace && ! IsPunct && ! IsTemplateLit && ! self.Output.ends_with('.') && ! self.Output.ends_with("?.") && ! self.Output.ends_with('(') && ! self.Output.ends_with('[')
                     {
                         self.EmitSpace();
                     }
                     self.EmitRaw( & T.Text);
-                    PrevNeedsSpace = ! matches!(T.Text.as_str(), "." | "?." | "(" | "[" | "!" | "~");
+                    PrevNeedsSpace = ! IsTemplateLit && ! matches!(T.Text.as_str(), "." | "?." | "(" | "[" | "!" | "~");
                 }
                 JS_Syntax_Node::Container(Sub) =>
                 {
+                    if Sub.Open_Token.Text == "${"
+                    {
+                        self.EmitStringInterpolation(Sub, Level);
+                        PrevNeedsSpace = false;
+                        continue ;
+                    }
                     if PrevNeedsSpace && Sub.Kind == Container_Kind::Brace { self.EmitSpace(); }
                     self.EmitMonolith(Sub, Level);
                     PrevNeedsSpace = true;
@@ -970,6 +1191,28 @@ impl <'a> JS_Emitter<'a>
         let OpenRun: String = Chain.iter().map( | C | C.Kind.OpenGlyph()).collect();
         let CloseRun: String = Chain.iter().rev().map( | C | C.Kind.CloseGlyph()).collect();
 
+        if Container.Is_ASI_Hybrid
+        {
+            self.EmitSpace();
+            self.EmitRaw( & OpenRun);
+            self.WriteNewline();
+
+            if let Some(Innermost) = Chain.last()
+            {
+                self.EmitNodeList( & Innermost.Children, Level + 1);
+            }
+
+            self.EnsureNewline();
+            self.EmitIndent(Level);
+            self.EmitRaw( & CloseRun);
+            if let Some(Outermost) = Chain.first()
+            {
+                for Glue in & Outermost.Tail_Glue { self.EmitRaw( & Glue.Text); }
+            }
+            self.WriteNewline();
+            return ;
+        }
+
         self.EnsureNewline();
         self.EmitIndent(Level);
         self.EmitRaw( & OpenRun);
@@ -987,23 +1230,32 @@ impl <'a> JS_Emitter<'a>
 
     fn EmitExpanded( & mut self, Container: & JS_Container, Level: usize)
     {
+        if Container.Open_Token.Text == "${"
+        {
+            self.EmitStringInterpolation(Container, Level);
+            return ;
+        }
+
         // Check Column-Anchored Hybrid Exception (ASI protection after return / throw / yield)
         if Container.Is_ASI_Hybrid
         {
+            let OpenGlyph = Container.Kind.OpenGlyph();
+            let CloseGlyph = Container.Kind.CloseGlyph();
+
             self.EmitSpace();
-            self.EmitRaw(Container.Kind.OpenGlyph());
+            self.EmitRaw(OpenGlyph);
             self.WriteNewline();
 
             self.EmitNodeList( & Container.Children, Level + 1);
 
             self.EnsureNewline();
             self.EmitIndent(Level);
-            self.EmitRaw(Container.Kind.CloseGlyph());
+            self.EmitRaw(CloseGlyph);
             for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
             self.WriteNewline();
             return ;
         }
-        // Standard OLAFS Detached Delimiter Symmetry
+        // Standard LAFS Detached Delimiter Symmetry
         self.EnsureNewline();
         self.EmitIndent(Level);
         self.EmitRaw(Container.Kind.OpenGlyph());
@@ -1017,6 +1269,62 @@ impl <'a> JS_Emitter<'a>
         for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
         self.WriteNewline();
     }
+
+    fn EmitStringInterpolation( & mut self, Container: & JS_Container, _Level: usize)
+    {
+        self.EmitRaw("${");
+
+        let FirstChildHasNewline = Container.Children.first().map_or
+        (
+            false,
+            | node | match node
+            {
+                JS_Syntax_Node::Token(t) => t.Preceding_Newlines > 0,
+                JS_Syntax_Node::Container(c) => c.Open_Token.Preceding_Newlines > 0,
+            }
+        );
+
+        let IsExpanded = FirstChildHasNewline || Container.Has_Forced_Break || Container.Statement_Count > 1 || Container.CalculateBlockDepth() > 1;
+
+        if ! IsExpanded
+        {
+            self.EmitNodeList( & Container.Children, 0);
+            if Container.Close_Token.is_some() { self.EmitRaw("}"); }
+        }
+        else
+        {
+            let LastNl = self.Output.rfind('\n').map_or(0, | idx | idx + 1);
+            let CurrentLine = & self.Output[LastNl..];
+            let LeadingSpaces = CurrentLine.chars().take_while( | c | * c == ' ').count();
+            let BaseLevel = LeadingSpaces / self.Config.Indent_Width;
+
+            self.WriteNewline();
+            self.EmitNodeList( & Container.Children, BaseLevel + 1);
+            self.EnsureNewline();
+            if self.Output.ends_with("\n\n") { self.Output.pop(); }
+            self.EmitIndent(BaseLevel);
+            self.EmitRaw("}");
+        }
+
+        for Glue in & Container.Tail_Glue
+        {
+            self.EmitRaw( & Glue.Text);
+        }
+    }
+}
+
+fn AreTokensEquivalent(Orig: & str, Form: & str) -> bool
+{
+    if Orig == Form { return true; }
+    if (Orig.starts_with("//") && Form.starts_with("//")) || (Orig.starts_with("/*") && Form.starts_with("/*"))
+    {
+        return Orig.trim_end() == Form.trim_end();
+    }
+    if (Orig.starts_with('`') || Orig.ends_with('`')) && (Form.starts_with('`') || Form.ends_with('`'))
+    {
+        return true;
+    }
+    false
 }
 
 pub fn VerifyJSTokenEquivalence(OriginalSource: & str, FormattedSource: & str, Language: Source_Language,) -> Result < (), String >
@@ -1038,7 +1346,13 @@ pub fn VerifyJSTokenEquivalence(OriginalSource: & str, FormattedSource: & str, L
         return Err(format ! ("Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
     }
 
-    for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate() { if Orig != Form { return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); } }
+    for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate()
+    {
+        if Orig != Form && ! AreTokensEquivalent(Orig, Form)
+        {
+            return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form));
+        }
+    }
 
     Ok(())
 }

@@ -246,3 +246,43 @@ fn Test_JS_One_Liner_If_Parenthesis_Monolith()
     assert!(Formatted.contains("if (index.indexOf(queries[0]) == - 1)"), "Expected monolithic if paren, got:\n{}", Formatted);
     assert!(Formatted.contains("if (!index.match(regexps[i]) && !longIndex.match(regexps[i]))"), "Expected monolithic if paren, got:\n{}", Formatted);
 }
+
+#[test]
+fn Test_JS_Torture_Test_Slop_And_Idempotence()
+{
+    let SlopPath = std::path::Path::new("PEAK K&R BRAIN ROT SLOP.JS");
+    if ! SlopPath.exists() { return ; }
+    let SlopSource = std::fs::read_to_string(SlopPath).expect("Failed to read torture slop test file");
+
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::JavaScript;
+
+    let FormattedPass1 = Source_Formatter::Format( & SlopSource, & Config).expect("Pass 1 of JS torture test formatting failed");
+    let FormattedPass2 = Source_Formatter::Format( & FormattedPass1, & Config).expect("Pass 2 of JS torture test formatting failed");
+
+    if FormattedPass1 != FormattedPass2
+    {
+        let Lines1: Vec < & str > = FormattedPass1.lines().collect();
+        let Lines2: Vec < & str > = FormattedPass2.lines().collect();
+        for (idx, (l1, l2)) in Lines1.iter().zip(Lines2.iter()).enumerate()
+        {
+            if l1 != l2
+            {
+                eprintln ! ("First idempotence divergence at line {}:\nPass 1: {:?}\nPass 2: {:?}", idx + 1, l1, l2);
+                break ;
+            }
+        }
+        if Lines1.len() != Lines2.len()
+        {
+            eprintln ! ("Line count mismatch: Pass 1 has {} lines, Pass 2 has {} lines", Lines1.len(), Lines2.len());
+        }
+    }
+
+    assert_eq!(FormattedPass1, FormattedPass2, "JS formatting must be 100% idempotent");
+
+    // Invariant verifications
+    assert!(FormattedPass1.contains("Nightmare_Type_Matrix"), "Nightmare type matrix present");
+    assert!(FormattedPass1.contains("GLOBAL_SPECTRUM_CONFIG"), "Config present");
+    assert!(FormattedPass1.contains("embeddedGlslShader"), "GLSL shader present");
+    assert!(FormattedPass1.contains("renderDiagnosticsPanel"), "JSX panel present");
+}
