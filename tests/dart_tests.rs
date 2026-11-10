@@ -7,11 +7,11 @@ use lafs:: { Config_Settings, Source_Formatter, Source_Language };
 fn Test_Dart_Monolith_Function()
 {
     let Input = "int Add(int A, int B) { return A + B; }";
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
     Config.Canvas_Width = 120;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert_eq!(Formatted.trim(), "int Add(int A, int B) { return A + B; }");
 }
 
@@ -22,11 +22,11 @@ fn Test_Dart_Expanded_Function_Detached_Brace()
     StepOne(Item);
     StepTwo(Count);
 }"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
     Config.Canvas_Width = 50;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     let Expected = "void ProcessData(String Item, int Count)\n{\n    StepOne(Item);\n    StepTwo(Count);\n}";
     assert_eq!(Formatted.trim(), Expected);
 }
@@ -35,10 +35,10 @@ fn Test_Dart_Expanded_Function_Detached_Brace()
 fn Test_Dart_1_Tuple_Record_Trailing_Comma()
 {
     let Input = "final (int,) SingleRecord = (42,);";
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("(42,)"), "1-tuple record must retain trailing comma. Got:\n{}", Formatted);
     assert!(Formatted.contains("(int,)"), "1-tuple record type must retain trailing comma. Got:\n{}", Formatted);
 }
@@ -50,10 +50,10 @@ fn Test_Dart_Empty_Container_Monolith()
     Point(this.x, this.y) {}
     void EmptyMethod() {}
 }"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("{}"), "Empty braces must stay compact '{{}}'. Got:\n{}", Formatted);
 }
 
@@ -63,10 +63,10 @@ fn Test_Dart_Dot_Shorthands()
     let Input = r#"final Tone = .violetCore;
 final Item = const .origin();
 final Other = .new();"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains(".violetCore"), "Dot shorthand must remain atomic. Got:\n{}", Formatted);
     assert!(Formatted.contains(".origin()"), "Dot constructor must remain atomic. Got:\n{}", Formatted);
     assert!(Formatted.contains(".new()"), "Dot new must remain atomic. Got:\n{}", Formatted);
@@ -79,10 +79,10 @@ fn Test_Dart_Cascades()
     ?..['step1'] = 123
     ..update('init', (x) => x)
     ..clear();"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("?..['step1']"), "Null-aware cascade must format cleanly. Got:\n{}", Formatted);
     assert!(Formatted.contains("..update"), "Cascade must format cleanly. Got:\n{}", Formatted);
     assert!(Formatted.contains("..clear()"), "Cascade must format cleanly. Got:\n{}", Formatted);
@@ -96,10 +96,10 @@ Line 1
   Line 2 (indented)
 Line 3
 ''';"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("Line 1\n  Line 2 (indented)\nLine 3"), "Multiline string interior whitespace must be preserved verbatim. Got:\n{}", Formatted);
 }
 
@@ -113,10 +113,10 @@ fn Test_Dart_Control_Flow_Collections()
     ...?OptionalList,
     ?SingleItem
 ];"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("for (var i = 0; i < 5; i++) i * 2"), "Collection for must remain without braces. Got:\n{}", Formatted);
     assert!(Formatted.contains("if (Flag) 99"), "Collection if must remain without braces. Got:\n{}", Formatted);
     assert!(Formatted.contains("...?OptionalList"), "Spread must remain intact. Got:\n{}", Formatted);
@@ -131,10 +131,10 @@ fn Test_Dart_Switch_Expression()
     var v when v.isOdd => 'ODD',
     _ => 'OTHER'
 };"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("switch (Value)"), "Switch expression header. Got:\n{}", Formatted);
     assert!(Formatted.contains("<= 0 => 'LOW'"), "Case arm. Got:\n{}", Formatted);
     assert!(Formatted.contains("var v when v.isOdd => 'ODD'"), "When guard. Got:\n{}", Formatted);
@@ -151,10 +151,10 @@ fn Test_Dart_Primary_Constructor_And_This_Body()
         if (PacketId == 'INVALID') { StateError('Bad packet'); }
     }
 }"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("sealed class AstPacket<T>"), "Class header. Got:\n{}", Formatted);
     assert!(Formatted.contains("this : assert"), "This initializer. Got:\n{}", Formatted);
 }
@@ -172,27 +172,27 @@ fn Test_Dart_Torture_Test_Slop_And_Idempotence()
 
     let EndIdx = MdContent[StartIdx..].find("```").expect("Failed to locate Part 1 closing ```") + StartIdx;
 
-    let TortureSlop = &MdContent[StartIdx..EndIdx];
+    let TortureSlop = & MdContent[StartIdx..EndIdx];
 
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
     Config.Canvas_Width = 160;
 
     // Pass 1: Format slop
-    let FormattedPass1 = Source_Formatter::Format(TortureSlop, &Config)
-        .expect("Formatting Dart torture test slop failed on Pass 1");
+    let FormattedPass1 = Source_Formatter::Format(TortureSlop, & Config)
+   .expect("Formatting Dart torture test slop failed on Pass 1");
 
     // Pass 2: Idempotence check
-    let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config)
-        .expect("Formatting Dart torture test slop failed on Pass 2");
+    let FormattedPass2 = Source_Formatter::Format( & FormattedPass1, & Config)
+   .expect("Formatting Dart torture test slop failed on Pass 2");
 
     assert_eq!(FormattedPass1, FormattedPass2, "Dart formatting must be 100% idempotent");
 
     // Invariant verifications
-    assert!(FormattedPass1.contains("(42,)"), "1-tuple record must retain comma");
-    assert!(FormattedPass1.contains("(scale,)"), "1-tuple scale record must retain comma");
-    assert!(FormattedPass1.contains(".violetCore"), "Dot shorthand must remain intact");
-    assert!(FormattedPass1.contains(".deepOrangeAlert"), "Dot shorthand must remain intact");
+    assert!(FormattedPass1 .contains("(42,)"), "1-tuple record must retain comma");
+    assert!(FormattedPass1 .contains("(scale,)"), "1-tuple scale record must retain comma");
+    assert!(FormattedPass1 .contains(".violetCore"), "Dot shorthand must remain intact");
+    assert!(FormattedPass1 .contains(".deepOrangeAlert"), "Dot shorthand must remain intact");
 }
 
 #[test]
@@ -203,11 +203,11 @@ fn Test_Dart_1_Tuple_Nested_List_Record_Grouping()
     'Secondary_#FC6A03_Warning_Threshold_Token',
     'Tertiary_#FF1744_Critical_Failure_Fallback_Token'
 ],);"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
     Config.Canvas_Width = 60;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("(["), "Alloyed opening node for nested 1-tuple list record");
     assert!(Formatted.contains("],);") || Formatted.contains("],)"), "Alloyed closing node must retain comma before paren");
 }
@@ -221,11 +221,11 @@ fn Test_Dart_Pure_Symmetry_On_Return_Throw_Yield()
         'code': 200
     };
 }"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
     Config.Canvas_Width = 40;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     // In Dart, return has no ASI hazard, so pure LAFS symmetry applies
     assert!(Formatted.contains("return\n    {\n") || Formatted.contains("return\n{\n"), "Pure symmetry on return in Dart without ASI hazard");
 }
@@ -234,10 +234,10 @@ fn Test_Dart_Pure_Symmetry_On_Return_Throw_Yield()
 fn Test_Dart_Adjacent_String_Literals()
 {
     let Input = r#"final Message = 'Part A ' 'Part B ' "Part C";"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert_eq!(Formatted.trim(), Input);
 }
 
@@ -246,10 +246,10 @@ fn Test_Dart_Nested_Block_Comments()
 {
     let Input = r#"/* Outer comment /* nested comment */ outer again */
 void Main() {}"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("/* Outer comment /* nested comment */ outer again */"));
 }
 
@@ -260,10 +260,10 @@ fn Test_Dart_Leading_Underscore_Privacy()
     final int _privateField = 42;
     void _privateMethod() {}
 }"#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Dart;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("_PrivateClass"));
     assert!(Formatted.contains("_privateField"));
     assert!(Formatted.contains("_privateMethod"));
