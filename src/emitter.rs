@@ -58,8 +58,16 @@ impl <'a> Code_Emitter<'a>
     fn EmitRaw( & mut self, Text: & str)
     {
         self.Output.push_str(Text);
-        if let Some(LastNl) = Text.rfind('\n') { self.Current_Line_Len = Text.len() - LastNl - 1; } else { self.Current_Line_Len += Text.len(); }
-        self.Line_Has_Content = true;
+        if let Some(LastNl) = Text.rfind('\n')
+        {
+            self.Current_Line_Len = Text.len() - LastNl - 1;
+            self.Line_Has_Content = self.Current_Line_Len > 0;
+        }
+        else
+        {
+            self.Current_Line_Len += Text.len();
+            self.Line_Has_Content = true;
+        }
     }
 
     fn EmitSpace( & mut self)
@@ -690,7 +698,7 @@ impl <'a> Code_Emitter<'a>
     {
         let Chain = Container.CollectChain();
         let OpenRun: String = Chain.iter().map( | C | C.Kind.OpenGlyph()).collect();
-        let CloseRun: String = Chain.iter().rev().map( | C | C.Kind.CloseGlyph()).collect();
+        let CloseRun: String = Chain.iter().rev().filter( | C | C.Close_Token.is_some()).map( | C | C.Kind.CloseGlyph()).collect();
         let Innermost = Chain.last().unwrap();
         // 1. Head stays on current line, then break line
         self.EnsureNewline();
@@ -700,15 +708,18 @@ impl <'a> Code_Emitter<'a>
         self.WriteNewline();
         // 3. Innermost children indented at Level + 1
         self.EmitNodeList( & Innermost.Children, Level + 1);
-        self.EnsureNewline();
-        // Remove trailing empty line right before compound closer
-        if self.Output.ends_with("\n\n") { self.Output.pop(); }
-        // 4. Compound closing run sits on its own line at Level indent (Load-bearing pillar)
-        self.EmitIndent(Level);
-        self.EmitRaw( & CloseRun);
-        // 5. Tail glue from outermost container sits right after close run
-        for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
-        self.WriteNewline();
+        if ! CloseRun.is_empty()
+        {
+            self.EnsureNewline();
+            // Remove trailing empty line right before compound closer
+            if self.Output.ends_with("\n\n") { self.Output.pop(); }
+            // 4. Compound closing run sits on its own line at Level indent (Load-bearing pillar)
+            self.EmitIndent(Level);
+            self.EmitRaw( & CloseRun);
+            // 5. Tail glue from outermost container sits right after close run
+            for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
+            self.WriteNewline();
+        }
     }
 
     fn EmitExpanded( & mut self, Container: & Container_Node, Level: usize)

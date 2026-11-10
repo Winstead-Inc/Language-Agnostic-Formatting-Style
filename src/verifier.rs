@@ -72,11 +72,11 @@ impl Safety_Verifier
 
         if
         (
-            Orig.starts_with('"') || Orig.starts_with("r\"") || Orig.starts_with("r#") || Orig.starts_with("br") || Orig.starts_with("cr") || Orig.starts_with("b\"") || Orig.starts_with('`') || Orig.starts_with('\'')
+            Orig.starts_with('"') || Orig.starts_with("r\"") || Orig.starts_with("r#") || Orig.starts_with("br") || Orig.starts_with("cr") || Orig.starts_with("c\"") || Orig.starts_with("b\"") || Orig.starts_with("b'") || Orig.starts_with('`') || Orig.starts_with('\'')
         )
         &&
         (
-            Form.starts_with('"') || Form.starts_with("r\"") || Form.starts_with("r#") || Form.starts_with("br") || Form.starts_with("cr") || Form.starts_with("b\"") || Form.starts_with('`') || Form.starts_with('\'')
+            Form.starts_with('"') || Form.starts_with("r\"") || Form.starts_with("r#") || Form.starts_with("br") || Form.starts_with("cr") || Form.starts_with("c\"") || Form.starts_with("b\"") || Form.starts_with("b'") || Form.starts_with('`') || Form.starts_with('\'')
         )
         {
             let OrigLines: Vec < & str > = Orig.lines().collect();

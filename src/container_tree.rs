@@ -34,6 +34,7 @@ impl Container_Node
         let mut Current = self;
         while let Some(Child) = Current.GetSoleChildContainer()
         {
+            if Current.Close_Token.is_none() || Child.Close_Token.is_none() { break ; }
             // Angle containers never fuse into runs as per spec (angle.allow_grouping = false)
             if Current.Kind == Container_Kind::Angle || Child.Kind == Container_Kind::Angle { break ; }
             Chain.push(Child);

@@ -43,8 +43,8 @@ impl <'a> Lexer_Scanner<'a>
                 {
                     let mut Offset = 2;
                     while let Some(C) = self.PeekAhead(Offset)
-                    { if C.is_whitespace() { Offset += 1; } else { break ; } }
-                    self.PeekAhead(Offset) != Some('[')
+                    { if C == ' ' || C == '\t' { Offset += 1; } else { break ; } }
+                    self.PeekAhead(Offset) == Some('/')
                 };
 
                 if self.Language.SupportsPreprocessor() || IsShebang
