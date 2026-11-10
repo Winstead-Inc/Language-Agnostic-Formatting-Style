@@ -64,7 +64,7 @@ fn Test_JS_ASI_Column_Anchored_Hybrid_On_Return()
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("return {\n"), "Opening brace after return must remain on the return line (Column-Anchored Hybrid)");
-    assert!(Formatted.contains("\n    };\n"), "Closing brace must align with the return statement baseline");
+    assert!(Formatted.contains("           };\n"), "Closing brace must align with column-anchored hybrid opener column (column 11)");
 }
 
 #[test]

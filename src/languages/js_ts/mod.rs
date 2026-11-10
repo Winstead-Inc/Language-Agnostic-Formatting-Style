@@ -788,7 +788,27 @@ impl JS_Container_Builder
     pub fn BuildTree( & mut self) -> Vec<JS_Syntax_Node>
     {
         let mut RootNodes = Vec:: new ();
-        while self.Index < self.Tokens.len() { if let Some(Node) = self.ParseNextNode(false) { RootNodes.push(Node); } }
+        let mut LastSignificantWasReturn = false;
+        while self.Index < self.Tokens.len()
+        {
+            if let Some(Node) = self.ParseNextNode(LastSignificantWasReturn)
+            {
+                match & Node
+                {
+                    JS_Syntax_Node::Token(T) =>
+                    {
+                        if ! T.IsTrivia() && ! T.IsComment()
+                        {
+                            LastSignificantWasReturn = matches!(T.Text.as_str(), "return" | "throw" | "yield" | "default")
+                            || (T.Text == "*" && LastSignificantWasReturn);
+                        }
+                    }
+                    JS_Syntax_Node::Container(_) =>
+                    { LastSignificantWasReturn = false; }
+                }
+                RootNodes.push(Node);
+            }
+        }
         RootNodes
     }
 
@@ -858,7 +878,8 @@ impl JS_Container_Builder
 
                     if ! CurrentToken.IsTrivia() && ! CurrentToken.IsComment()
                     {
-                        LastSignificantWasReturn = matches!(CurrentToken.Text.as_str(), "return" | "throw" | "yield");
+                        LastSignificantWasReturn = matches!(CurrentToken.Text.as_str(), "return" | "throw" | "yield" | "default")
+                        || (CurrentToken.Text == "*" && LastSignificantWasReturn);
                     }
 
                     Container.Children.push(JS_Syntax_Node::Token(CurrentToken));
@@ -1138,7 +1159,8 @@ impl <'a> JS_Emitter<'a>
 
         if Container.Is_ASI_Hybrid
         {
-            self.EmitSpace();
+            if ! self.Output.ends_with(' ') { self.EmitSpace(); }
+            let OpenCol = self.Current_Line_Len;
             self.EmitRaw( & OpenRun);
             self.WriteNewline();
 
@@ -1146,7 +1168,8 @@ impl <'a> JS_Emitter<'a>
             { self.EmitNodeList( & Innermost.Children, Level + 1); }
 
             self.EnsureNewline();
-            self.EmitIndent(Level);
+            let CloseIndent = " ".repeat(OpenCol);
+            self.EmitRaw( & CloseIndent);
             self.EmitRaw( & CloseRun);
             if let Some(Outermost) = Chain.first()
             { for Glue in & Outermost.Tail_Glue { self.EmitRaw( & Glue.Text); } }
@@ -1180,14 +1203,16 @@ impl <'a> JS_Emitter<'a>
             let OpenGlyph = Container.Kind.OpenGlyph();
             let CloseGlyph = Container.Kind.CloseGlyph();
 
-            self.EmitSpace();
+            if ! self.Output.ends_with(' ') { self.EmitSpace(); }
+            let OpenCol = self.Current_Line_Len;
             self.EmitRaw(OpenGlyph);
             self.WriteNewline();
 
             self.EmitNodeList( & Container.Children, Level + 1);
 
             self.EnsureNewline();
-            self.EmitIndent(Level);
+            let CloseIndent = " ".repeat(OpenCol);
+            self.EmitRaw( & CloseIndent);
             self.EmitRaw(CloseGlyph);
             for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
             self.WriteNewline();

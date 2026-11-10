@@ -642,7 +642,7 @@ impl <'a> Lexer_Scanner<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch.is_alphanumeric() || Ch == '_' || Ch == '$'
-            || (self.Language == crate::types::Source_Language::Css && (Ch == '-' || Ch == '.'))
+            || (self.Language == crate::types::Source_Language::Css && (Ch == '-' || Ch == '.' || Ch == '@' || Ch == '#' || Ch == '%'))
             || (self.Language.IsToml() && Ch == '-')
             { Result.push(self.Advance().unwrap()); }
             else { break ; }

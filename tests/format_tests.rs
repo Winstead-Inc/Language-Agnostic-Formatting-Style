@@ -453,3 +453,64 @@ fn Test_Raw_String_With_Non_Ascii_Unicode_Characters()
     let FormattedCpp = Source_Formatter::Format(CppInput, & Config).expect("Formatting failed for C++ raw string with non-ASCII chars");
     assert!(FormattedCpp.contains("R\"delim(content)delim\""));
 }
+
+#[test]
+fn Test_CSS_Formatting()
+{
+    let Input = r#".container {
+    margin: 0;
+    padding: 10px;
+    background-color: #7100FF;
+}"#;
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::Css;
+    Config.Canvas_Width = 40;
+
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("CSS formatting failed");
+    println!("Formatted CSS (Expanded):\n{}", Formatted);
+}
+
+#[test]
+fn Test_CSS_Media_Query()
+{
+    let Input = r#"@media (max-width: 768px) {
+    .container {
+        display: none;
+    }
+}"#;
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::Css;
+    Config.Canvas_Width = 40;
+
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("CSS media query failed");
+    println!("Formatted CSS Media Query:\n{}", Formatted);
+}
+
+#[test]
+fn Test_HTML_Polyglot()
+{
+    let Input = r#"<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Page</title>
+    <style>
+body { margin: 0; background: #7100FF; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Welcome</h1>
+    </div>
+    <script>
+function initApp() {
+    console.log("App ready");
+}
+    </script>
+</body>
+</html>"#;
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::Html;
+
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("HTML polyglot failed");
+    println!("Formatted HTML:\n{}", Formatted);
+}

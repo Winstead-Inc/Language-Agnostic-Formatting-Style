@@ -16,14 +16,36 @@ impl Source_Language
         if Lower.ends_with(".js") || Lower.ends_with(".jsx") || Lower.ends_with(".mjs") || Lower.ends_with(".cjs") { return Source_Language::JavaScript; }
         if Lower.ends_with(".sh") || Lower.ends_with(".bash") || Lower.ends_with(".zsh") || Lower.ends_with(".ksh") { return Source_Language::Shell; }
         if Lower.ends_with(".go") { return Source_Language::Go; }
-        if Lower.ends_with(".php") { return Source_Language::Php; }
-        if Lower.ends_with(".html") || Lower.ends_with(".htm") { return Source_Language::Html; }
-        if Lower.ends_with(".css") { return Source_Language::Css; }
+        if Lower.ends_with(".php") || Lower.ends_with(".phtml") { return Source_Language::Php; }
+        if Lower.ends_with(".html") || Lower.ends_with(".htm") || Lower.ends_with(".xhtml") || Lower.ends_with(".vue") || Lower.ends_with(".svelte")
+        {
+            return Source_Language::Html;
+        }
+        if Lower.ends_with(".css") || Lower.ends_with(".scss") || Lower.ends_with(".less") { return Source_Language::Css; }
         if Lower.ends_with(".kt") || Lower.ends_with(".kts") { return Source_Language::Kotlin; }
         if Lower.ends_with(".bat") || Lower.ends_with(".cmd") { return Source_Language::Batch; }
         if Lower.ends_with("cargo.lock") || Lower.ends_with(".lock") || Lower == "lock" { return Source_Language::CargoLock; }
         if Lower.ends_with(".toml") || Lower == "toml" { return Source_Language::Toml; }
         if Lower.ends_with(".dart") { return Source_Language::Dart; }
+        Source_Language::Generic
+    }
+
+    pub fn Detect(Source: & str) -> Self
+    {
+        let Trimmed = Source.trim();
+        let Lower = Trimmed.to_lowercase();
+        if Lower.starts_with("<!doctype") || Lower.starts_with("<html") || (Lower.contains("<script") && Lower.contains("</script>")) || (Lower.contains("<style") && Lower.contains("</style>"))
+        {
+            return Source_Language::Html;
+        }
+        if Lower.starts_with("<?php") || Lower.starts_with("<?=")
+        { return Source_Language::Php; }
+        if (Lower.contains("@media") || Lower.contains("@keyframes") || Lower.contains("@import"))
+        ||
+        (
+            Lower.contains('{') && Lower.contains('}') && (Lower.contains("margin:") || Lower.contains("padding:") || Lower.contains("color:") || Lower.contains("background:"))
+        )
+        { return Source_Language::Css; }
         Source_Language::Generic
     }
 

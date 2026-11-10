@@ -10,6 +10,17 @@ impl Source_Formatter
 {
     pub fn Format(Source: & str, Config: & Config_Settings) -> Result<String, String>
     {
+        if Config.Language == crate::types::Source_Language::Generic
+        {
+            let Detected = crate::types::Source_Language::Detect(Source);
+            if Detected != crate::types::Source_Language::Generic
+            {
+                let mut DetectedConfig = Config.clone();
+                DetectedConfig.Language = Detected;
+                return Self::Format(Source, & DetectedConfig);
+            }
+        }
+
         if Config.Language.IsJavaScriptOrTypeScript() { return crate::languages::js_ts::JS_TS_Formatter::Format(Source, Config); }
 
         if Config.Language.IsShell() { return crate::languages::shell::Shell_Formatter::Format(Source, Config); }
@@ -26,6 +37,9 @@ impl Source_Formatter
         {
             return crate::languages::polyglot::Polyglot_Formatter::Format(Source, Config);
         }
+
+        if Config.Language == crate::types::Source_Language::Css
+        { return crate::languages::css::CSS_Formatter::Format(Source, Config); }
 
         let mut Scanner = Lexer_Scanner::New(Source, Config.Language);
         let Tokens = Scanner.TokenizeAll();
