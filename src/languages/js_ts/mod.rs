@@ -29,13 +29,11 @@ impl JS_TS_Formatter
 
 #[derive(Debug, Clone)]
 struct Template_Context
-{
-    Brace_Depth: usize,
-}
+{ Brace_Depth: usize, }
 
 pub struct JS_Lexer<'a>
 {
-    Source: &'a str,
+    Source: & 'a str,
     Chars: Vec<char>,
     Index: usize,
     Line: usize,
@@ -47,9 +45,9 @@ pub struct JS_Lexer<'a>
     JSX_Brace_Depth: usize,
 }
 
-impl<'a> JS_Lexer<'a>
+impl <'a> JS_Lexer<'a>
 {
-    pub fn New(Source: &'a str, Language: Source_Language) -> Self
+    pub fn New(Source: & 'a str, Language: Source_Language) -> Self
     {
         JS_Lexer
         {
@@ -60,7 +58,7 @@ impl<'a> JS_Lexer<'a>
             Column: 0,
             Language,
             Expects_Expression: true,
-            Template_Stack: Vec::new(),
+            Template_Stack: Vec:: new (),
             In_JSX_Tag_Header: 0,
             JSX_Brace_Depth: 0,
         }
@@ -139,9 +137,7 @@ impl<'a> JS_Lexer<'a>
                     self.Expects_Expression = true;
                 }
                 else
-                {
-                    self.Expects_Expression = false;
-                }
+                { self.Expects_Expression = false; }
                 continue;
             }
             // 6. Strings (Single and Double Quotes)
@@ -177,13 +173,9 @@ impl<'a> JS_Lexer<'a>
             {
                 self.Advance();
                 if let Some(Ctx) = self.Template_Stack.last_mut()
-                {
-                    Ctx.Brace_Depth += 1;
-                }
+                { Ctx.Brace_Depth += 1; }
                 if self.In_JSX_Tag_Header > 0
-                {
-                    self.JSX_Brace_Depth += 1;
-                }
+                { self.JSX_Brace_Depth += 1; }
                 RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace), "{".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
@@ -199,9 +191,7 @@ impl<'a> JS_Lexer<'a>
                         Ctx.Brace_Depth -= 1;
                         self.Advance();
                         if self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth > 0
-                        {
-                            self.JSX_Brace_Depth -= 1;
-                        }
+                        { self.JSX_Brace_Depth -= 1; }
                         RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines,));
                         PrecedingNewlines = 0;
                         self.Expects_Expression = false;
@@ -226,9 +216,7 @@ impl<'a> JS_Lexer<'a>
                             self.Expects_Expression = true;
                         }
                         else
-                        {
-                            self.Expects_Expression = false;
-                        }
+                        { self.Expects_Expression = false; }
                         continue;
                     }
                 }
@@ -236,9 +224,7 @@ impl<'a> JS_Lexer<'a>
                 {
                     self.Advance();
                     if self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth > 0
-                    {
-                        self.JSX_Brace_Depth -= 1;
-                    }
+                    { self.JSX_Brace_Depth -= 1; }
                     RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     self.Expects_Expression = false;
@@ -277,7 +263,7 @@ impl<'a> JS_Lexer<'a>
             {
                 self.Advance();
                 let IdentText = self.ScanIdentifier();
-                let FullIdent = format ! ("#{}", IdentText);
+                let FullIdent = format!("#{}", IdentText);
                 RawTokens.push(Token_Info::New(Token_Kind::Identifier(FullIdent.clone()), FullIdent, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
@@ -347,9 +333,7 @@ impl<'a> JS_Lexer<'a>
             {
                 self.Advance();
                 if self.Expects_Expression && self.Peek().map_or(false, | C | C.is_ascii_alphabetic() || C == '>')
-                {
-                    self.In_JSX_Tag_Header += 1;
-                }
+                { self.In_JSX_Tag_Header += 1; }
                 RawTokens.push(Token_Info::New(Token_Kind::Operator("<".to_string()), "<".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
@@ -435,16 +419,9 @@ impl<'a> JS_Lexer<'a>
                 continue;
             }
             if Ch == '$' && self.PeekAhead(1) == Some('{')
-            {
-                self.Advance();
-                self.Advance();
-                return (Result, true);
-            }
+            { self.Advance(); self.Advance(); return (Result, true); }
             if Ch == '`'
-            {
-                Result.push(self.Advance().unwrap());
-                return (Result, false);
-            }
+            { Result.push(self.Advance().unwrap()); return (Result, false); }
             Result.push(self.Advance().unwrap());
         }
         (Result, false)
@@ -463,16 +440,9 @@ impl<'a> JS_Lexer<'a>
                 continue;
             }
             if Ch == '$' && self.PeekAhead(1) == Some('{')
-            {
-                self.Advance();
-                self.Advance();
-                return (Result, true);
-            }
+            { self.Advance(); self.Advance(); return (Result, true); }
             if Ch == '`'
-            {
-                Result.push(self.Advance().unwrap());
-                return (Result, false);
-            }
+            { Result.push(self.Advance().unwrap()); return (Result, false); }
             Result.push(self.Advance().unwrap());
         }
         (Result, false)
@@ -563,9 +533,7 @@ impl<'a> JS_Lexer<'a>
         while let Some(Ch) = self.Peek()
         {
             if Ch.is_alphanumeric() || Ch == '_' || Ch == '$'
-            {
-                Result.push(self.Advance().unwrap());
-            }
+            { Result.push(self.Advance().unwrap()); }
             else if Ch == '-' && self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0 && self.PeekAhead(1).map_or(false, | C | C.is_alphabetic() || C == '_')
             {
                 Result.push(self.Advance().unwrap());
@@ -586,9 +554,7 @@ impl<'a> JS_Lexer<'a>
         {
             Result.push(self.Advance().unwrap());
             if self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0
-            {
-                self.In_JSX_Tag_Header -= 1;
-            }
+            { self.In_JSX_Tag_Header -= 1; }
             return Result;
         }
 
@@ -631,9 +597,7 @@ impl<'a> JS_Lexer<'a>
         }
 
         if Result == ">" && self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0
-        {
-            self.In_JSX_Tag_Header -= 1;
-        }
+        { self.In_JSX_Tag_Header -= 1; }
 
         Result
     }
@@ -741,12 +705,7 @@ impl JS_Container
         if self.Children.len() == 1
         {
             if let JS_Syntax_Node::Container(ref C) = self.Children[0]
-            {
-                if C.Tail_Glue.is_empty() && self.Close_Token.is_some() && C.Close_Token.is_some()
-                {
-                    return Some(C);
-                }
-            }
+            { if C.Tail_Glue.is_empty() && self.Close_Token.is_some() && C.Close_Token.is_some() { return Some(C); } }
         }
         None
     }
@@ -1003,11 +962,7 @@ impl <'a> JS_Emitter<'a>
                 JS_Syntax_Node::Container(C) =>
                 {
                     if C.Open_Token.Text == "${"
-                    {
-                        self.EmitStringInterpolation(C, Level);
-                        Index += 1;
-                        continue ;
-                    }
+                    { self.EmitStringInterpolation(C, Level); Index += 1; continue ; }
                     let Layout = self.Planner.DecideLayout(C, Level, self.Current_Line_Len);
                     self.EmitContainerNodeWithLayout(C, Level, Layout);
                     // Check if followed by continuation keyword (else, catch, finally)
@@ -1108,10 +1063,7 @@ impl <'a> JS_Emitter<'a>
     fn EmitContainerNodeWithLayout( & mut self, Container: & JS_Container, Level: usize, Layout: Layout_State,)
     {
         if Container.Open_Token.Text == "${"
-        {
-            self.EmitStringInterpolation(Container, Level);
-            return ;
-        }
+        { self.EmitStringInterpolation(Container, Level); return ; }
 
         match Layout
         {
@@ -1124,10 +1076,7 @@ impl <'a> JS_Emitter<'a>
     fn EmitMonolith( & mut self, Container: & JS_Container, Level: usize)
     {
         if Container.Open_Token.Text == "${"
-        {
-            self.EmitStringInterpolation(Container, Level);
-            return ;
-        }
+        { self.EmitStringInterpolation(Container, Level); return ; }
 
         if ! self.Line_Has_Content { self.EmitIndent(Level); }
         else if Container.Kind == Container_Kind::Brace { self.EmitSpace(); }
@@ -1167,11 +1116,7 @@ impl <'a> JS_Emitter<'a>
                 JS_Syntax_Node::Container(Sub) =>
                 {
                     if Sub.Open_Token.Text == "${"
-                    {
-                        self.EmitStringInterpolation(Sub, Level);
-                        PrevNeedsSpace = false;
-                        continue ;
-                    }
+                    { self.EmitStringInterpolation(Sub, Level); PrevNeedsSpace = false; continue ; }
                     if PrevNeedsSpace && Sub.Kind == Container_Kind::Brace { self.EmitSpace(); }
                     self.EmitMonolith(Sub, Level);
                     PrevNeedsSpace = true;
@@ -1198,17 +1143,13 @@ impl <'a> JS_Emitter<'a>
             self.WriteNewline();
 
             if let Some(Innermost) = Chain.last()
-            {
-                self.EmitNodeList( & Innermost.Children, Level + 1);
-            }
+            { self.EmitNodeList( & Innermost.Children, Level + 1); }
 
             self.EnsureNewline();
             self.EmitIndent(Level);
             self.EmitRaw( & CloseRun);
             if let Some(Outermost) = Chain.first()
-            {
-                for Glue in & Outermost.Tail_Glue { self.EmitRaw( & Glue.Text); }
-            }
+            { for Glue in & Outermost.Tail_Glue { self.EmitRaw( & Glue.Text); } }
             self.WriteNewline();
             return ;
         }
@@ -1231,10 +1172,7 @@ impl <'a> JS_Emitter<'a>
     fn EmitExpanded( & mut self, Container: & JS_Container, Level: usize)
     {
         if Container.Open_Token.Text == "${"
-        {
-            self.EmitStringInterpolation(Container, Level);
-            return ;
-        }
+        { self.EmitStringInterpolation(Container, Level); return ; }
 
         // Check Column-Anchored Hybrid Exception (ASI protection after return / throw / yield)
         if Container.Is_ASI_Hybrid
@@ -1278,19 +1216,13 @@ impl <'a> JS_Emitter<'a>
         (
             false,
             | node | match node
-            {
-                JS_Syntax_Node::Token(t) => t.Preceding_Newlines > 0,
-                JS_Syntax_Node::Container(c) => c.Open_Token.Preceding_Newlines > 0,
-            }
+            { JS_Syntax_Node::Token(t) => t.Preceding_Newlines > 0, JS_Syntax_Node::Container(c) => c.Open_Token.Preceding_Newlines > 0, }
         );
 
         let IsExpanded = FirstChildHasNewline || Container.Has_Forced_Break || Container.Statement_Count > 1 || Container.CalculateBlockDepth() > 1;
 
         if ! IsExpanded
-        {
-            self.EmitNodeList( & Container.Children, 0);
-            if Container.Close_Token.is_some() { self.EmitRaw("}"); }
-        }
+        { self.EmitNodeList( & Container.Children, 0); if Container.Close_Token.is_some() { self.EmitRaw("}"); } }
         else
         {
             let LastNl = self.Output.rfind('\n').map_or(0, | idx | idx + 1);
@@ -1307,9 +1239,7 @@ impl <'a> JS_Emitter<'a>
         }
 
         for Glue in & Container.Tail_Glue
-        {
-            self.EmitRaw( & Glue.Text);
-        }
+        { self.EmitRaw( & Glue.Text); }
     }
 }
 
@@ -1321,9 +1251,7 @@ fn AreTokensEquivalent(Orig: & str, Form: & str) -> bool
         return Orig.trim_end() == Form.trim_end();
     }
     if (Orig.starts_with('`') || Orig.ends_with('`')) && (Form.starts_with('`') || Form.ends_with('`'))
-    {
-        return true;
-    }
+    { return true; }
     false
 }
 
