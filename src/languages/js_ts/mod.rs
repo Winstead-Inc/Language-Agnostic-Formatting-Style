@@ -780,18 +780,12 @@ impl JS_Container
 }
 
 pub struct JS_Container_Builder
-{
-    Tokens: Vec<Token_Info>,
-    Index: usize,
-    Enable_CAH: bool,
-}
+{ Tokens: Vec<Token_Info>, Index: usize, Enable_CAH: bool , }
 
 impl JS_Container_Builder
 {
     pub fn New(Tokens: Vec<Token_Info>, Enable_CAH: bool) -> Self
-    {
-        JS_Container_Builder { Tokens, Index: 0, Enable_CAH }
-    }
+    { JS_Container_Builder { Tokens, Index: 0, Enable_CAH } }
 
     pub fn BuildTree( & mut self) -> Vec<JS_Syntax_Node>
     {
@@ -949,10 +943,10 @@ impl <'a> JS_Emitter<'a>
         {
             Config,
             Planner: JS_Layout_Planner::New(Config),
-            Output: String::new (),
+            Output: String:: new (),
             Current_Line_Len: 0,
             Line_Has_Content: false,
-            Base_Column_Offsets: Vec::new (),
+            Base_Column_Offsets: Vec:: new (),
         }
     }
 
@@ -977,15 +971,13 @@ impl <'a> JS_Emitter<'a>
     {
         if ! self.Line_Has_Content
         {
-            let IndentStr = if let Some(& BaseCol) = self.Base_Column_Offsets.last()
+            let IndentStr = if let Some( & BaseCol) = self.Base_Column_Offsets.last()
             {
                 let Additional = Level * self.Config.Indent_Width;
                 " ".repeat(BaseCol + Additional)
             }
             else
-            {
-                self.Config.IndentString(Level)
-            };
+            { self.Config.IndentString(Level) };
             self.Output.push_str( & IndentStr);
             self.Current_Line_Len = IndentStr.len();
             self.Line_Has_Content = true;
