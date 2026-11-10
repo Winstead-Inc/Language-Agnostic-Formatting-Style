@@ -133,16 +133,22 @@ jobs:
           ls -la dist/
           chmod +x dist/LAFS-* dist/LAFS.exe || true
 
-      - name: Stage Release Binary to Repository Root
+      - name: Stage All Platform Binaries to Repository Root
         run: |
           cp dist/LAFS.exe ./LAFS.exe
+          cp dist/LAFS-linux-x86_64 ./LAFS-linux-x86_64
+          cp dist/LAFS-linux-aarch64 ./LAFS-linux-aarch64
+          cp dist/LAFS-darwin ./LAFS-darwin
+          cp dist/LAFS-darwin-x86_64 ./LAFS-darwin-x86_64
+          cp dist/LAFS-darwin-arm64 ./LAFS-darwin-arm64
+          chmod +x ./LAFS-* || true
 
-      - name: Commit and Push Root Binary
+      - name: Commit and Push Root Binaries
         if: github.ref == 'refs/heads/main'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: update root binary LAFS.exe [skip ci]"
-          file_pattern: "LAFS.exe"
+          commit_message: "chore: update all platform binaries in root [skip ci]"
+          file_pattern: "LAFS.exe LAFS-linux-x86_64 LAFS-linux-aarch64 LAFS-darwin LAFS-darwin-x86_64 LAFS-darwin-arm64"
           commit_user_name: "github-actions[bot]"
           commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
           commit_author: "LAFS Bot <actions@github.com>"
