@@ -2,6 +2,10 @@
 
 A pure-Rust, high-performance container formatter implementing the **Language-Agnostic Formatting Style (LAFS)** for **C**, **C++**, **C#**, **Go**, **JavaScript**, **TypeScript**, **PHP**, **HTML**, and **CSS**.
 
+> [!IMPORTANT]
+> **This Repository is NOT a Cesspool of ugly, improperly formatted K&R Brain Rot & Slop.**
+> Trailing delimiter/container attachments (`fn() {`, `if (Condition) {`), asymmetrical diagonal vector tracking, and compressed scope exit clusters (`}}});`) are strictly banned across all languages, files, templates, scripts, and documentation. Delimiters are load-bearing architectural columns, not sentence punctuation.
+
 ---
 
 ## Architectural Principles
