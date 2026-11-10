@@ -263,14 +263,14 @@ fn NormalizePathSpec(Spec: & str) -> (String, bool)
 fn FormatFailedEntry(FilePathStr: & str, Lang: & str, Reason: & str) -> String
 { format ! ("File: {}\nLanguage: {}\nReason: {}\n", FilePathStr, Lang, Reason.trim()) }
 
-fn SafelyWriteFile(FilePath: & Path, Content: & str) -> std::io::Result<()>
+fn SafelyWriteFile(FilePath: & Path, Content: & str) -> std::io::Result < () >
 {
     use std::io::Write;
-    let mut File = fs::OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(FilePath)?;
+    let mut File = fs::OpenOptions:: new ()
+   .write(true)
+   .create(true)
+   .truncate(true)
+   .open(FilePath)?;
     File.write_all(Content.as_bytes())?;
     File.sync_all()?;
     Ok(())

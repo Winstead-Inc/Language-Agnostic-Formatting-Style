@@ -669,7 +669,7 @@ impl <'a> Dart_Lexer<'a>
                 matches!(Text, "=" | "=>" | ":" | "," | "(" | "[" | "{" | "??" | "const" | "new")
                 || matches!(Text, "class" | "enum" | "mixin" | "extension" | "typedef")
                 || matches!(Text, "int" | "double" | "num" | "bool" | "dynamic" | "void" | "never" | "symbol" | "Object" | "Comparable" | "Future" | "FutureOr" | "Stream")
-                || (matches!(Prev.Kind, Token_Kind::Identifier(_)) && (Text.starts_with( | c: char | c.is_uppercase()) || Text.starts_with('_')))
+                || (matches ! (Prev.Kind, Token_Kind::Identifier(_)) && (Text.starts_with( | c: char | c.is_uppercase()) || Text.starts_with('_')))
             };
 
             if ! PrecedingValid { I += 1; continue ; }
@@ -705,11 +705,11 @@ impl <'a> Dart_Lexer<'a>
                     Depth -= 1;
                     if Depth == 0 && ParenDepth == 0 { MatchIndex = Some(J); break ; }
                 }
-                else if Tokens[J].Text == ";" || (ParenDepth == 0 && matches!(Tokens[J].Text.as_str(), "{" | "}" | "||" | "&&" | "+" | "-" | "*" | "/" | "%" | "==" | "!=" | "<=" | ">=" | "if" | "while" | "return" | "yield"))
-                {
-                    ContainsInvalidTypeToken = true;
-                    break ;
-                }
+                else if Tokens[J].Text == ";" ||
+                (
+                    ParenDepth == 0 && matches!(Tokens[J].Text.as_str(), "{" | "}" | "||" | "&&" | "+" | "-" | "*" | "/" | "%" | "==" | "!=" | "<=" | ">=" | "if" | "while" | "return" | "yield")
+                )
+                { ContainsInvalidTypeToken = true; break ; }
                 J += 1;
             }
 
@@ -900,9 +900,7 @@ impl Dart_Container_Builder
                         Container.Statement_Count += 1;
                     }
                     else if Next.Text == "=>"
-                    {
-                        Container.Statement_Count += 2;
-                    }
+                    { Container.Statement_Count += 2; }
 
                     if let Some(ChildNode) = self.ParseNode()
                     {
@@ -947,23 +945,11 @@ impl Dart_Container_Builder
                                 while ChildIdx < Container.Children.len()
                                 {
                                     if let Dart_Syntax_Node::Token(ref T) = Container.Children[ChildIdx]
-                                    {
-                                        if matches!(T.Text.as_str(), "async" | "sync*" | "async*" | "=>")
-                                        {
-                                            Modifier = Some(T.Text.clone());
-                                            ChildIdx += 1;
-                                            continue ;
-                                        }
-                                    }
-                                    break ;
+                                    { if matches ! (T.Text.as_str(), "async" | "sync*" | "async*" | "=>") { Modifier = Some(T.Text.clone()); ChildIdx += 1; continue ; } }
+                                    break;
                                 }
                                 if ChildIdx < Container.Children.len()
-                                {
-                                    if let Dart_Syntax_Node::Container(_) = Container.Children[ChildIdx]
-                                    {
-                                        Is_Closure = true;
-                                    }
-                                }
+                                { if let Dart_Syntax_Node::Container(_) = Container.Children[ChildIdx] { Is_Closure = true; } }
                             }
                         }
                     }
@@ -977,7 +963,7 @@ impl Dart_Container_Builder
                         {
                             let T0 = & self.Tokens[self.Index];
                             let T1 = & self.Tokens[self.Index + 1];
-                            if T0.Text == "(" && T1.Text == ")" && T0.Preceding_Newlines == 0
+                            if T0 .Text == "(" && T1 .Text == ")" && T0 .Preceding_Newlines == 0
                             {
                                 Container.IIFE_Has_Invocation = true;
                                 self.Index += 2;
@@ -1050,15 +1036,7 @@ impl <'a> Dart_Emitter<'a>
     pub fn New(Config: & 'a Config_Settings) -> Self
     {
         Dart_Emitter
-        {
-            Config,
-            Output: String::new (),
-            Current_Line_Len: 0,
-            Line_Has_Content: false,
-            In_Cascade: false,
-            In_Directive: false,
-            In_Ternary: 0,
-        }
+        { Config, Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, In_Cascade: false, In_Directive: false, In_Ternary: 0, }
     }
 
     pub fn Emit(mut self, Nodes: & [Dart_Syntax_Node]) -> String
@@ -1137,39 +1115,26 @@ impl <'a> Dart_Emitter<'a>
                 Dart_Syntax_Node::Token(T) =>
                 {
                     if T.Text == ".." || T.Text == "?.."
-                    {
-                        self.In_Cascade = true;
-                    }
+                    { self.In_Cascade = true; }
                     else if T.Text == "for" || T.Text == "if"
-                    {
-                        InForOrIfElement = false;
-                    }
+                    { InForOrIfElement = false; }
 
                     self.EmitSingleToken(T, if self.In_Cascade { Level + 1 } else { NodeLevel }, Nodes, I);
 
                     if T.Text == ";"
-                    {
-                        self.In_Cascade = false;
-                        InForOrIfElement = false;
-                    }
+                    { self.In_Cascade = false; InForOrIfElement = false; }
                 }
                 Dart_Syntax_Node::Container(C) =>
                 {
                     if InForOrIfElement
-                    {
-                        self.EnsureNewline();
-                    }
+                    { self.EnsureNewline(); }
                     self.EmitContainerNode(C, if self.In_Cascade { Level + 1 } else { EffectiveLevel });
 
                     if C.Tail_Glue.iter().any( | g | g.Text == ";")
-                    {
-                        self.In_Cascade = false;
-                    }
+                    { self.In_Cascade = false; }
 
                     if InForOrIfElement
-                    {
-                        InForOrIfElement = false;
-                    }
+                    { InForOrIfElement = false; }
                     else if C.Kind == Container_Kind::Paren && I > 0
                     {
                         if let Dart_Syntax_Node::Token(ref PrevT) = Nodes[I - 1]
@@ -1179,12 +1144,7 @@ impl <'a> Dart_Emitter<'a>
                                 if I + 1 < Nodes.len()
                                 {
                                     if let Dart_Syntax_Node::Container(ref NextC) = Nodes[I + 1]
-                                    {
-                                        if NextC.Kind != Container_Kind::Brace
-                                        {
-                                            InForOrIfElement = true;
-                                        }
-                                    }
+                                    { if NextC.Kind != Container_Kind::Brace { InForOrIfElement = true; } }
                                 }
                             }
                         }
@@ -1197,22 +1157,11 @@ impl <'a> Dart_Emitter<'a>
             {
                 Dart_Syntax_Node::Token(T) => T.Text == ";" || T.Text == ",",
                 Dart_Syntax_Node::Container(C) =>
-                {
-                    C.Open_Token.Text != "${" &&
-                    (
-                        C.Tail_Glue.iter().any( | g | g.Text == ";" || g.Text == ",")
-                        || C.Kind == Container_Kind::Brace
-                    )
-                }
+                { C.Open_Token.Text != "${" && (C.Tail_Glue.iter().any( | g | g.Text == ";" || g.Text == ",") || C.Kind == Container_Kind::Brace) }
             };
 
             if IsStatementOrDecl && I + 1 < Nodes.len()
-            {
-                if Level > 0
-                {
-                    self.EnsureNewline();
-                }
-            }
+            { if Level > 0 { self.EnsureNewline(); } }
 
             // Annotation completion (e.g. @override or @Deprecated(...))
             let IsAnnotationComplete = match Node
@@ -1224,55 +1173,27 @@ impl <'a> Dart_Emitter<'a>
                         if let Dart_Syntax_Node::Token(ref PrevT) = Nodes[I - 1]
                         {
                             if PrevT.Text == "@"
-                            {
-                                if I + 1 < Nodes.len()
-                                {
-                                    ! matches!(Nodes[I + 1], Dart_Syntax_Node::Container(ref C) if C.Kind == Container_Kind::Paren)
-                                }
-                                else
-                                {
-                                    true
-                                }
-                            }
+                            { if I + 1 < Nodes.len() { ! matches ! (Nodes[I + 1], Dart_Syntax_Node::Container(ref C) if C.Kind == Container_Kind::Paren) } else { true } }
                             else
-                            {
-                                false
-                            }
+                            { false }
                         }
                         else
-                        {
-                            false
-                        }
+                        { false }
                     }
                     else
-                    {
-                        false
-                    }
+                    { false }
                 }
                 Dart_Syntax_Node::Container(C) =>
                 {
                     if C.Kind == Container_Kind::Paren && I >= 2
-                    {
-                        if let Dart_Syntax_Node::Token(ref PrevPrevT) = Nodes[I - 2]
-                        {
-                            PrevPrevT.Text == "@"
-                        }
-                        else
-                        {
-                            false
-                        }
-                    }
+                    { if let Dart_Syntax_Node::Token(ref PrevPrevT) = Nodes[I - 2] { PrevPrevT.Text == "@" } else { false } }
                     else
-                    {
-                        false
-                    }
+                    { false }
                 }
             };
 
             if IsAnnotationComplete && I + 1 < Nodes.len()
-            {
-                self.EnsureNewline();
-            }
+            { self.EnsureNewline(); }
         }
         self.In_Cascade = SavedCascade;
     }
@@ -1281,17 +1202,13 @@ impl <'a> Dart_Emitter<'a>
     {
         // 1. Directives (import, export, library, part)
         if Token.Text == "import" || Token.Text == "export" || Token.Text == "library" || Token.Text == "part"
-        {
-            self.In_Directive = true;
-        }
+        { self.In_Directive = true; }
 
         // 2. Preceding newlines preservation
         if Token.Preceding_Newlines > 0
         {
             if self.In_Directive
-            {
-                if ! self.Output.ends_with(' ') { self.EmitSpace(); }
-            }
+            { if ! self.Output.ends_with(' ') { self.EmitSpace(); } }
             else
             {
                 let Trimmed = self.Output.trim_end();
@@ -1309,14 +1226,9 @@ impl <'a> Dart_Emitter<'a>
                 };
 
                 if IsSignatureBreak || (IsAfterFatArrow && self.Current_Line_Len + 1 + Token.Text.len() <= self.Config.Canvas_Width)
-                {
-                    if ! self.Output.ends_with(' ') { self.EmitSpace(); }
-                }
+                { if ! self.Output.ends_with(' ') { self.EmitSpace(); } }
                 else
-                {
-                    self.EnsureNewline();
-                    if Token.Preceding_Newlines >= 2 { self.EnsureBlankLine(); }
-                }
+                { self.EnsureNewline(); if Token.Preceding_Newlines >= 2 { self.EnsureBlankLine(); } }
             }
         }
 
@@ -1351,9 +1263,7 @@ impl <'a> Dart_Emitter<'a>
         {
             let Trimmed = self.Output.trim_end();
             if Trimmed.ends_with( | c: char | c.is_alphanumeric() || c == '_' || c == '$' || c == '>' || c == ')' || c == ']' || c == '\'' || c == '"')
-            {
-                while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
-            }
+            { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
             self.EmitRaw( & Token.Text);
             return ;
         }
@@ -1422,54 +1332,49 @@ impl <'a> Dart_Emitter<'a>
                         if _Index + 1 < _Nodes.len()
                         {
                             if let Dart_Syntax_Node::Token(ref NextT) = _Nodes[_Index + 1]
-                            {
-                                if NextT.Preceding_Newlines > 0
-                                {
-                                    self.WriteNewline();
-                                    self.EmitIndent(Level + 1);
-                                    return ;
-                                }
-                            }
+                            { if NextT.Preceding_Newlines > 0 { self.WriteNewline(); self.EmitIndent(Level + 1); return ; } }
                         }
                     }
                     self.EmitSpace();
                 }
                 else if Op == "..." || Op == "...?" || Op == "!" || Op == "~" || Op == "@"
-                {
-                    self.EmitRaw(Op);
-                }
+                { self.EmitRaw(Op); }
                 else if Op == "?"
                 {
                     let PrecededByDelimiter = self.Output.ends_with('(') || self.Output.ends_with('[') || self.Output.ends_with('{') || self.Output.ends_with(',') || self.Output.ends_with(':')
-                    || (self.Output.ends_with(' ') && {
-                        let Trimmed = self.Output.trim_end();
-                        Trimmed.ends_with('(') || Trimmed.ends_with('[') || Trimmed.ends_with('{') || Trimmed.ends_with(',') || Trimmed.ends_with(':')
-                    });
+                    ||
+                    (
+                        self.Output.ends_with(' ') &&
+                        {
+                            let Trimmed = self.Output.trim_end();
+                            Trimmed.ends_with('(') || Trimmed.ends_with('[') || Trimmed.ends_with('{') || Trimmed.ends_with(',') || Trimmed.ends_with(':')
+                        }
+                    );
 
                     if PrecededByDelimiter
-                    {
-                        if self.Output.ends_with(',') { self.EmitSpace(); }
-                        self.EmitRaw("?");
-                    }
+                    { if self.Output.ends_with(',') { self.EmitSpace(); } self.EmitRaw("?"); }
                     else
                     {
-                        let PrecedingIsType = _Index > 0 && match &_Nodes[_Index - 1] {
-                            Dart_Syntax_Node::Token(prev_t) => IsTypeNameToken(&prev_t.Text),
+                        let PrecedingIsType = _Index > 0 && match & _Nodes[_Index - 1]
+                        {
+                            Dart_Syntax_Node::Token(prev_t) => IsTypeNameToken( & prev_t.Text),
                             Dart_Syntax_Node::Container(prev_c) => prev_c.Kind == Container_Kind::Angle || prev_c.Kind == Container_Kind::Paren,
                         };
 
                         let NextFollower = _Index + 1 < _Nodes.len();
-                        let NextIsDeclOrCloser = if NextFollower {
-                            match &_Nodes[_Index + 1] {
-                                Dart_Syntax_Node::Token(next_t) => {
+                        let NextIsDeclOrCloser = if NextFollower
+                        {
+                            match & _Nodes[_Index + 1]
+                            {
+                                Dart_Syntax_Node::Token(next_t) =>
+                                {
                                     next_t.Text == ">" || next_t.Text == "," || next_t.Text == ")" || next_t.Text == "Function"
                                     || matches!(next_t.Kind, Token_Kind::Identifier(_))
                                 }
                                 Dart_Syntax_Node::Container(next_c) => next_c.Kind == Container_Kind::Angle,
                             }
-                        } else {
-                            false
-                        };
+                        }
+                        else { false };
 
                         let IsNullableType = PrecedingIsType && NextIsDeclOrCloser;
 
@@ -1477,13 +1382,8 @@ impl <'a> Dart_Emitter<'a>
                         {
                             while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
                             self.EmitRaw("?");
-                            let NextIsCloser = _Index + 1 < _Nodes.len() && match &_Nodes[_Index + 1] {
-                                Dart_Syntax_Node::Token(next_t) => next_t.Text == ">" || next_t.Text == "," || next_t.Text == ")",
-                                _ => false,
-                            };
-                            if !NextIsCloser {
-                                self.EmitSpace();
-                            }
+                            let NextIsCloser = _Index + 1 < _Nodes.len() && match & _Nodes[_Index + 1] { Dart_Syntax_Node::Token(next_t) => next_t.Text == ">" || next_t.Text == "," || next_t.Text == ")", _ => false, };
+                            if ! NextIsCloser { self.EmitSpace(); }
                         }
                         else
                         {
@@ -1505,10 +1405,7 @@ impl <'a> Dart_Emitter<'a>
                     while self.Output.ends_with(' ') { self.Output.pop(); }
                     self.EmitRaw( & P.to_string());
                     if * P == ';' && self.In_Directive
-                    {
-                        self.In_Directive = false;
-                        self.WriteNewline();
-                    }
+                    { self.In_Directive = false; self.WriteNewline(); }
                     else if Level > 0
                     { self.WriteNewline(); }
                     else
@@ -1526,21 +1423,20 @@ impl <'a> Dart_Emitter<'a>
                     else
                     {
                         let IsPatternGetter = self.Output.ends_with('(') || self.Output.ends_with('{')
-                        || (self.Output.ends_with(' ') && {
-                            let Trimmed = self.Output.trim_end();
-                            Trimmed.ends_with(',') || Trimmed.ends_with('(') || Trimmed.ends_with('{')
-                        });
-                        let NextIsIdentOrKeyword = _Index + 1 < _Nodes.len() && match & _Nodes[_Index + 1] {
-                            Dart_Syntax_Node::Token(t) => matches!(t.Kind, Token_Kind::Identifier(_) | Token_Kind::Keyword(_)),
-                            _ => false,
-                        };
+                        ||
+                        (
+                            self.Output.ends_with(' ') &&
+                            {
+                                let Trimmed = self.Output.trim_end();
+                                Trimmed.ends_with(',') || Trimmed.ends_with('(') || Trimmed.ends_with('{')
+                            }
+                        );
+                        let NextIsIdentOrKeyword = _Index + 1 < _Nodes.len() && match & _Nodes[_Index + 1] { Dart_Syntax_Node::Token(t) => matches ! (t.Kind, Token_Kind::Identifier(_) | Token_Kind::Keyword(_)), _ => false, };
 
                         if IsPatternGetter && NextIsIdentOrKeyword
                         {
                             if ! self.Output.ends_with(' ') && ! self.Output.ends_with('(') && ! self.Output.ends_with('{')
-                            {
-                                self.EmitSpace();
-                            }
+                            { self.EmitSpace(); }
                             self.EmitRaw(":");
                         }
                         else
@@ -1611,13 +1507,9 @@ impl <'a> Dart_Emitter<'a>
         {
             let Layout = self.DetermineLayoutState(Container);
             if Layout == Layout_State::Monolith
-            {
-                self.EmitMonolith(Container, Level);
-            }
+            { self.EmitMonolith(Container, Level); }
             else
-            {
-                self.EmitIIFE(Container, Level);
-            }
+            { self.EmitIIFE(Container, Level); }
             return ;
         }
 
@@ -1689,20 +1581,24 @@ impl <'a> Dart_Emitter<'a>
                             self.EmitSpace();
                             In_Ternary -= 1;
                             PrevNeedsSpace = false;
-                            continue ;
+                            continue;
                         }
 
                         let IsPatternGetter = self.Output.ends_with('(') || self.Output.ends_with('{')
-                        || (self.Output.ends_with(' ') && {
-                            let Trimmed = self.Output.trim_end();
-                            Trimmed.ends_with(',') || Trimmed.ends_with('(') || Trimmed.ends_with('{')
-                        });
+                        ||
+                        (
+                            self.Output.ends_with(' ') &&
+                            {
+                                let Trimmed = self.Output.trim_end();
+                                Trimmed.ends_with(',') || Trimmed.ends_with('(') || Trimmed.ends_with('{')
+                            }
+                        );
                         if IsPatternGetter
                         {
                             if self.Output.ends_with(',') { self.EmitSpace(); }
                             self.EmitRaw(":");
                             PrevNeedsSpace = false;
-                            continue ;
+                            continue;
                         }
                         let Trimmed = self.Output.trim_end();
                         if Trimmed.ends_with("this") || Trimmed.ends_with(')')
@@ -1714,7 +1610,7 @@ impl <'a> Dart_Emitter<'a>
                         self.EmitRaw(":");
                         self.EmitSpace();
                         PrevNeedsSpace = false;
-                        continue ;
+                        continue;
                     }
 
                     if T.Text == ";"
@@ -1724,62 +1620,64 @@ impl <'a> Dart_Emitter<'a>
                         self.EmitRaw(";");
                         self.EmitSpace();
                         PrevNeedsSpace = false;
-                        continue ;
+                        continue;
                     }
 
                     if T.Text == "." || T.Text == "?."
                     {
                         let Trimmed = self.Output.trim_end();
                         if Trimmed.ends_with( | c: char | c.is_alphanumeric() || c == '_' || c == '$' || c == '>' || c == ')' || c == ']' || c == '\'' || c == '"')
-                        {
-                            while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
-                        }
+                        { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
                         self.EmitRaw( & T.Text);
                         PrevNeedsSpace = false;
-                        continue ;
+                        continue;
                     }
 
                     if T.Text == "?"
                     {
                         let PrecededByDelimiter = self.Output.ends_with('(') || self.Output.ends_with('[') || self.Output.ends_with('{') || self.Output.ends_with(',') || self.Output.ends_with(':')
-                        || (self.Output.ends_with(' ') && {
-                            let Trimmed = self.Output.trim_end();
-                            Trimmed.ends_with('(') || Trimmed.ends_with('[') || Trimmed.ends_with('{') || Trimmed.ends_with(',') || Trimmed.ends_with(':')
-                        });
+                        ||
+                        (
+                            self.Output.ends_with(' ') &&
+                            {
+                                let Trimmed = self.Output.trim_end();
+                                Trimmed.ends_with('(') || Trimmed.ends_with('[') || Trimmed.ends_with('{') || Trimmed.ends_with(',') || Trimmed.ends_with(':')
+                            }
+                        );
 
                         if PrecededByDelimiter
                         {
                             if self.Output.ends_with(',') { self.EmitSpace(); }
                             self.EmitRaw("?");
                             PrevNeedsSpace = false;
-                            continue ;
+                            continue;
                         }
 
-                        let PrecedingIsType = ChildIdx > 0 && match &Container.Children[ChildIdx - 1] {
-                            Dart_Syntax_Node::Token(prev_t) => IsTypeNameToken(&prev_t.Text),
+                        let PrecedingIsType = ChildIdx > 0 && match & Container.Children[ChildIdx - 1]
+                        {
+                            Dart_Syntax_Node::Token(prev_t) => IsTypeNameToken( & prev_t.Text),
                             Dart_Syntax_Node::Container(prev_c) => prev_c.Kind == Container_Kind::Angle || prev_c.Kind == Container_Kind::Paren,
                         };
 
-                        let NextIsCloser = if ChildIdx + 1 < Container.Children.len() {
-                            match &Container.Children[ChildIdx + 1] {
-                                Dart_Syntax_Node::Token(next_t) => next_t.Text == ">" || next_t.Text == "," || next_t.Text == ")",
-                                _ => false,
-                            }
-                        } else {
-                            Container.Close_Token.is_some()
-                        };
+                        let NextIsCloser = if ChildIdx + 1 < Container.Children.len()
+                        {
+                            match & Container.Children[ChildIdx + 1] { Dart_Syntax_Node::Token(next_t) => next_t.Text == ">" || next_t.Text == "," || next_t.Text == ")", _ => false, }
+                        }
+                        else { Container.Close_Token.is_some() };
 
-                        let NextIsDeclOrCloser = if ChildIdx + 1 < Container.Children.len() {
-                            match &Container.Children[ChildIdx + 1] {
-                                Dart_Syntax_Node::Token(next_t) => {
+                        let NextIsDeclOrCloser = if ChildIdx + 1 < Container.Children.len()
+                        {
+                            match & Container.Children[ChildIdx + 1]
+                            {
+                                Dart_Syntax_Node::Token(next_t) =>
+                                {
                                     next_t.Text == ">" || next_t.Text == "," || next_t.Text == ")" || next_t.Text == "Function"
                                     || matches!(next_t.Kind, Token_Kind::Identifier(_))
                                 }
                                 Dart_Syntax_Node::Container(next_c) => next_c.Kind == Container_Kind::Angle,
                             }
-                        } else {
-                            Container.Close_Token.is_some()
-                        };
+                        }
+                        else { Container.Close_Token.is_some() };
 
                         let IsNullableType = PrecedingIsType && NextIsDeclOrCloser;
 
@@ -1787,11 +1685,9 @@ impl <'a> Dart_Emitter<'a>
                         {
                             while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
                             self.EmitRaw("?");
-                            if ! NextIsCloser {
-                                self.EmitSpace();
-                            }
+                            if ! NextIsCloser { self.EmitSpace(); }
                             PrevNeedsSpace = false;
-                            continue ;
+                            continue;
                         }
                         else
                         {
@@ -1800,7 +1696,7 @@ impl <'a> Dart_Emitter<'a>
                             self.EmitSpace();
                             In_Ternary += 1;
                             PrevNeedsSpace = false;
-                            continue ;
+                            continue;
                         }
                     }
 
@@ -1976,10 +1872,7 @@ impl <'a> Dart_Emitter<'a>
         self.EmitIndent(Level);
         self.EmitRaw("(()");
         if let Some(ref Mod) = Container.IIFE_Modifier
-        {
-            self.EmitSpace();
-            self.EmitRaw(Mod);
-        }
+        { self.EmitSpace(); self.EmitRaw(Mod); }
         self.WriteNewline();
 
         // 3. Find the body container
@@ -1987,14 +1880,8 @@ impl <'a> Dart_Emitter<'a>
         while BodyIdx < Container.Children.len()
         {
             if let Dart_Syntax_Node::Token(ref T) = Container.Children[BodyIdx]
-            {
-                if matches!(T.Text.as_str(), "async" | "sync*" | "async*" | "=>")
-                {
-                    BodyIdx += 1;
-                    continue ;
-                }
-            }
-            break ;
+            { if matches ! (T.Text.as_str(), "async" | "sync*" | "async*" | "=>") { BodyIdx += 1; continue ; } }
+            break;
         }
 
         if BodyIdx < Container.Children.len()
@@ -2042,10 +1929,7 @@ impl <'a> Dart_Emitter<'a>
                             self.EmitRaw(")");
                         }
                         else
-                        {
-                            self.EmitContainerNode(BodyC, Level);
-                            self.EmitRaw(")");
-                        }
+                        { self.EmitContainerNode(BodyC, Level); self.EmitRaw(")"); }
                     }
                 }
                 Dart_Syntax_Node::Token(_) =>
@@ -2058,31 +1942,19 @@ impl <'a> Dart_Emitter<'a>
             }
         }
         else
-        {
-            self.EnsureNewline();
-            self.EmitIndent(Level);
-            self.EmitRaw(")");
-        }
+        { self.EnsureNewline(); self.EmitIndent(Level); self.EmitRaw(")"); }
 
         // 4. Trailing invocation `()`
         if Container.IIFE_Has_Invocation
-        {
-            self.EmitRaw("()");
-        }
+        { self.EmitRaw("()"); }
 
         // 5. Tail glue
         for Glue in & Container.Tail_Glue
-        {
-            self.EmitRaw( & Glue.Text);
-        }
+        { self.EmitRaw( & Glue.Text); }
         if Container.Tail_Glue.is_empty()
-        {
-            self.EmitSpace();
-        }
+        { self.EmitSpace(); }
         else
-        {
-            self.WriteNewline();
-        }
+        { self.WriteNewline(); }
     }
 
     fn EmitStringInterpolation( & mut self, Container: & Dart_Container_Node, _Level: usize)
