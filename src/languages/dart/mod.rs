@@ -35,36 +35,16 @@ impl Dart_Formatter
 // ============================================================================
 
 pub struct Dart_Lexer<'a>
-{
-    Source: &'a str,
-    Chars: Vec<char>,
-    Index: usize,
-    Line: usize,
-    Column: usize,
-    Multiline_Stack: Vec<Multiline_Context>,
-}
+{ Source: & 'a str, Chars: Vec<char>, Index: usize, Line: usize, Column: usize, Multiline_Stack: Vec<Multiline_Context>, }
 
 #[derive(Clone, Debug)]
 struct Multiline_Context
-{
-    Quote_Char: char,
-    Brace_Depth: usize,
-}
+{ Quote_Char: char , Brace_Depth: usize, }
 
-impl<'a> Dart_Lexer<'a>
+impl <'a> Dart_Lexer<'a>
 {
-    pub fn New(Source: &'a str) -> Self
-    {
-        Dart_Lexer
-        {
-            Source,
-            Chars: Source.chars().collect(),
-            Index: 0,
-            Line: 1,
-            Column: 0,
-            Multiline_Stack: Vec::new(),
-        }
-    }
+    pub fn New(Source: & 'a str) -> Self
+    { Dart_Lexer { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, Multiline_Stack: Vec::new (), } }
 
     fn Peek( & self) -> Option<char>
     { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
@@ -144,7 +124,7 @@ impl<'a> Dart_Lexer<'a>
             {
                 let QuoteChar = Ch;
                 let (ChunkText, HasInterp) = self.ScanMultilineStringStart(QuoteChar);
-                if !ChunkText.is_empty()
+                if ! ChunkText.is_empty()
                 {
                     RawTokens.push(Token_Info::New(Token_Kind::String_Lit(ChunkText.clone()), ChunkText, StartLine, StartCol, PrecedingNewlines));
                     PrecedingNewlines = 0;
@@ -228,9 +208,7 @@ impl<'a> Dart_Lexer<'a>
             {
                 self.Advance();
                 if let Some(Ctx) = self.Multiline_Stack.last_mut()
-                {
-                    Ctx.Brace_Depth += 1;
-                }
+                { Ctx.Brace_Depth += 1; }
                 RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace), "{".to_string(), StartLine, StartCol, PrecedingNewlines));
                 PrecedingNewlines = 0;
                 continue;
@@ -255,7 +233,7 @@ impl<'a> Dart_Lexer<'a>
                         PrecedingNewlines = 0;
 
                         let (ResumeChunk, HasAnotherInterp) = self.ScanMultilineStringResume(QuoteChar);
-                        if !ResumeChunk.is_empty()
+                        if ! ResumeChunk.is_empty()
                         {
                             RawTokens.push(Token_Info::New(Token_Kind::String_Lit(ResumeChunk.clone()), ResumeChunk, self.Line, self.Column, 0));
                         }
@@ -437,9 +415,9 @@ impl<'a> Dart_Lexer<'a>
         Result
     }
 
-    fn ScanMultilineStringStart(&mut self, QuoteChar: char) -> (String, bool)
+    fn ScanMultilineStringStart( & mut self, QuoteChar: char) -> (String, bool)
     {
-        let mut Result = String::new();
+        let mut Result = String:: new ();
         for _ in 0..3 { Result.push(self.Advance().unwrap()); }
 
         while let Some(Ch) = self.Peek()
@@ -450,11 +428,7 @@ impl<'a> Dart_Lexer<'a>
                 if let Some(_) = self.Peek() { Result.push(self.Advance().unwrap()); }
             }
             else if Ch == '$' && self.PeekAhead(1) == Some('{')
-            {
-                self.Advance();
-                self.Advance();
-                return (Result, true);
-            }
+            { self.Advance(); self.Advance(); return (Result, true); }
             else if Ch == QuoteChar && self.PeekAhead(1) == Some(QuoteChar) && self.PeekAhead(2) == Some(QuoteChar)
             {
                 for _ in 0..3 { Result.push(self.Advance().unwrap()); }
@@ -466,9 +440,9 @@ impl<'a> Dart_Lexer<'a>
         (Result, false)
     }
 
-    fn ScanMultilineStringResume(&mut self, QuoteChar: char) -> (String, bool)
+    fn ScanMultilineStringResume( & mut self, QuoteChar: char) -> (String, bool)
     {
-        let mut Result = String::new();
+        let mut Result = String:: new ();
 
         while let Some(Ch) = self.Peek()
         {
@@ -478,11 +452,7 @@ impl<'a> Dart_Lexer<'a>
                 if let Some(_) = self.Peek() { Result.push(self.Advance().unwrap()); }
             }
             else if Ch == '$' && self.PeekAhead(1) == Some('{')
-            {
-                self.Advance();
-                self.Advance();
-                return (Result, true);
-            }
+            { self.Advance(); self.Advance(); return (Result, true); }
             else if Ch == QuoteChar && self.PeekAhead(1) == Some(QuoteChar) && self.PeekAhead(2) == Some(QuoteChar)
             {
                 for _ in 0..3 { Result.push(self.Advance().unwrap()); }
@@ -567,10 +537,7 @@ impl<'a> Dart_Lexer<'a>
             while self.PeekAhead(Offset) == Some(' ') || self.PeekAhead(Offset) == Some('\t')
             { Offset += 1; }
             if self.PeekAhead(Offset) == Some('*')
-            {
-                for _ in 0..=Offset { self.Advance(); }
-                Result.push('*');
-            }
+            { for _ in 0..=Offset { self.Advance(); } Result.push('*'); }
         }
         Result
     }
@@ -678,7 +645,7 @@ impl<'a> Dart_Lexer<'a>
         )
     }
 
-    fn ClassifyAngleGenerics(Tokens: &mut Vec<Token_Info>)
+    fn ClassifyAngleGenerics(Tokens: & mut Vec<Token_Info>)
     {
         let mut I = 0;
         while I < Tokens.len()
@@ -689,30 +656,25 @@ impl<'a> Dart_Lexer<'a>
             let PrecedingValid = if I == 0 { false }
             else
             {
-                let Prev = &Tokens[I - 1];
+                let Prev = & Tokens[I - 1];
                 matches!(Prev.Kind, Token_Kind::Identifier(_) | Token_Kind::Keyword(_))
                 || matches!(Prev.Text.as_str(), ")" | "]" | "=" | "=>" | ":" | "," | "(" | "[" | "??" | "const" | "new" | "." | "?.")
             };
 
-            if !PrecedingValid { I += 1; continue ; }
+            if ! PrecedingValid { I += 1; continue ; }
 
             // Scan forward for matching '>'
             let mut Depth: usize = 0;
-            let mut MatchIndex: Option<usize> = None;
+            let mut MatchIndex: Option < usize > = None;
             let mut J = I;
 
             while J < Tokens.len()
             {
                 if Tokens[J].Text == "<"
-                {
-                    Depth += 1;
-                }
+                { Depth += 1; }
                 else if Tokens[J].Text == ">"
-                {
-                    Depth -= 1;
-                    if Depth == 0 { MatchIndex = Some(J); break ; }
-                }
-                else if Tokens[J].Text.chars().all(|c| c == '>') && Tokens[J].Text.len() > 1 && Depth >= 1
+                { Depth -= 1; if Depth == 0 { MatchIndex = Some(J); break ; } }
+                else if Tokens[J].Text.chars().all( | c | c == '>') && Tokens[J].Text.len() > 1 && Depth >= 1
                 {
                     // Closer splitting per LAFS edge-cases §A.1 (handles >>, >>>, >>>>)
                     let Count = Tokens[J].Text.len();
@@ -727,9 +689,7 @@ impl<'a> Dart_Lexer<'a>
                     if Depth == 0 { MatchIndex = Some(J); break ; }
                 }
                 else if matches!(Tokens[J].Text.as_str(), ";" | "{" | "}" | "||" | "&&")
-                {
-                    break ;
-                }
+                { break ; }
                 J += 1;
             }
 
@@ -737,7 +697,7 @@ impl<'a> Dart_Lexer<'a>
             {
                 let FollowValid = if M + 1 < Tokens.len()
                 {
-                    let Next = &Tokens[M + 1];
+                    let Next = & Tokens[M + 1];
                     matches!
                     (
                         Next.Text.as_str(),
@@ -905,7 +865,10 @@ impl Dart_Container_Builder
                     // Forced break conditions
                     if matches!(Next.Kind, Token_Kind::Comment_Line(_)) { Container.Has_Forced_Break = true; }
                     if Next.Text.contains('\n') { Container.Has_Forced_Break = true; }
-                    if matches!(Next.Text.as_str(), ";" | "if" | "for" | "while" | "switch" | "try" | "yield" | "yield*" | "return") { Container.Statement_Count += 1; }
+                    if matches!(Next.Text.as_str(), ";" | "if" | "for" | "while" | "switch" | "try" | "yield" | "yield*" | "return")
+                    {
+                        Container.Statement_Count += 1;
+                    }
 
                     if let Some(ChildNode) = self.ParseNode()
                     {
@@ -1103,15 +1066,13 @@ impl <'a> Dart_Emitter<'a>
                 && ! self.Output.ends_with('@') && ! self.Output.ends_with('?')
                 { self.EmitSpace(); }
                 self.EmitRaw(K);
-                let NextIsParenOrAngle = _Index + 1 < _Nodes.len() && match &_Nodes[_Index + 1]
+                let NextIsParenOrAngle = _Index + 1 < _Nodes.len() && match & _Nodes[_Index + 1]
                 {
                     Dart_Syntax_Node::Token(NextT) => NextT.Text == "(" || NextT.Text == "<",
                     Dart_Syntax_Node::Container(NextC) => NextC.Kind == Container_Kind::Paren || NextC.Kind == Container_Kind::Angle,
                 };
-                if K != "Function" || !NextIsParenOrAngle
-                {
-                    self.EmitSpace();
-                }
+                if K != "Function" || ! NextIsParenOrAngle
+                { self.EmitSpace(); }
             }
             Token_Kind::Identifier(Ident) =>
             {
@@ -1155,23 +1116,15 @@ impl <'a> Dart_Emitter<'a>
                 }
                 else if Op == "?"
                 {
-                    let EndsWithIdentOrCloser = self.Output.ends_with(|c: char| c.is_alphanumeric() || c == '_' || c == '$' || c == '>' || c == ')');
+                    let EndsWithIdentOrCloser = self.Output.ends_with( | c: char | c.is_alphanumeric() || c == '_' || c == '$' || c == '>' || c == ')');
                     if EndsWithIdentOrCloser
-                    {
-                        while self.Output.ends_with(' ') { self.Output.pop(); }
-                        self.EmitRaw("?");
-                        self.EmitSpace();
-                    }
+                    { while self.Output.ends_with(' ') { self.Output.pop(); } self.EmitRaw("?"); self.EmitSpace(); }
                     else if self.Output.ends_with('(') || self.Output.ends_with('[') || self.Output.ends_with('{') || self.Output.ends_with(',')
                     {
                         self.EmitRaw("?");
                     }
                     else
-                    {
-                        if !self.Output.ends_with(' ') { self.EmitSpace(); }
-                        self.EmitRaw("?");
-                        self.EmitSpace();
-                    }
+                    { if ! self.Output.ends_with(' ') { self.EmitSpace(); } self.EmitRaw("?"); self.EmitSpace(); }
                 }
                 else
                 { self.EmitRaw(Op); }
@@ -1183,13 +1136,9 @@ impl <'a> Dart_Emitter<'a>
                     while self.Output.ends_with(' ') { self.Output.pop(); }
                     self.EmitRaw( & P.to_string());
                     if Level > 0
-                    {
-                        self.WriteNewline();
-                    }
+                    { self.WriteNewline(); }
                     else
-                    {
-                        self.EmitSpace();
-                    }
+                    { self.EmitSpace(); }
                 }
                 else if * P == ':'
                 {
@@ -1219,7 +1168,7 @@ impl <'a> Dart_Emitter<'a>
         }
     }
 
-    fn DetermineLayoutState(&self, Container: &Dart_Container_Node) -> Layout_State
+    fn DetermineLayoutState( & self, Container: & Dart_Container_Node) -> Layout_State
     {
         // 1. Empty container -> State 1 Monolith
         if Container.Children.is_empty() { return Layout_State::Monolith; }
@@ -1227,21 +1176,17 @@ impl <'a> Dart_Emitter<'a>
         // 2. Monolith Check:
         // Must fit Canvas AND not exceed complexity budget AND have no forced breaks
         let WithinComplexity = Container.Statement_Count <= self.Config.Max_Statements_In_Monolith
-            && Container.Max_Child_Depth <= self.Config.Max_Block_Depth;
+        && Container.Max_Child_Depth <= self.Config.Max_Block_Depth;
 
         let Span = Container.CalculateSingleLineSpan();
-        if WithinComplexity && !Container.Has_Forced_Break && (self.Current_Line_Len + Span <= self.Config.Canvas_Width)
-        {
-            return Layout_State::Monolith;
-        }
+        if WithinComplexity && ! Container.Has_Forced_Break && (self.Current_Line_Len + Span <= self.Config.Canvas_Width)
+        { return Layout_State::Monolith; }
 
         // 3. State 2: Container Grouping / Simplified Symmetry
         // If it's a Sole-Child Chain (continuous structural boundary run), group it!
         let Chain = Container.CollectChain();
         if Chain.len() > 1
-        {
-            return Layout_State::Grouped;
-        }
+        { return Layout_State::Grouped; }
 
         // 4. State 3: Expanded Symmetry (Hierarchical)
         Layout_State::Expanded
@@ -1250,10 +1195,7 @@ impl <'a> Dart_Emitter<'a>
     fn EmitContainerNode( & mut self, Container: & Dart_Container_Node, Level: usize)
     {
         if Container.Open_Token.Text == "${"
-        {
-            self.EmitStringInterpolation(Container, Level);
-            return ;
-        }
+        { self.EmitStringInterpolation(Container, Level); return ; }
 
         let Layout = self.DetermineLayoutState(Container);
 
@@ -1328,7 +1270,7 @@ impl <'a> Dart_Emitter<'a>
 
                     if T.Text == "?"
                     {
-                        let EndsWithIdentOrCloser = self.Output.ends_with(|c: char| c.is_alphanumeric() || c == '_' || c == '$' || c == '>' || c == ')');
+                        let EndsWithIdentOrCloser = self.Output.ends_with( | c: char | c.is_alphanumeric() || c == '_' || c == '$' || c == '>' || c == ')');
                         if EndsWithIdentOrCloser
                         {
                             while self.Output.ends_with(' ') { self.Output.pop(); }
@@ -1365,17 +1307,7 @@ impl <'a> Dart_Emitter<'a>
                     )
                     { self.EmitSpace(); PrevNeedsSpace = false; }
                     else if Dart_Lexer::IsKeyword( & T.Text)
-                    {
-                        if T.Text == "Function"
-                        {
-                            PrevNeedsSpace = false;
-                        }
-                        else
-                        {
-                            self.EmitSpace();
-                            PrevNeedsSpace = false;
-                        }
-                    }
+                    { if T.Text == "Function" { PrevNeedsSpace = false; } else { self.EmitSpace(); PrevNeedsSpace = false; } }
                     else
                     {
                         PrevNeedsSpace = ! matches!(T.Text.as_str(), "." | "?." | ".." | "?.." | "..." | "...?" | "(" | "[" | "!" | "~" | "@" | "$" | "?");
@@ -1410,9 +1342,7 @@ impl <'a> Dart_Emitter<'a>
                         { if ! self.Output.ends_with(' ') { self.EmitSpace(); } }
                     }
                     else if Sub.Kind == Container_Kind::Angle
-                    {
-                        while self.Output.ends_with(' ') { self.Output.pop(); }
-                    }
+                    { while self.Output.ends_with(' ') { self.Output.pop(); } }
 
                     self.EmitMonolith(Sub, Level);
                     PrevNeedsSpace = Sub.Kind != Container_Kind::Angle;
@@ -1472,23 +1402,16 @@ impl <'a> Dart_Emitter<'a>
             for Glue in & Container.Tail_Glue
             { self.EmitRaw( & Glue.Text); }
             if Container.Tail_Glue.is_empty()
-            {
-                self.EmitSpace();
-            }
+            { self.EmitSpace(); }
             else
-            {
-                self.WriteNewline();
-            }
+            { self.WriteNewline(); }
         }
     }
 
     fn EmitExpanded( & mut self, Container: & Dart_Container_Node, Level: usize)
     {
         if Container.Open_Token.Text == "${"
-        {
-            self.EmitStringInterpolation(Container, Level);
-            return ;
-        }
+        { self.EmitStringInterpolation(Container, Level); return ; }
 
         // 1. Break line before opening delimiter
         self.EnsureNewline();
@@ -1514,50 +1437,38 @@ impl <'a> Dart_Emitter<'a>
             for Glue in & Container.Tail_Glue
             { self.EmitRaw( & Glue.Text); }
             if Container.Tail_Glue.is_empty()
-            {
-                self.EmitSpace();
-            }
+            { self.EmitSpace(); }
             else
-            {
-                self.WriteNewline();
-            }
+            { self.WriteNewline(); }
         }
     }
 
-    fn EmitStringInterpolation(&mut self, Container: &Dart_Container_Node, Level: usize)
+    fn EmitStringInterpolation( & mut self, Container: & Dart_Container_Node, Level: usize)
     {
         // Open glyph is "${" directly attached to preceding chunk
         self.EmitRaw("${");
 
-        let FirstChildHasNewline = Container.Children.first().map_or(false, |node| match node {
-            Dart_Syntax_Node::Token(t) => t.Preceding_Newlines > 0,
-            Dart_Syntax_Node::Container(c) => c.Open_Token.Preceding_Newlines > 0,
-        });
+        let FirstChildHasNewline = Container.Children.first().map_or
+        (
+            false, | node | match node { Dart_Syntax_Node::Token(t) => t.Preceding_Newlines > 0, Dart_Syntax_Node::Container(c) => c.Open_Token.Preceding_Newlines > 0, }
+        );
 
         let IsExpanded = FirstChildHasNewline || Container.Has_Forced_Break || Container.Statement_Count > 1 || Container.Max_Child_Depth > 1;
 
-        if !IsExpanded
-        {
-            self.EmitNodeList(&Container.Children, 0);
-            if Container.Close_Token.is_some()
-            {
-                self.EmitRaw("}");
-            }
-        }
+        if ! IsExpanded
+        { self.EmitNodeList( & Container.Children, 0); if Container.Close_Token.is_some() { self.EmitRaw("}"); } }
         else
         {
             self.WriteNewline();
-            self.EmitNodeList(&Container.Children, Level + 1);
+            self.EmitNodeList( & Container.Children, Level + 1);
             self.EnsureNewline();
             if self.Output.ends_with("\n\n") { self.Output.pop(); }
             self.EmitIndent(Level);
             self.EmitRaw("}");
         }
 
-        for Glue in &Container.Tail_Glue
-        {
-            self.EmitRaw(&Glue.Text);
-        }
+        for Glue in & Container.Tail_Glue
+        { self.EmitRaw( & Glue.Text); }
     }
 }
 
@@ -1616,13 +1527,19 @@ fn AreTokensEquivalent(Orig: & str, Form: & str) -> bool
     || (Orig.starts_with("/*") && Form.starts_with("/*"))
     { if Orig.trim_end() == Form.trim_end() { return true; } }
 
-    if (Orig.starts_with('\'') || Orig.starts_with('"') || Orig.starts_with("r'") || Orig.starts_with("r\"") || Orig.ends_with("'''") || Orig.ends_with("\"\"\""))
-    && (Form.starts_with('\'') || Form.starts_with('"') || Form.starts_with("r'") || Form.starts_with("r\"") || Form.ends_with("'''") || Form.ends_with("\"\"\""))
+    if
+    (
+        Orig.starts_with('\'') || Orig.starts_with('"') || Orig.starts_with("r'") || Orig.starts_with("r\"") || Orig.ends_with("'''") || Orig.ends_with("\"\"\"")
+    )
+    &&
+    (
+        Form.starts_with('\'') || Form.starts_with('"') || Form.starts_with("r'") || Form.starts_with("r\"") || Form.ends_with("'''") || Form.ends_with("\"\"\"")
+    )
     {
-        let OrigLines: Vec<&str> = Orig.lines().collect();
-        let FormLines: Vec<&str> = Form.lines().collect();
+        let OrigLines: Vec < & str > = Orig.lines().collect();
+        let FormLines: Vec < & str > = Form.lines().collect();
         if OrigLines.len() == FormLines.len()
-        { if OrigLines.iter().zip(FormLines.iter()).all(|(OL, FL)| OL.trim() == FL.trim()) { return true; } }
+        { if OrigLines.iter().zip(FormLines.iter()).all( | (OL, FL) | OL.trim() == FL.trim()) { return true; } }
     }
 
     false
