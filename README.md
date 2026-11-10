@@ -1,6 +1,7 @@
 # LAFS Container Formatter
 
 A pure-Rust, high-performance container formatter implementing the **Language-Agnostic Formatting Style (LAFS)** for **C**, **C++**, **C#**, **Go**, **JavaScript**, **TypeScript**, **PHP**, **HTML**, and **CSS**.
+
 ---
 > [!IMPORTANT]
 > **This Repository is NOT a Cesspool of ugly, improperly formatted K&R Brain Rot & Slop.**
