@@ -162,7 +162,26 @@ fn Test_Dart_Primary_Constructor_And_This_Body()
 #[test]
 fn Test_Dart_Torture_Test_Slop_And_Idempotence()
 {
-    let MdContent = std::fs::read_to_string("Dart.md").expect("Failed to read Dart.md");
+    let PossiblePaths = [
+        "The Ultimat Failure Of K&R Exposed in Dart.md",
+        "Dart.md",
+    ];
+    let mut MdContent = None;
+    for PathStr in &PossiblePaths
+    {
+        let P = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(PathStr);
+        if let Ok(Content) = std::fs::read_to_string(&P)
+        {
+            MdContent = Some(Content);
+            break;
+        }
+        if let Ok(Content) = std::fs::read_to_string(PathStr)
+        {
+            MdContent = Some(Content);
+            break;
+        }
+    }
+    let MdContent = MdContent.expect("Failed to locate Dart torture test reference markdown");
     let Part1Marker = "WARNING: INTENTIONALLY CORRUPTED";
 
     let MarkerIdx = MdContent.find(Part1Marker).expect("Failed to locate Part 1 marker");
@@ -185,6 +204,24 @@ fn Test_Dart_Torture_Test_Slop_And_Idempotence()
     // Pass 2: Idempotence check
     let FormattedPass2 = Source_Formatter::Format( & FormattedPass1, & Config)
    .expect("Formatting Dart torture test slop failed on Pass 2");
+
+    if FormattedPass1 != FormattedPass2
+    {
+        let Lines1: Vec<&str> = FormattedPass1.lines().collect();
+        let Lines2: Vec<&str> = FormattedPass2.lines().collect();
+        for (idx, (l1, l2)) in Lines1.iter().zip(Lines2.iter()).enumerate()
+        {
+            if l1 != l2
+            {
+                eprintln!("First idempotence divergence at line {}:\nPass 1: {:?}\nPass 2: {:?}", idx + 1, l1, l2);
+                break;
+            }
+        }
+        if Lines1.len() != Lines2.len()
+        {
+            eprintln!("Line count mismatch: Pass 1 has {} lines, Pass 2 has {} lines", Lines1.len(), Lines2.len());
+        }
+    }
 
     assert_eq!(FormattedPass1, FormattedPass2, "Dart formatting must be 100% idempotent");
 
