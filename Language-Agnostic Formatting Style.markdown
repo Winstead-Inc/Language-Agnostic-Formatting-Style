@@ -963,7 +963,33 @@ func ProcessAccountData(AccountID string) {
 | **Standard Scope (JS, C#, Java, Rust, SQL)** | Standard Language Rule       | **Pure LAFS Symmetry**     | Dedicated new line with own column                     |
 | **JS/TS `return` / `throw` / `yield`** | ASI Semicolon Hazard         | **Column-Anchored Hybrid** | Opens at `Keyword + 1`; closes matching `(` column |
 | **Go Grammar (`if`, `func`, `for`)**   | Compiler Semicolon Injection | **Column-Anchored Hybrid** | Opens on keyword line; closes matching `{` column    |
+| **Lockfiles (`Cargo.lock`, `*.lock`, TOML arrays)** | Table Header Grammar Collision | **Column-Anchored Hybrid** | Opens inline after `= [`; closes matching `[` column |
 | **Any Custom DSL / Tooling Bug**             | Hard Parser Error            | **Column-Anchored Hybrid** | Opens inline; closes on matching column coordinate     |
+
+###### 6.1.5 Lockfiles and TOML Key-Value Arrays (`Cargo.lock`, `*.lock`)
+
+In TOML and package lockfiles (such as `Cargo.lock` or any `*.lock` file), opening square brackets attached to a key-value assignment (`key = [ ... ]`) MUST NEVER be detached onto a new line (e.g., `key =\n[\n`). In standard TOML 1.0 grammar, any square bracket on a fresh line (`[ ... ]`) is parsed as a **table header declaration**, causing fatal parser errors (`key with no value, expected =`).
+
+To ensure 100% interoperability across standard language toolchains, package managers, and CI environments while enforcing LAFS visual symmetry:
+
+1. **State 1 — Monolith (Single Line):** If the array or table fits within the configured Canvas Limit without internal line breaks, it remains a flat Monolith:
+   ```toml
+   dependencies = ["chrono",]
+   empty = []
+   ```
+2. **State 2 — Column-Anchored Hybrid (Mandatory for Multiline):** When an array or container spans multiple lines, it MUST use **Column-Anchored Hybrid**:
+   * The opening bracket `[` opens immediately after the `=` on the same line.
+   * Child items indent relative to the column of `[`: $\text{Column}(Child) = \text{Column}([) + 4$.
+   * The closing bracket `]` terminates on its own line aligned at the exact column coordinate of `[`: $\text{Column}(]) \equiv \text{Column}([)$.
+   ```toml
+   [[package]]
+   name = "Language-Agnostic-Formatting-Style"
+   version = "0.1.0"
+   dependencies = [
+                      "chrono",
+                  ]
+   ```
+3. **Strict Prohibition:** Detached Allman brackets (`key =\n[\n`) are permanently forbidden in `.lock` and TOML key-value pairs.
 
 ---
 
