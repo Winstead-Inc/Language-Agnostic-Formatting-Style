@@ -529,10 +529,10 @@ impl <'a> Lexer_Scanner<'a>
         }
 
         let TargetEnd = format!("){}\"", Delim);
-        let TargetChars: Vec<char> = TargetEnd.chars().collect();
+        let TargetChars: Vec < char > = TargetEnd.chars().collect();
         while self.Index < self.Chars.len()
         {
-            if TargetChars.iter().enumerate().all(|(Offset, &Expected)| self.PeekAhead(Offset) == Some(Expected))
+            if TargetChars.iter().enumerate().all( | (Offset, & Expected) | self.PeekAhead(Offset) == Some(Expected))
             {
                 for _ in 0..TargetChars.len() { Result.push(self.Advance().unwrap()); }
                 break;
@@ -571,7 +571,7 @@ impl <'a> Lexer_Scanner<'a>
 
         while self.Index < self.Chars.len()
         {
-            if (0..QuoteCount).all(|Offset| self.PeekAhead(Offset) == Some('"'))
+            if (0..QuoteCount).all( | Offset | self.PeekAhead(Offset) == Some('"'))
             {
                 for _ in 0..QuoteCount { Result.push(self.Advance().unwrap()); }
                 break;
