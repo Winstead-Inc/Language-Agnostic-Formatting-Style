@@ -263,6 +263,19 @@ fn NormalizePathSpec(Spec: & str) -> (String, bool)
 fn FormatFailedEntry(FilePathStr: & str, Lang: & str, Reason: & str) -> String
 { format ! ("File: {}\nLanguage: {}\nReason: {}\n", FilePathStr, Lang, Reason.trim()) }
 
+fn SafelyWriteFile(FilePath: & Path, Content: & str) -> std::io::Result<()>
+{
+    use std::io::Write;
+    let mut File = fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(FilePath)?;
+    File.write_all(Content.as_bytes())?;
+    File.sync_all()?;
+    Ok(())
+}
+
 fn ParseFailedLine(Line: & str) -> Option< & str>
 {
     let Trimmed = Line.trim();
@@ -1052,7 +1065,7 @@ fn Main()
                     else if OutputToStdout { print ! ("{}", Formatted); }
                     else if ! IsAlreadyFormatted
                     {
-                        if let Err(E) = fs::write(FilePath, & Formatted)
+                        if let Err(E) = SafelyWriteFile(FilePath, & Formatted)
                         {
                             Logger.Eprintln( & format ! ("Failed to save file {}: {}", FilePathStr, E));
                             ErrorCount.fetch_add(1, Ordering::Relaxed);
@@ -1131,7 +1144,7 @@ fn Main()
                                 {
                                     if Formatted != FileContent
                                     {
-                                        if let Err(E) = fs::write(FilePath, & Formatted)
+                                        if let Err(E) = SafelyWriteFile(FilePath, & Formatted)
                                         {
                                             WorkerLogger.Eprintln( & format ! ("Failed to save file {}: {}", FilePathStr, E));
                                             WorkerErrorCount.fetch_add(1, Ordering::Relaxed);

@@ -1,0 +1,2358 @@
+## Dart
+
+### Part 1: The Ultimate K&R Brain-Rot Dart Slop Torture-Test Suite
+
+The following Dart source file (`lafs_dart_torture_test_slop.dart`) is intentionally engineered as a **horrifically formatted K&R / hybrid brain-rot stress test**. It is specifically designed to break naive AST/CST formatters and test every rule of a **Language-Agnostic Formatting Style (LAFS)** formatter across Dart 1.0 through Dart 3.13+ grammar constructs.
+
+It deliberately incorporates every structural anti-pattern that LAFS is built to eliminate:
+
+* **Severe K&R Tail-Hugging:** Opening braces `{`, parentheses `(`, brackets `[`, and angle brackets `<` glued onto the ends of uneven lines.
+* **High-Entropy Closing Clumps:** Up to 12 closing delimiters jammed onto a single line at arbitrary $X$-coordinates (e.g., `})]}));}}}]);`).
+* **Premature Vertical Explosion:** 2-argument constructors and trivial calls exploded across 8 lines (testing whether the formatter collapses them back into **State 1 Monoliths**).
+* **Complexity Budget Breaches:** Single lines exceeding 250+ columns with 6+ statements and 4 levels of nested control flow (testing whether the formatter forces expansion when the `4`-statement / `2`-depth Complexity Budget is breached).
+* **Interrupted vs. Uninterrupted Sole-Child Chains:** Deeply nested containers (`[({ ... })]`) where outer and inner runs can fuse via **Maximal Local Grouping**, while middle layers are interrupted by Significant Content ($\mathbf{S}$) or comments (`//`).
+* **Full Dart Grammar Coverage (up to Dart 3.13):** Primary constructors (`class Foo(...)` and `this` initializer blocks), concise constructors (`new named`, `factory named`), dot shorthands (`.value`, `.new()`, `const .origin()`), null-aware collection elements (`[?item, ...?spread, ?k: ?v]`), multi-wildcard parameters (`(_, _, _)`), digit separators (`1_000_000`, `0xFF_71_00_FF`), extension types, records (including 1-tuple trailing-comma records `(x,)`), patterns, exhaustive `switch` expressions with `when` guards, cascades (`..`, `?..`), control-flow collections, `sync*`/`async*` generators, raw/multiline strings, and deeply nested `${...}` string interpolations.
+
+```dart
+// ============================================================================
+// WARNING: INTENTIONALLY CORRUPTED K&R / HYBRID BRAIN-ROT TORTURE TEST INPUT
+// DESIGNED TO STRESS-TEST A LAFS CST/AST FORMATTER ON DART 3.13+ GRAMMAR
+// ============================================================================
+@Deprecated(
+  'Torture test library metadata with K&R hugging'
+) @pragma(
+'vm:prefer-inline', [
+  {'mode': 'aggressive', 'color': '#7100FF'}]) library
+    lafs.torture_test.brain_rot_slop;
+
+import 'dart:async'
+    as async_lib show
+        Future, Stream, Completer, FutureOr, StreamController, Zone
+    hide
+        Timer;
+import 'dart:collection' deferred as
+    lazy_collections show
+        LinkedHashMap, UnmodifiableListView;
+import 'dart:convert' show jsonEncode, utf8;
+
+// 1. TORTURE: Horrific Generic Function Typedefs & Nested Record Types
+typedef NightmareCallback<
+  T extends Comparable<
+      T>, U extends Map<String, List<(int, {String tag, bool? flag})>>
+> = FutureOr<
+    (T, (int,), {
+      U payload,
+      List<T> Function<V extends T>(
+          V input, [
+            String? prefix
+          ])? transformer})
+> Function<
+    W extends Object?
+>(
+    T primary,
+    (int,) singleTupleRecord, {
+    required U? config,
+    W Function(
+        int,
+        int,
+        {String? label}
+    )? interceptor});
+
+// 2. TORTURE: Dart 3.13 Enum with Primary Constructor, Implicit Const, & Switch Expressions
+enum TelemetrySpectrum(
+  final int channelCode, final String hexAccent, {
+    final bool isCritical = false
+  }) implements Comparable<TelemetrySpectrum> {
+  violetCore(0x00_71_00_FF, '#7100FF', isCritical: false),
+  deepOrangeAlert(
+    0x00_FC_6A_03,
+    '#FC6A03',
+      isCritical: true), crimsonFault(0x00_FF_17_44, '#FF1744', isCritical: true),
+  azureStream(0x00_00_BF_FF, '#00BFFF'),
+  emeraldPass(0x00_00_E6_76, '#00E676'),
+  lavenderToken(0x00_C7_7D_FF, '#C77DFF'),
+  indigoAnchor(0x00_3D_5A_FE, '#3D5AFE');
+
+  // Prematurely exploded simple getter + K&R switch expression
+  String get
+      badgeLabel => switch (
+          this) {
+        .violetCore || .indigoAnchor when channelCode > 0 =>
+          'STRUCTURAL_PRIMARY[$hexAccent]',
+        .deepOrangeAlert => 'WARN_STATE[$hexAccent]',
+        .crimsonFault =>
+          'CRITICAL_ERR[$hexAccent]',
+        _ => 'AUXILIARY[$hexAccent]'};
+
+  @override int compareTo(
+      TelemetrySpectrum other
+  ) {
+    return channelCode.compareTo(
+        other.channelCode
+    ); }
+}
+
+// 3. TORTURE: Dart 3.3 Extension Type wrapping a deeply nested Record & Map
+extension type const ZeroCostMatrix<
+    T extends num
+>._(
+    ({
+      List<List<T>> grid,
+      (T,) scaleFactor,
+      Map<String, (T, {String hex})> metadata
+    }) _backingStore
+) implements Object {
+  // Concise Dart 3.13 constructors inside Extension Type
+  new (
+      List<List<T>> grid,
+      T scale
+  ) : this._((
+        grid: grid,
+        scaleFactor: (scale,),
+        metadata: const {}));
+
+  factory fromFlat(
+      List<T> flat, {
+        required T defaultScale
+      }) { if (flat.isEmpty) { return ZeroCostMatrix._((grid: [], scaleFactor: (defaultScale,), metadata: {'empty': (defaultScale, hex: '#7100FF')})); }
+    return ZeroCostMatrix._((
+      grid: [
+        flat,
+        [for (final v in flat) (v + defaultScale) as T]
+      ],
+      scaleFactor: (
+        defaultScale,
+      ),
+      metadata: {
+        'origin': (
+          flat.first,
+          hex: '#00E676'
+        )})); }
+
+  T operator [](int index) => _backingStore.grid[index].first;
+  ZeroCostMatrix<T> operator +(ZeroCostMatrix<T> other) => ZeroCostMatrix._((grid: [..._backingStore.grid, ...other._backingStore.grid], scaleFactor: _backingStore.scaleFactor, metadata: {..._backingStore.metadata, ...other._backingStore.metadata}));
+}
+
+// 4. TORTURE: Sealed Hierarchy + Base Mixin + Dart 3.13 Primary Constructors + `this` Body
+sealed class AstPacket<T>(
+    final String packetId,
+    final TelemetrySpectrum spectrum
+) {
+  this : assert(
+      packetId.isNotEmpty,
+      'Packet ID cannot be empty'
+  ) { if (packetId == 'INVALID') { StateError('Bad packet'); } }
+
+  // Premature explosion of an empty-body method & atomic signature
+  void
+  audit(
+      String
+      auditorId,
+      int
+      timestamp
+  ) {
+  }
+}
+
+base mixin PacketDiagnostics<T> on AstPacket<T> {
+  Map<String, Object?> collectMetrics([String? namespace]) { return {'id': packetId, 'color': spectrum.hexAccent, 'ns': ?namespace}; }
+}
+
+// Dart 3.13 Named Primary Constructor with initializer and body
+final class MatrixPayloadPacket<
+    T extends num
+>.seeded(
+    final String id,
+    var int retryCount,
+    final ZeroCostMatrix<T> matrix, {
+      final TelemetrySpectrum tone = .violetCore, // Dart 3.10 Dot Shorthand!
+      final List<(int, String)>? auditTrail
+    }
+) extends AstPacket<T>(id, tone) with PacketDiagnostics<T> {
+  this {
+    if (retryCount < 0) { retryCount = 0; }
+  }
+
+  // Dart 3.13 concise named constructor & factory without class prefix
+  new fallback(
+      String id,
+      ZeroCostMatrix<T> m
+  ) : this.seeded(
+        id,
+        0,
+        m,
+        tone: .deepOrangeAlert);
+
+  factory empty(
+      T zeroVal
+  ) { return .fallback(
+        'EMPTY_NODE',
+        ZeroCostMatrix(
+            [[zeroVal]],
+            zeroVal)); }
+}
+
+// 5. TORTURE: THE ABYSSAL NESTING CESSPOOL (14+ Levels of Mixed Containers,
+// Interrupted Boundary Runs, Cascades, Control-Flow Collections, Patterns,
+// Records, Null-Aware Elements, Wildcards, and String Interpolations)
+class SlopOrchestrator {
+  final String _instanceTag;
+  static const int _MAX_HEX_MASK = 0xFF_71_00_FF;
+  static const double _PI_APPROX = 3.141_592_653_589_793;
+
+  // Illegal premature signature expansion on a trivial constructor:
+  SlopOrchestrator(
+      this._instanceTag
+  ) {
+  }
+
+  // Monolith Budget Violation on a single 320-char line (6 statements, depth 3):
+  void monolithBudgetBreaker(int x) { var a = 1; var b = 2; var c = 3; var d = 4; var e = 5; if (x > 0) { for (var i = 0; i < x; i++) { if (i % 2 == 0) { a += i; b -= i; c *= 2; d ~/= 1; e ^= a; } } } }
+
+  // Deeply nested Sole-Child Chains mixed with Interrupted Runs and K&R Clumping:
+  Future<Map<String, dynamic>> executeHyperNestedCesspool<T extends num>(
+      List<AstPacket<T>>? incomingPackets, {
+        required (int, String, {bool strictMode, TelemetrySpectrum? overrideTone}) options,
+        String? nullableHeader,
+        List<String>? nullableTags
+      }) async {
+    await lazy_collections.loadLibrary();
+
+    // Dart 3.7 Multiple Wildcard Parameters `_` in the same closure scope!
+    final wildcardIgnorer = (int _, String _, [bool _ = false]) => (42,);
+    final (extractedSingleTuple,) = wildcardIgnorer(1, 'ignore', true);
+
+    // Uninterrupted Sole-Child Chain (Should become State 2 Container Grouping `[({ ... })]`):
+    final groupedSoleChildChain = [({
+          'alphaKey': [({
+                'deepInnerPayload': (
+                  1_000_000,
+                  '#7100FF',
+                  (
+                    nestedSingleRecord: (999_999,),
+                    palette: const ['#7100FF', '#FC6A03', '#FF1744', '#00BFFF', '#00E676']
+                  )
+                )
+              })]
+        })];
+
+    // Interrupted Boundary Run (Outer 1 & 1.1 group, 1.1.1 separates due to S, 1.1.1.1 & 1.1.1.1.1 re-group!):
+    final interruptedBoundaryMatrix = [({
+          // Comment counts as Significant Content (S) interrupting the boundary run!
+          'interruptedStage': (() {
+            final localPrep = extractedSingleTuple + _MAX_HEX_MASK;
+            return (
+              localPrep,
+              [{
+                'reGroupedDeepInner': (() => [({
+                      'core': localPrep * 2,
+                      'accent': '#C77DFF',
+                      'deep': _PI_APPROX
+                    })])()
+              }]
+            );
+          })()
+        })];
+
+    // Dart 3.0 Pattern Destructuring + Null-Check + Guard + Rest Elements + Map/Record Patterns
+    final (
+      int optCode,
+      String optLabel,
+      :strictMode,
+      overrideTone: TelemetrySpectrum? activeTone
+    ) = options;
+
+    // Extreme Control-Flow Collection + Null-Aware Elements (Dart 3.8 `?`) + Switch Expressions + Cascades
+    final List<Map<String, Object?>> mutatedStreamOutput = [
+      ? (nullableHeader != null ? {'header': nullableHeader, 'theme': '#7100FF22'} : null),
+      for (final (int idx, AstPacket<T> pkt) in (incomingPackets ?? <AstPacket<T>>[]).indexed)
+        if (pkt case MatrixPayloadPacket<T>(
+              packetId: final String pId && != '',
+              retryCount: var int retries && (>= 0 && <= 100),
+              spectrum: final TelemetrySpectrum spec,
+              matrix: final ZeroCostMatrix<T> mat
+            ) when strictMode || retries != -1) ...[
+          {
+            'index': idx,
+            'packetId': pId,
+            // Dart 3.8 Null-aware map key/value elements:
+            ?nullableHeader: ?activeTone?.hexAccent,
+            'tags': [
+              ?nullableHeader,
+              ...?nullableTags,
+              for (int r = 0; r < (retries == 0 ? 1 : retries); r++)
+                if (r.isEven)
+                  switch ((spec, r)) {
+                    (.violetCore, 0) => 'PRIMARY_ZERO_#7100FF',
+                    (.deepOrangeAlert || .crimsonFault, > 2 && <= 10) => 'HIGH_RETRY_#FF1744',
+                    (final TelemetrySpectrum s, final int count) when s.isCritical =>
+                      'CRIT_${s.name}_$count',
+                    _ => 'STD_${mat[0]}'
+                  }
+                else ...[
+                  'ODD_BRANCH_$r',
+                  if (r == 3)
+                    (() {
+                      // 10 Levels of Nested Closures, Try/Catch, Cascades, & Generators
+                      try {
+                        final buffer = StringBuffer()
+                          ..write('START[')
+                          ..writeAll([
+                            for (var k in [1, 2, 3])
+                              (() {
+                                switch (k) {
+                                  case 1:
+                                    return 'ONE:#3D5AFE';
+                                  case 2:
+                                    return 'TWO:#00E676';
+                                  default:
+                                    return 'OTHER:#00BFFF';
+                                }
+                              })()
+                          ], '|')
+                          ..write(']');
+                        return buffer.toString();
+                      } on FormatException catch (e, st) {
+                        return 'FMT_ERR:$e/$st';
+                      } catch (_, _) { // Dart 3.7 dual wildcard catch!
+                        return 'UNKNOWN_ERR:#FF1744';
+                      } finally {
+                        // Empty finally block K&R hug
+                      }
+                    })()
+                ]
+            ]
+          }
+        ] else if (pkt case AstPacket<T>(:final packetId, :final spectrum))
+          {
+            'fallbackId': packetId,
+            'fallbackTone': spectrum.badgeLabel,
+            'groupedData': groupedSoleChildChain,
+            'interruptedData': interruptedBoundaryMatrix
+          }
+    ];
+
+    // 6. TORTURE: Multiline Strings, Raw Strings, Adjacent Strings, & Nested Interpolations
+    final String interpolatedNightmare = 'ADJACENT_HEAD_'
+        "SECOND_PART_${optCode}_"
+        r'RAW_SEGMENT_WITH_NO_INTERP_${ignored}\n'
+        '''
+    MULTILINE_SINGLE_QUOTE_BLOCK
+    ColorToken: #7100FF
+    NestedInterpolation: ${
+      (() {
+        final innerMap = <String, List<(int, {String hex})>>{
+          'rowA': [(1, hex: '#7100FF'), (2, hex: '#FC6A03')],
+          'rowB': [
+            for (var n = 0; n < 3; n++)
+              (
+                n * 10,
+                hex: switch (n) {
+                  0 => '#00E676',
+                  1 => '#00BFFF',
+                  _ => '#FF1744'
+                }
+              )
+          ]
+        };
+        return jsonEncode(innerMap.keys.toList());
+      })()
+    }
+    EndOfMultilineBlock
+    '''
+        """
+    DOUBLE_QUOTE_MULTILINE_WITH_EMBEDDED_EXPRESSION: ${
+      mutatedStreamOutput.isEmpty ? "EMPTY_#FF1744" : "COUNT_${mutatedStreamOutput.length}_#00E676"
+    }
+    """;
+
+    // 7. TORTURE: Deep Cascade Chain with Mixed Null-Aware Cascades (?..) and Index Assignments
+    final Map<String, dynamic>? cascadeVictim = <String, dynamic>{
+      'init': _instanceTag,
+      'str': interpolatedNightmare
+    }
+      ?..['step1'] = ([({
+            'cascadeInner': (
+              optLabel,
+              (singleRecordElement: 777,),
+              [for (var x in [10, 20, 30]) if (x > 15) x * 2]
+            )
+          })])
+      ..update(
+          'init',
+          (existing) => '${existing}_MUTATED',
+          ifAbsent: () => 'DEFAULT_#7100FF')
+      ..addEntries([
+        MapEntry(
+            'streamDump',
+            await (() async {
+              final collected = <String>[];
+              await for (final chunk in _generateTortureStream(optCode)) {
+                collected.add(chunk);
+              }
+              return collected;
+            })())
+      ]);
+
+    return cascadeVictim ?? {'status': 'NULL_FALLBACK', 'accent': '#FF1744'}; }
+
+  // 8. TORTURE: Sync* and Async* Recursive Generators with Yield and Yield*
+  Stream<String> _generateTortureStream(int seed) async* {
+    Iterable<int> syncRange(int start, int count) sync* {
+      if (count <= 0) { return; }
+      yield start;
+      yield* syncRange(start + 1, count - 1); }
+
+    for (final val in syncRange(seed, 3)) {
+      yield switch (val) {
+        <= 0 => 'NEG_OR_ZERO:#FF1744',
+        1 || 2 => 'LOW_SEED:#FC6A03',
+        var v when v.isOdd => 'ODD_SEED_$v:#7100FF',
+        _ => 'EVEN_SEED:#00E676'};
+    }
+  }
+}
+```
+
+---
+
+### Part 2: Comprehensive Research & Catalog of Dart Language Edge Cases for a LAFS Formatter
+
+Applying the **Language-Agnostic Formatting Style (LAFS)** to the official Dart language (up through Dart 3.13) requires handling several grammar-level ambiguities where delimiter tokens (`()`, `{}`, `[]`, `<>`, `'''`, `"""`), commas, and keywords carry runtime type or value semantics.
+
+Below is the complete engineering catalog of Dart edge cases and the exact rules a LAFS formatter must implement to guarantee **100% non-breaking semantic preservation**.
+
+---
+
+#### Edge Case 1: Single-Field Positional Records `(x,)` vs. Grouping Parentheses `(x)` vs. Sole-Child Trailing Comma Glue ($\mathbf{G_{\text{close}}}$)
+
+* **The Dart Grammar Trap:**
+  In Dart 3.0+, parentheses `(...)` are overloaded for three distinct constructs:
+  1. **Grouped Expression:** `(42)` evaluates to the integer `42` of type `int`.
+  2. **Single-Field Positional Record (1-Tuple):** `(42,)` evaluates to an immutable `Record` of type `(int,)` with a `$1` getter. The trailing comma `,` is **mandatory syntax** that differentiates a 1-element Record from a parenthesized expression!
+  3. **Empty Record vs. Empty Parameter List:** `()` as an expression is an empty `Record` literal; `() => ...` is a zero-parameter closure.
+* **The LAFS Interaction (Section 4.2 & 4.3.1):**
+  Under LAFS Section 4.3.1, a trailing comma `,` is classified as Closing/Suffix Glue ($\mathbf{G_{\text{close}}}$) when a child container is a sole child. However, if a nested container sits inside a 1-element positional Record—such as `([Alpha, Beta],)`—the outer `(` and `)` do **not** form a redundant wrapper around `[...]`; the comma `,` inside `([ ... ],)` is the **Record constructor token** for the outer `(` `)` container.
+* **Mandatory LAFS Formatter Rule:**
+  1. In a 1-field positional Record `(ChildContainer,)`, the trailing comma `,` **MUST NEVER** be stripped when collapsing a Monolith or fusing a Closing Run.
+  2. When fusing `([ ... ],)` in **State 2 (Container Grouping)**, the comma belongs between `]` and `)`—producing `([` as the opening alloy and `],)` as the closing alloy ($\mathbf{C} \cdot \mathbf{G_{\text{close}}} \cdot \mathbf{C}$), preserving the exact reverse nesting hierarchy!
+
+```dart
+// ✔️ STATE 1 — LAFS MONOLITH (Preserves mandatory 1-tuple Record comma):
+final (int,) SingleRecord = (42,);
+final (List<String>,) NestedListRecord = (['#7100FF', '#00E676'],);
+
+// ✔️ STATE 2 — LAFS CONTAINER GROUPING (Comma preserved between ']' and ')'):
+final (List<String>,) MultilineRecordTuple =
+([
+    'Primary_#7100FF_Configuration_Token',
+    'Secondary_#FC6A03_Warning_Threshold_Token',
+    'Tertiary_#FF1744_Critical_Failure_Fallback_Token'
+],);
+```
+
+---
+
+#### Edge Case 2: The 4-Way Ambiguity of `{}` (Block vs. Map Literal vs. Set Literal vs. Named Parameter/Record Group)
+
+* **The Dart Grammar Trap:**
+  In Dart, curly braces `{ ... }` represent four different AST node types:
+  1. **Execution Block (`Block` / `BlockFunctionBody`):** `if (Flag) { Execute(); }` or `() { return 1; }`.
+  2. **Map Literal (`SetOrMapLiteral`):** `{'Key': Value}`. Note that an empty `{}` in an untyped expression context defaults to `Map<dynamic, dynamic>`!
+  3. **Set Literal (`SetOrMapLiteral`):** `{ValueA, ValueB}` or `<String>{}`.
+  4. **Named Parameter Group / Record Named Field Type Group:** `void Configure(int Id, {required String Label})` or `(int, {String Label})`. Note that in Dart Record *type annotations*, named fields use `{String Label}` inside `( ... )`, whereas in Dart Record *expressions/literals*, named fields are written directly inside `(...)` without braces: `(1, Label: 'Alpha')`. Writing `({'Label': 'Alpha'})` is a parenthesized `Map` literal, not a Record!
+* **The LAFS Interaction (Section 3.1 & 4.3):**
+  1. **Empty Containers:** Under LAFS Section 3.1, *any* empty container (`{}`, `[]`, `()`) is unconditionally a **State 1 Monolith** with zero internal spaces (`{}`), whether it is an empty constructor body `Constructor(this.Id) {}` or an empty collection `const <String>{}`.
+  2. **Non-Empty Monolith Padding:** Non-empty `{ ... }` Monoliths always receive exactly one space inside the braces (`{ 'Key': '#7100FF' }`, `{ Execute(); }`, `{ required String Name }`).
+  3. **Named Parameter / Record Type Alloys:** When a function signature or record type has *only* named parameters/fields and exceeds the Canvas Limit, the opening `(` and `{` are adjacent with zero intervening tokens (`({`), so they legally fuse into an alloyed boundary node `({ ... })` under State 2! When positional parameters precede `{`, Positional parameters are Significant Content ($\mathbf{S}$), so `{` opens at indentation tier $X+4$ only if the named parameter group itself spans multiple lines.
+
+```dart
+// ✔️ Only Named Parameters (Exceeding Canvas Limit -> Alloyed '({' and '})'):
+void InitializeGraphicsPipeline
+({
+    required String PrimaryShaderHexCode,
+    required Map<String, List<int>> VertexBufferAllocationMap,
+    required bool EnableHardwareTessellationGrid
+})
+{
+    BindShader(PrimaryShaderHexCode);
+    AllocateBuffers(VertexBufferAllocationMap);
+    ConfigureTessellation(EnableHardwareTessellationGrid);
+    CommitGraphicsState();
+    FlushCommandQueue();
+}
+
+// ✔️ Positional + Multiline Named Parameters (Separated by Significant Content):
+void DispatchSegmentedPayload
+(
+    int PartitionKey,
+    String TargetEndpointURL,
+    {
+        required Map<String, Object?> HeaderMetadata,
+        required Duration ConnectionTimeoutLimit,
+        bool RetryOnTransientFault = true
+    }
+)
+{
+    ValidatePartition(PartitionKey);
+    OpenTransport(TargetEndpointURL, ConnectionTimeoutLimit);
+    SendHeaders(HeaderMetadata, RetryOnTransientFault);
+    VerifyAcknowledgement();
+    CloseTransport();
+}
+```
+
+---
+
+#### Edge Case 3: Multiline Strings (`'''...'''`, `"""..."""`, `r'''...'''`) & Dart's First-Newline Stripping Rule
+
+* **The Dart Grammar Trap:**
+  According to the Dart Language Specification (Section *Strings*), a multiline string delimited by `'''` or `"""` has a special lexer rule:
+  * **Opening Newline Rule:** If the opening `'''` or `"""` is immediately followed by a newline (optionally preceded by whitespace on that same first line), **the Dart compiler ignores/strips that first newline** from the string's runtime value.
+  * **Closing Newline Rule:** The Dart compiler **does NOT strip** a newline immediately preceding the closing `'''` or `"""`, nor does it strip leading indentation spaces on subsequent lines!
+* **The LAFS Interaction (Section 6.2.1 & 6.2.3):**
+  Under LAFS Section 6.2.1 (*Verbatim String Preservation Rule*), the interior text of a string literal is part of its runtime value and **must never be re-indented** (unless explicitly configured as an embedded whitespace-insensitive language like SQL or GLSL).
+  * **Detaching the Opening `'''` / `"""`:** Moving the opening `'''` or `"""` from `final Sql = '''` onto its own line (`'''` at the statement's column coordinate) is **100% safe in Dart** and does not alter the runtime string.
+  * **Preserving the Closing `'''` / `"""` Semantics:** If the source string had its closing `'''` on the same line as the last character of text (`Line 2'''`), moving `'''` onto a new line would inject a trailing `\n` and indentation spaces into the runtime string value! Conversely, if the closing `'''` is already on its own line at Column $X$ (or inside an embedded whitespace-insensitive block), it aligns vertically with the opening `'''`.
+  * **Internal `${ ... }` Code Containers:** Code inside `${ ... }` interpolation expressions is parsed as Dart AST nodes and formatted using full LAFS rules without altering the surrounding verbatim string segments.
+
+```dart
+// ✔️ LAFS Detached Identical-Glyph Container with Internal ${ ... } Symmetry:
+final String DiagnosticQuery =
+'''
+SELECT AccountID, StatusHex
+FROM EnterpriseAccounts
+WHERE StatusHex IN
+(
+${
+    ApprovedPalette.Map
+    (
+        (ColorHex) => "'$ColorHex'"
+    ).Join(', ')
+}
+);
+''';
+```
+
+---
+
+#### Edge Case 4: Adjacent String Literals (`'PartA' 'PartB'`)
+
+* **The Dart Grammar Trap:**
+  Dart implicitly concatenates adjacent string literals (`'Alpha' 'Beta' "Gamma"`) at compile time without requiring a `+` operator.
+* **Mandatory LAFS Formatter Rule:**
+  Adjacent strings are sequence expressions, not a container pair (each individual string literal is its own verbatim token). If adjacent string literals fit within the configured Canvas Limit (`180 / 160 / 120`), they remain a single-line Monolith (`'Alpha' 'Beta'`). If they span multiple lines, each subsequent string literal aligns vertically with the first string literal's starting column (or indents `+4` under an assignment operator).
+
+---
+
+#### Edge Case 5: Cascade Notation (`..` and `?..`) Interacting with Multiline Containers
+
+* **The Dart Grammar Trap:**
+  Dart's cascade operators (`..` and null-shorting `?..`) invoke methods, getters/setters, or index operators `..[Key] = Value` on the original receiver and evaluate to that receiver. Cascades frequently chain multiple method calls that each take multiline closures or collection literals.
+* **The LAFS Interaction (Section 4.3.1):**
+  A cascade selector (`..MethodName` or `?..PropertyName =`) is **Significant Content ($\mathbf{S}$)**—not unpaired glue ($\mathbf{G}$). Therefore:
+  1. Short cascade chains that fit within the Canvas Limit and Complexity Budget stay a **State 1 Monolith**:
+     ```dart
+     final PaintStroke = Paint()..Color = '#7100FF'..StrokeWidth = 2.0..IsAntiAlias = true;
+     ```
+  2. When a cascade chain expands vertically, each `..Selector` sits on its own indented line (`+4` from the receiver), and if a selector invokes a multiline container `( ... )`, that container detaches directly beneath the `..Selector` at the selector's exact column coordinate!
+
+```dart
+// ✔️ LAFS Symmetrical Cascade with Detached Multiline Argument Containers:
+final ConfiguredPipeline = PipelineBuilder( ThemeColor: '#7100FF' )
+    ..RegisterInterceptor
+    (
+        (RequestContext)
+        {
+            ValidateHeaders(RequestContext);
+            AttachTraceToken(RequestContext, '#00BFFF');
+            RecordDispatchMetric(RequestContext);
+            VerifyPayloadSignature(RequestContext);
+            return RequestContext.Proceed();
+        }
+    )
+    ?..RegisterFallbackMatrix
+    ([
+        { 'Tier': 1, 'Accent': '#00E676' },
+        { 'Tier': 2, 'Accent': '#FC6A03' }
+    ])
+    ..FinalizeConfiguration();
+```
+
+---
+
+#### Edge Case 6: Control-Flow Collections (`if`, `else`, `for`, `await for`), Spreads (`...`, `...?`), and Null-Aware Elements (`?` in Dart 3.8+)
+
+* **The Dart Grammar Trap:**
+  Inside `[...]`, `{...}` (Set), and `{...}` (Map), Dart allows `if (Condition) Element else OtherElement` and `for (var Item in Source) Element` **without curly braces `{}`** around the body—because `{}` inside a list literal creates a nested `Map` or `Set` element rather than a statement block! Instead, grouping multiple elements inside a control-flow collection branch uses a spread collection `...[ ElementA, ElementB ]` (or `...{ ... }`). Additionally, Dart 3.8 introduced the unary null-aware element prefix `?` (`[?NullableValue, ?NullableKey: ?NullableVal]`).
+* **Mandatory LAFS Formatter Rule:**
+  1. **Never Insert Braces `{}` Around Control-Flow Collection Branches:** Inserting `{}` around an `if` or `for` branch inside a collection literal changes the element type into a `Set` or `Map`!
+  2. **Spread Operators (`...`, `...?`) and Null-Aware Element Prefixes (`?`) Are Opening Glue ($\mathbf{G_{\text{open}}}$):** When `...`, `...?`, or `?` immediately precedes an opening container (`...[`, `...{`, `?(`), they act as prefix glue ($\mathbf{G_{\text{open}}}$) under LAFS Section 4.3.1 and attach directly to the opening delimiter on its dedicated line!
+
+```dart
+// ✔️ LAFS Control-Flow Collection with Spread Glue ('...[') and Null-Aware Glue ('?('):
+final List<Object> RenderTreeNodes =
+[
+    ?(
+        OptionalHeaderConfig != null
+        ? HeaderNode(OptionalHeaderConfig, '#7100FF')
+        : null
+    ),
+    for (final Section in DocumentSections)
+        if (Section.IsVisible)
+        ...[
+            SectionTitleWidget(Section.Title, '#00BFFF'),
+            SectionBodyContainer
+            (
+                Section.Paragraphs,
+                HighlightTone: '#00E676',
+                AlertTone: '#FC6A03'
+            )
+        ]
+        else
+            CollapsedPlaceholderWidget(Section.Id, '#C77DFF')
+];
+```
+
+---
+
+#### Edge Case 7: Exhaustive `switch` Expressions (`=>`) vs. `switch` Statements (`case ...:`)
+
+* **The Dart Grammar Trap:**
+  Dart 3.0+ has two distinct `switch` forms:
+  * **`switch` Statement:** Uses `case Pattern when Guard:` with colons `:` and statement lists. Crucially, a `case` clause in a Dart `switch` statement does not require `{}` around its statements, and adding `{}` creates a new lexical scope.
+  * **`switch` Expression:** Uses `Pattern when Guard => Expression,` with commas `,` separating arms, and evaluates to a value anywhere an expression is expected (e.g., after `return`, `=>`, `=`, or inside an argument list).
+* **Mandatory LAFS Formatter Rule:**
+  1. In a `switch` expression, the `(Value)` header stays inline with `switch (Value)` (just like `if (Condition)`), while the `{` and `}` of the `switch` body detach onto their own column-aligned lines whenever the `switch` is not a State 1 Monolith.
+  2. When a `switch` expression is the sole body of an arrow function (`=> switch (State)`) or variable assignment, each pattern arm that fits on a single line remains a flat Monolith arm (`Pattern => Expression,`), while any arm whose right-hand expression is a multiline container detaches its container cleanly on the next line using `=>` as Prefix/Infix Glue ($\mathbf{G_{\text{open}}}$).
+
+```dart
+// ✔️ LAFS Switch Expression with Monolith Arms and Detached Container Arm:
+String ResolveTelemetryPayload(Telemetry_Status_Code CurrentState) =>
+    switch (CurrentState)
+    {
+        .EmeraldPass => 'STATUS_OK:#00E676',
+        .DeepOrangeAlert => 'STATUS_WARN:#FC6A03',
+        .CrimsonFault when CurrentState.ShouldEscalate =>
+            FormatEscalationReport
+            (
+                CurrentState,
+                PrimaryColor: '#FF1744',
+                FallbackColor: '#7100FF'
+            ),
+        _ => 'STATUS_DEFAULT:#00BFFF'
+    };
+```
+
+---
+
+#### Edge Case 8: Destructuring Patterns, Object Patterns, & `if-case` Headers
+
+* **The Dart Grammar Trap:**
+  Dart 3.0+ allows deeply nested container delimiters (`()`, `[]`, `{}`) inside **patterns**—in variable declarations (`final (A, [B, C]) = Expr;`), assignments (`(B, A) = (A, B);`), and `if-case` headers (`if (Payload case UserPacket(Id: var Id, Roles: [var Primary, ...]) when Id > 0)`).
+* **Mandatory LAFS Formatter Rule:**
+  1. If an `if (Expr case Pattern when Guard)` header fits within the configured Canvas Limit (`180 / 160 / 120`), keep the entire `if (...)` condition on a single line, with the body `{ ... }` either on the same line (if the whole `if` statement is a State 1 Monolith) or detached below `if`.
+  2. If the pattern inside `if (...)` or a destructuring declaration exceeds the Canvas Limit, the pattern's containers (`(`, `[`, `{`) follow standard LAFS symmetry!
+
+```dart
+// ✔️ State 1 Monolith if-case (Fits within 160-col Canvas Limit):
+if (JsonPayload case {'AccountID': int Id, 'Role': String Role} when Id > 0) { ActivateSession(Id, Role); }
+
+// ✔️ Expanded Symmetry when the Pattern Header itself breaches the Canvas Limit:
+if
+(
+    IncomingTelemetryEvent case MatrixPayloadPacket<double>
+    (
+        PacketId: final String VerifiedPacketIdentifier && != '',
+        RetryCount: final int CurrentRetryAttempt && >= 0,
+        Spectrum: final TelemetrySpectrum AssignedSpectrumTone
+    )
+    when AssignedSpectrumTone.IsCritical
+)
+{
+    TriggerImmediateEscalation(VerifiedPacketIdentifier, CurrentRetryAttempt, AssignedSpectrumTone);
+}
+```
+
+---
+
+#### Edge Case 9: Dart 3.13 Primary Constructors (`class Name(...)`), `this` Constructor Bodies, & Concise Constructors (`new`, `factory`)
+
+* **The Dart Grammar Trap:**
+  Dart 3.13 (released August 2026) introduced three major constructor syntax forms:
+  1. **Primary Constructors in Declaration Headers:** `class Point(final double X, final double Y);` or `class Session.named(final String Token) { ... }` (also supported on `enum` and `extension type`). Note that a class with a primary constructor and no body members can end with a semicolon `;` instead of `{}`!
+  2. **The `this` Constructor Body Block:** Inside a class with a primary constructor, initializer lists and constructor body logic are declared using `this : assert(...) { ... }` or `this { ... }`.
+  3. **Concise In-Body Constructors (`new` and `factory` without Class Name):** Inside a class body, generative and factory constructors can omit the class name: `new(int X);`, `new named(int X) : this(X);`, `factory fromJson(Map M) => ...;`. (Edge case: a method literally named `factory` must have an explicit return type like `void factory()` so it is not parsed as a concise factory constructor).
+* **Mandatory LAFS Formatter Rule:**
+  1. **Header-Level Semicolon vs. Empty Braces:** When a Dart 3.13 primary constructor class ends with `;` (`class Point(final double X, final double Y);`), preserve the `;` (or keep `{}` inline as an Empty Container Monolith if `{}` is used).
+  2. **Primary Constructor Parameter Lists:** Follow the **Constructor & Parameter Signature Monolith Rule** (LAFS Section 3.3)—keep `class Name(final A, final B)` flat on a single line unless the header breaches the configured Canvas Limit (`180 / 160 / 120`).
+  3. **`this` Body Blocks & Concise `new`/`factory` Constructors:** Treat `this` blocks and concise `new`/`factory` declarations identically to standard constructors: Monolith when under the Canvas Limit and Complexity Budget; detached `{` and `}` on their own column when multiline.
+
+```dart
+// ✔️ Dart 3.13 Primary Constructor with Semicolon Body (Monolith):
+final class Coordinate_Vector(final double X, final double Y, final String HexColor = '#7100FF');
+
+// ✔️ Dart 3.13 Primary Constructor with `this` Block and Concise `new` / `factory`:
+class Connection_Session(final String SessionId, var int TimeoutMs)
+{
+    this : assert(TimeoutMs > 0, 'Timeout must be positive')
+    {
+        RegisterActiveSession(SessionId, TimeoutMs, '#00E676');
+    }
+
+    // Concise named constructor (Monolith)
+    new Ephemeral(String SessionId) : this(SessionId, 5_000);
+
+    // Concise factory constructor (Monolith)
+    factory DefaultSession() => .Ephemeral('DEFAULT_SESSION_#7100FF');
+}
+```
+
+---
+
+#### Edge Case 10: Dart 3.10 Dot Shorthands (`.Identifier`, `.new(...)`, `const .named(...)`)
+
+* **The Dart Grammar Trap:**
+  In Dart 3.10+, expressions can begin with a leading dot `.` when the compiler can infer the context type (e.g., `TelemetrySpectrum Tone = .VioletCore;`, `Point P = const .Origin();`, or `List<int> Items = .Filled(4, 0);`).
+* **Mandatory LAFS Formatter Rule:**
+  1. **Never Split the Leading Dot `.` from its Identifier:** `.Identifier` and `const .Identifier` are atomic head tokens—not cascade operators!
+  2. When a dot-shorthand constructor or static invocation (`.FromConfiguration(...)` or `const .new(...)`) takes a multiline argument list that exceeds the Canvas Limit, the opening `(` detaches onto the line below at the exact column coordinate of the expression start (or `const`), maintaining pure LAFS translational symmetry.
+
+---
+
+#### Edge Case 11: Dart Compiler-Enforced Privacy (`_`) & Dart 3.7 Multi-Wildcards (`_`) vs. LAFS Casing Triad
+
+* **The Dart Grammar Trap:**
+  Unlike C++, C#, Java, or TypeScript (which use `private` keywords), Dart enforces library-level privacy in the compiler and VM by checking whether an identifier begins with an underscore `_` (e.g., `_PrivateField`, `_PrivateClass`). Furthermore, in Dart 3.7+, a standalone `_` for local variables and parameters is a **non-binding wildcard** (allowing multiple `_` parameters in the same signature: `(_, _, _) => ...`).
+* **The LAFS Interaction (Section 1.1 & 1.2.4):**
+  Under LAFS Section 1.1 (*Syntax Tolerance & Parser Sovereignty*) and Section 1.2.4 (*Compiler-Enforced Casing Mechanisms*), stripping a leading `_` in Dart would silently turn private members into public APIs and break Dart 3.2+ private final field promotion!
+* **Mandatory LAFS Formatter Rule:**
+  Preserve the leading `_` compiler-privacy glyph and apply the three-tier LAFS casing convention immediately after `_`:
+  * **Public / Private Types, Classes, Enums, Extension Types, Mixins, Typedefs:** `Pascal_Snake_Case` / `_Pascal_Snake_Case` (e.g., `Database_Connection_Pool`, `_Internal_Cache_Node`).
+  * **Public / Private `const` and `static const` Invariants:** `SCREAMING_SNAKE_CASE` / `_SCREAMING_SNAKE_CASE` (e.g., `DEFAULT_ACCENT_HEX = '#7100FF'`, `_MAX_BUFFER_SIZE = 1_048_576`).
+  * **Public / Private Functions, Methods, Variables, Parameters, Fields, & Named Arguments:** `PascalCase` / `_PascalCase` (e.g., `ExecuteTransaction`, `_ValidateChecksum`, `UserAccountToken`).
+  * **Standalone `_` Wildcard (Dart 3.7+):** Preserved verbatim as `_`.
+
+---
+
+#### Edge Case 12: Zero ASI Hazards in Dart (100% Pure LAFS Symmetry on `return`, `throw`, `yield`, `yield*`, `=>`)
+
+* **Architectural Comparison with JS/TS and Go (LAFS Section 6.1):**
+  Unlike JavaScript/TypeScript (which suffer from Automatic Semicolon Insertion after `return`, `throw`, and `yield`) and Go (which injects semicolons before newlines preceding `{`), **Dart's lexer never inserts semicolons**. Every statement in Dart is explicitly terminated by `;` or `}`.
+* **Mandatory LAFS Formatter Rule:**
+  A Dart LAFS formatter **never** needs to fall back to the Section 6.1 Column-Anchored Hybrid exception! Every multiline container following `return`, `throw`, `yield`, `yield*`, `await`, `=>`, `if`, `for`, `while`, `switch`, or `class` detaches cleanly onto its own line at the statement's base column $X$.
+
+---
+
+#### Summary Matrix of Dart-Specific LAFS Resolution Rules
+
+| **Dart Construct**                      | **Grammar / Semantic Hazard**                                                             | **Mandatory LAFS Formatter Resolution**                                                                                                                           |
+| :-------------------------------------------- | :---------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1-Tuple Record `(Val,)`**           | Removing `,` turns `Record` `(int,)` into `int` `(Val)`.                              | Preserve `,` inside `)`. In State 2 Container Grouping, `([ ... ],)` closes as `],)`.                                                                           |
+| **Empty `{}` vs. `() {}`**          | `{}` is an empty `Map`/`Set` or empty block.                                              | Always format empty containers as a **State 1 Monolith** with zero inner spaces (`{}`).                                                                         |
+| **Multiline Strings `'''` / `"""`** | Dart strips the first newline after opening `'''`, but keeps newlines before closing `'''`. | Detach opening `'''` to its own line; never alter interior whitespace or inject newlines before closing `'''`. Format `${ ... }` code containers inside via LAFS. |
+| **Control-Flow Collections**            | Adding `{}` inside `[ if (C) ... ]` creates a `Set`/`Map` instead of a block.           | Never add `{}` around collection `if`/`for` branches; fuse spread glue `...[` and `...{` as $\mathbf{G_{\text{open}}}$.                                     |
+| **Null-Aware Elements (`?Item`)**     | Dart 3.8 unary `?` prefix inside collections.                                                 | Classify leading `?` as Prefix Glue ($\mathbf{G_{\text{open}}}$); fuse with container openers as `?(` or `?[`.                                                  |
+| **Cascades (`..` / `?..`)**         | `..Selector` binds to the original receiver across lines.                                     | Treat `..Selector` as Significant Content ($\mathbf{S}$); detach multiline argument `( ... )` directly beneath the `..Selector` column.                         |
+| **Dart 3.13 Primary Constructors**      | Header parameters `class C(final int X);` and `this { ... }` blocks.                        | Keep header signature as a Monolith if $\le$ Canvas Limit; format `this` and concise `new`/`factory` bodies as standard LAFS blocks.                            |
+| **Dart 3.10 Dot Shorthands**            | Context-inferred `.EnumVal`, `.new()`, `const .Origin()`.                                 | Treat `.Identifier` as an atomic head token; detach multiline `(` below the expression start column.                                                                |
+| **Leading `_` Privacy**               | Leading `_` enforces library privacy in the Dart compiler.                                    | Preserve `_` prefix; apply LAFS casing immediately after (`_Pascal_Snake_Case`, `_SCREAMING_SNAKE_CASE`, `_PascalCase`).                                        |
+| **`return` / `throw` / `yield`**  | No Automatic Semicolon Insertion (ASI) in Dart.                                                 | Use **100% Pure LAFS Symmetry** (no Column-Anchored Hybrid needed).                                                                                               |
+
+It is the ultimate irony of software engineering history: if you showed a K&R purist a line ending in `) {` followed thirty lines later by `})]})); }`, they would unironically nod in approval and say, *"Look at all the vertical screen space we saved by not putting those opening brackets on their own lines!"*
+
+Meanwhile, the human eye trying to read that code has to play a game of **diagonal laser tag** across 140 columns of jittery text just to figure out which opening delimiter owns which closing delimiter.
+
+---
+
+### 1. The Anatomy of the K&R / Linux Kernel Paradox
+
+What makes the "Brain-Rot Slop" such a devastating satire of K&R formatting is that it exposes the **three fatal contradictions** at the heart of the 1970s trailing-delimiter dogma:
+
+#### Contradiction A: The "Saved Lines" Illusion vs. Premature Wrapping
+
+K&R defenders argue that gluing `{` and `(` to the end of a line preserves vertical density. Yet in the Linux Kernel coding style, that rule is paired with an **80-column VT100 terminal limit** (and 8-space tabs!). The result? A simple 3-argument function call or condition gets crushed against the right margin at column 80 and explodes into 6 jagged lines anyway—wasting *more* vertical lines than a clean **160-column LAFS Monolith** while destroying horizontal readability:
+
+```text
+[K&R + Narrow Terminal Limit: 6 Jagged Lines & Broken Vectors]
+if ( ValidateSecurityContext(PrimaryUserToken,
+                             TargetResourceIdentifier,
+                             ACTIVE_PERMISSION_MASK) ) {
+        ExecuteAuthorizedOperation(PrimaryUserToken);
+}
+
+[LAFS State 1 Monolith (160-Column Canvas): 1 Crisp Horizontal Line]
+if (ValidateSecurityContext(PrimaryUserToken, TargetResourceIdentifier, ACTIVE_PERMISSION_MASK)) { ExecuteAuthorizedOperation(PrimaryUserToken); }
+```
+
+#### Contradiction B: The Closing-Delimiter Avalanche (`})]}));`)
+
+When K&R meets modern programming paradigms—closures, functional pipelines, pattern matching, records, and declarative UI trees—the refusal to treat `(` and `[` as structural containers produces **high-entropy closing clumps**:
+
+```text
+                    metadata: {
+                      'origin': (
+                        flat.first,
+                        hex: '#00E676'
+                      )})); }   <── 6 scopes terminated on 1 line at 3 different X-offsets!
+```
+
+In K&R, the opening delimiters are scattered across the right-hand tails of four different lines at arbitrary $X$-coordinates (`Col 32`, `Col 21`, `Col 23`, `Col 33`), while their closing counterparts are shoveled into a single heap at the bottom (`)})); }`). There is **zero vertical load path**.
+
+#### Contradiction C: Even K&R Secretly Admitted Allman Was Right at Column 0
+
+Here is the dirty secret of both the original 1978 *The C Programming Language* (K&R) and Linus Torvalds’ Linux Kernel Coding Style (`Documentation/process/coding-style.rst`): **they actually enforce Allman style for functions!**
+
+```c
+// Official Linux Kernel Style for Functions:
+int system_call_entry(int irq_id)
+{ // <── Detached opening brace at Column 0!
+        return process_irq(irq_id);
+}
+```
+
+Why did Kernighan, Ritchie, and Torvalds put the function's opening `{` on its own line at Column 0? Because even on a 24-line 1970s teleprinter, **human vision needs a vertical column anchor ($X_{\text{open}} == X_{\text{close}}$) to locate the boundaries of a scope**. They simply refused to grant inner scopes the same structural integrity because dogmatic 1980s Allman lacked **Monolith First** and **Container Grouping (`[({ ... })]`)**, causing inner blocks to balloon vertically.
+
+**LAFS solves the Linus Paradox completely:**
+
+1. **It saves MORE vertical space than K&R** on simple constructs by keeping them as single-line **State 1 Monoliths** up to the `160`-column canvas and fusing consecutiveSole-Child boundaries into **State 2 Alloyed Nodes (`[({ ... })]`)**.
+2. **It eliminates 100% of K&R's visual debt** whenever code goes multiline by enforcing strict vertical load paths ($X_{\text{open}} \equiv X_{\text{close}}$).
+
+---
+
+### 2. The Antidote: The Exact Dart Torture-Test Slop Transformed into Pure LAFS Geometry
+
+Below is what happens when the **LAFS Formatter** processes the entire horrific `lafs_dart_torture_test_slop.dart` file from Part 1 (using the default `160`-column Canvas Tier, Complexity Budget of `4` statements / `2` nesting depth, **Maximal Local Grouping**, and the **LAFS Casing Triad**):
+
+* **Notice the Vertical Economy:** The prematurely exploded 8-line constructors (`Slop_Orchestrator`, `Audit`, `CompareTo`) collapse into **1-line State 1 Monoliths**.
+* **Notice the Complexity Breaker:** `MonolithBudgetBreaker` (which crammed 6 statements and 3 nested loops onto one 320-column line) is automatically expanded into symmetrical vertical pillars.
+* **Notice the Local Boundary Grouping:** `GroupedSoleChildChain` fuses its consecutive boundaries into `[({` and `)}]`, while `InterruptedBoundaryMatrix` keeps `[({` grouped at the outer level, separates `(` where the comment/statement interrupts it, and **re-groups** `[({` at the deepest level!
+
+```dart
+// ============================================================================
+// LAFS-FORMATTED ARCHITECTURAL OUTPUT (160-COLUMN CANVAS TIER)
+// 100% TRANSLATIONAL SYMMETRY | MONOLITH FIRST | MAXIMAL LOCAL GROUPING
+// ============================================================================
+@Deprecated('Torture test library metadata with K&R hugging')
+@pragma('vm:prefer-inline', [{ 'mode': 'aggressive', 'color': '#7100FF' }])
+library Lafs.TortureTest.CleanArchitecture;
+
+import 'dart:async' as AsyncLib show Future, Stream, Completer, FutureOr, StreamController, Zone hide Timer;
+import 'dart:collection' deferred as LazyCollections show LinkedHashMap, UnmodifiableListView;
+import 'dart:convert' show jsonEncode, utf8;
+
+// 1. Generic Function Typedef & Nested Record Types (Expanded Symmetry over 160 cols)
+typedef Nightmare_Callback
+<
+    T extends Comparable<T>,
+    U extends Map<String, List<(int, { String Tag, bool? Flag })>>
+> =
+    FutureOr
+    <
+        (
+            T,
+            (int,),
+            {
+                U Payload,
+                List<T> Function<V extends T>(V Input, [String? Prefix])? Transformer
+            }
+        )
+    >
+    Function<W extends Object?>
+    (
+        T Primary,
+        (int,) SingleTupleRecord,
+        {
+            required U? Config,
+            W Function(int, int, { String? Label })? Interceptor
+        }
+    );
+
+// 2. Dart 3.13 Enum with Primary Constructor (Signature fits 160-col Canvas -> Monolith Header!)
+enum Telemetry_Spectrum(final int ChannelCode, final String HexAccent, { final bool IsCritical = false }) implements Comparable<Telemetry_Spectrum>
+{
+    VioletCore(0x00_71_00_FF, '#7100FF', IsCritical: false),
+    DeepOrangeAlert(0x00_FC_6A_03, '#FC6A03', IsCritical: true),
+    CrimsonFault(0x00_FF_17_44, '#FF1744', IsCritical: true),
+    AzureStream(0x00_00_BF_FF, '#00BFFF'),
+    EmeraldPass(0x00_00_E6_76, '#00E676'),
+    LavenderToken(0x00_C7_7D_FF, '#C77DFF'),
+    IndigoAnchor(0x00_3D_5A_FE, '#3D5AFE');
+
+    String get BadgeLabel =>
+        switch (this)
+        {
+            .VioletCore || .IndigoAnchor when ChannelCode > 0 => 'STRUCTURAL_PRIMARY[$HexAccent]',
+            .DeepOrangeAlert => 'WARN_STATE[$HexAccent]',
+            .CrimsonFault => 'CRITICAL_ERR[$HexAccent]',
+            _ => 'AUXILIARY[$HexAccent]'
+        };
+
+    // Prematurely exploded K&R method collapsed into a 1-line LAFS Monolith:
+    @override
+    int compareTo(Telemetry_Spectrum Other) { return ChannelCode.compareTo(Other.ChannelCode); }
+}
+
+// 3. Dart 3.3 Extension Type with State 2 Alloyed Record Type Header `({ ... })`
+extension type const Zero_Cost_Matrix<T extends num>._
+({
+    List<List<T>> Grid,
+    (T,) ScaleFactor,
+    Map<String, (T, { String Hex })> Metadata
+}) _BackingStore implements Object
+{
+    // Concise Dart 3.13 constructor (Fits 160-col Canvas -> State 1 Monolith!)
+    new (List<List<T>> Grid, T Scale) : this._((Grid: Grid, ScaleFactor: (Scale,), Metadata: const {}));
+
+    factory FromFlat(List<T> Flat, { required T DefaultScale })
+    {
+        if (Flat.isEmpty)
+        {
+            return Zero_Cost_Matrix._((Grid: [], ScaleFactor: (DefaultScale,), Metadata: { 'empty': (DefaultScale, Hex: '#7100FF') }));
+        }
+
+        // State 2 Container Grouping: `._((` fuses at the top and `))` mirrors at the bottom
+        return Zero_Cost_Matrix._
+        ((
+            Grid:
+            [
+                Flat,
+                [for (final Value in Flat) (Value + DefaultScale) as T]
+            ],
+            ScaleFactor: (DefaultScale,),
+            Metadata: { 'origin': (Flat.first, Hex: '#00E676') }
+        ));
+    }
+
+    T operator [](int Index) => _BackingStore.Grid[Index].first;
+
+    Zero_Cost_Matrix<T> operator +(Zero_Cost_Matrix<T> Other) =>
+        Zero_Cost_Matrix._
+        ((
+            Grid: [..._BackingStore.Grid, ...Other._BackingStore.Grid],
+            ScaleFactor: _BackingStore.ScaleFactor,
+            Metadata: { ..._BackingStore.Metadata, ...Other._BackingStore.Metadata }
+        ));
+}
+
+// 4. Sealed Hierarchy + Base Mixin + Dart 3.13 Primary Constructors + `this` Body
+sealed class Ast_Packet<T>(final String PacketId, final Telemetry_Spectrum Spectrum)
+{
+    // Fits within 160-col Canvas and Complexity Budget -> State 1 Monolith:
+    this : assert(PacketId.isNotEmpty, 'Packet ID cannot be empty') { if (PacketId == 'INVALID') { StateError('Bad packet'); } }
+
+    // Empty Container Rule: 8 lines of K&R vertical waste collapsed into 1 Monolith line:
+    void Audit(String AuditorId, int Timestamp) {}
+}
+
+base mixin Packet_Diagnostics<T> on Ast_Packet<T>
+{
+    Map<String, Object?> CollectMetrics([String? Namespace]) { return { 'id': PacketId, 'color': Spectrum.HexAccent, 'ns': ?Namespace }; }
+}
+
+final class Matrix_Payload_Packet<T extends num>.Seeded
+(
+    final String Id,
+    var int RetryCount,
+    final Zero_Cost_Matrix<T> Matrix,
+    {
+        final Telemetry_Spectrum Tone = .VioletCore,
+        final List<(int, String)>? AuditTrail
+    }
+) extends Ast_Packet<T>(Id, Tone) with Packet_Diagnostics<T>
+{
+    this { if (RetryCount < 0) { RetryCount = 0; } }
+
+    new Fallback(String Id, Zero_Cost_Matrix<T> Matrix) : this.Seeded(Id, 0, Matrix, Tone: .DeepOrangeAlert);
+
+    factory Empty(T ZeroVal) { return .Fallback('EMPTY_NODE', Zero_Cost_Matrix([[ZeroVal]], ZeroVal)); }
+}
+
+// 5. Symmetrical Resolution of the Deep Nesting Torture Suite
+class Slop_Orchestrator
+{
+    final String _InstanceTag;
+    static const int _MAX_HEX_MASK = 0xFF_71_00_FF;
+    static const double _PI_APPROX = 3.141_592_653_589_793;
+
+    // Empty Constructor Monolith Rule:
+    Slop_Orchestrator(this._InstanceTag) {}
+
+    // Complexity Budget Breaker (> 4 statements and > 2 nesting depth forces full symmetry):
+    void MonolithBudgetBreaker(int Limit)
+    {
+        var Alpha = 1;
+        var Beta = 2;
+        var Gamma = 3;
+        var Delta = 4;
+        var Epsilon = 5;
+
+        if (Limit > 0)
+        {
+            for (var Index = 0; Index < Limit; Index++)
+            {
+                if (Index % 2 == 0)
+                {
+                    Alpha += Index;
+                    Beta -= Index;
+                    Gamma *= 2;
+                    Delta ~/= 1;
+                    Epsilon ^= Alpha;
+                }
+            }
+        }
+    }
+
+    Future<Map<String, dynamic>> ExecuteHyperNestedCesspool<T extends num>
+    (
+        List<Ast_Packet<T>>? IncomingPackets,
+        {
+            required (int, String, { bool StrictMode, Telemetry_Spectrum? OverrideTone }) Options,
+            String? NullableHeader,
+            List<String>? NullableTags
+        }
+    ) async
+    {
+        await LazyCollections.loadLibrary();
+
+        // Dart 3.7 Multiple Wildcard Parameters `_` in a clean Monolith:
+        final WildcardIgnorer = (int _, String _, [bool _ = false]) => (42,);
+        final (ExtractedSingleTuple,) = WildcardIgnorer(1, 'ignore', true);
+
+        // STATE 2 — Uninterrupted Sole-Child Chain fuses into `[({` and `)}]`:
+        final GroupedSoleChildChain =
+        [({
+            'alphaKey':
+            [({
+                'deepInnerPayload':
+                (
+                    1_000_000,
+                    '#7100FF',
+                    (
+                        NestedSingleRecord: (999_999,),
+                        Palette: const ['#7100FF', '#FC6A03', '#FF1744', '#00BFFF', '#00E676']
+                    )
+                )
+            })]
+        })];
+
+        // LAW OF ZERO VERTICAL PROPAGATION:
+        // Outer `[({` fuses, separates locally after comment/statements, and re-groups `[({` inside!
+        final InterruptedBoundaryMatrix =
+        [({
+            // Comment counts as Significant Content (S) interrupting the next boundary run
+            'interruptedStage':
+            (()
+            {
+                final LocalPrep = ExtractedSingleTuple + _MAX_HEX_MASK;
+                return
+                (
+                    LocalPrep,
+                    [{
+                        'reGroupedDeepInner':
+                        (() =>
+                        [({
+                            'core': LocalPrep * 2,
+                            'accent': '#C77DFF',
+                            'deep': _PI_APPROX
+                        })])()
+                    }]
+                );
+            })()
+        })];
+
+        final (int OptCode, String OptLabel, :StrictMode, OverrideTone: Telemetry_Spectrum? ActiveTone) = Options;
+
+        // Control-Flow Collection with Spread Glue `...[` and Null-Aware Glue `?(`
+        final List<Map<String, Object?>> MutatedStreamOutput =
+        [
+            ?(NullableHeader != null ? { 'header': NullableHeader, 'theme': '#7100FF22' } : null),
+            for (final (int Idx, Ast_Packet<T> Pkt) in (IncomingPackets ?? <Ast_Packet<T>>[]).indexed)
+                if
+                (
+                    Pkt case Matrix_Payload_Packet<T>
+                    (
+                        PacketId: final String PId && != '',
+                        RetryCount: var int Retries && (>= 0 && <= 100),
+                        Spectrum: final Telemetry_Spectrum Spec,
+                        Matrix: final Zero_Cost_Matrix<T> Mat
+                    )
+                    when StrictMode || Retries != -1
+                )
+                ...[{
+                    'index': Idx,
+                    'packetId': PId,
+                    ?NullableHeader: ?ActiveTone?.HexAccent,
+                    'tags':
+                    [
+                        ?NullableHeader,
+                        ...?NullableTags,
+                        for (int RetryIdx = 0; RetryIdx < (Retries == 0 ? 1 : Retries); RetryIdx++)
+                            if (RetryIdx.isEven)
+                                switch ((Spec, RetryIdx))
+                                {
+                                    (.VioletCore, 0) => 'PRIMARY_ZERO_#7100FF',
+                                    (.DeepOrangeAlert || .CrimsonFault, > 2 && <= 10) => 'HIGH_RETRY_#FF1744',
+                                    (final Telemetry_Spectrum S, final int Count) when S.IsCritical => 'CRIT_${S.name}_$Count',
+                                    _ => 'STD_${Mat[0]}'
+                                }
+                            else
+                            ...[
+                                'ODD_BRANCH_$RetryIdx',
+                                if (RetryIdx == 3)
+                                    (()
+                                    {
+                                        try
+                                        {
+                                            final Buffer = StringBuffer()
+                                                ..write('START[')
+                                                ..writeAll
+                                                (
+                                                    [
+                                                        for (var Key in [1, 2, 3])
+                                                            switch (Key)
+                                                            {
+                                                                1 => 'ONE:#3D5AFE',
+                                                                2 => 'TWO:#00E676',
+                                                                _ => 'OTHER:#00BFFF'
+                                                            }
+                                                    ],
+                                                    '|'
+                                                )
+                                                ..write(']');
+                                            return Buffer.toString();
+                                        }
+                                        on FormatException catch (Fault, Stack) { return 'FMT_ERR:$Fault/$Stack'; }
+                                        catch (_, _) { return 'UNKNOWN_ERR:#FF1744'; }
+                                        finally {}
+                                    })()
+                            ]
+                    ]
+                }]
+                else if (Pkt case Ast_Packet<T>(:final PacketId, :final Spectrum))
+                {
+                    'fallbackId': PacketId,
+                    'fallbackTone': Spectrum.BadgeLabel,
+                    'groupedData': GroupedSoleChildChain,
+                    'interruptedData': InterruptedBoundaryMatrix
+                }
+        ];
+
+        // 6. Multiline Strings & Internal `${ ... }` LAFS Code Containers
+        final String InterpolatedNightmare =
+            'ADJACENT_HEAD_'
+            "SECOND_PART_${OptCode}_"
+            r'RAW_SEGMENT_WITH_NO_INTERP_${ignored}\n'
+            '''
+    MULTILINE_SINGLE_QUOTE_BLOCK
+    ColorToken: #7100FF
+    NestedInterpolation: ${
+        (()
+        {
+            final InnerMap = <String, List<(int, { String Hex })>>
+            {
+                'rowA': [(1, Hex: '#7100FF'), (2, Hex: '#FC6A03')],
+                'rowB':
+                [
+                    for (var Num = 0; Num < 3; Num++)
+                    (
+                        Num * 10,
+                        Hex:
+                            switch (Num)
+                            {
+                                0 => '#00E676',
+                                1 => '#00BFFF',
+                                _ => '#FF1744'
+                            }
+                    )
+                ]
+            };
+            return jsonEncode(InnerMap.keys.toList());
+        })()
+    }
+    EndOfMultilineBlock
+    '''
+            """
+    DOUBLE_QUOTE_MULTILINE_WITH_EMBEDDED_EXPRESSION: ${
+        MutatedStreamOutput.isEmpty ? "EMPTY_#FF1744" : "COUNT_${MutatedStreamOutput.length}_#00E676"
+    }
+    """;
+
+        // 7. Deep Cascade Chain with Detached Multiline Argument Containers
+        final Map<String, dynamic>? CascadeVictim = <String, dynamic>{ 'init': _InstanceTag, 'str': InterpolatedNightmare }
+            ?..['step1'] =
+            ([({
+                'cascadeInner':
+                (
+                    OptLabel,
+                    (SingleRecordElement: 777,),
+                    [for (var Val in [10, 20, 30]) if (Val > 15) Val * 2]
+                )
+            })])
+            ..update('init', (Existing) => '${Existing}_MUTATED', ifAbsent: () => 'DEFAULT_#7100FF')
+            ..addEntries
+            ([
+                MapEntry
+                (
+                    'streamDump',
+                    await
+                    (() async
+                    {
+                        final Collected = <String>[];
+                        await for (final Chunk in _GenerateTortureStream(OptCode)) { Collected.add(Chunk); }
+                        return Collected;
+                    })()
+                )
+            ]);
+
+        return CascadeVictim ?? { 'status': 'NULL_FALLBACK', 'accent': '#FF1744' };
+    }
+
+    // 8. Sync* and Async* Recursive Generators with Pure LAFS Symmetry
+    Stream<String> _GenerateTortureStream(int Seed) async*
+    {
+        Iterable<int> SyncRange(int Start, int Count) sync*
+        {
+            if (Count <= 0) { return; }
+            yield Start;
+            yield* SyncRange(Start + 1, Count - 1);
+        }
+
+        for (final Val in SyncRange(Seed, 3))
+        {
+            yield
+                switch (Val)
+                {
+                    <= 0 => 'NEG_OR_ZERO:#FF1744',
+                    1 || 2 => 'LOW_SEED:#FC6A03',
+                    var OddVal when OddVal.isOdd => 'ODD_SEED_$OddVal:#7100FF',
+                    _ => 'EVEN_SEED:#00E676'
+                };
+        }
+    }
+}
+```
+
+### 3. The Structural Verdict: K&R Slop vs. LAFS
+
+| Metric                                  | Part 1 (K&R Brain-Rot Slop)                                                         | Part 2 (LAFS Transformation)                                                         |
+| :-------------------------------------- | :---------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
+| **Opening Delimiter Anchors**     | Floating at the right-hand tail of uneven text (`Col 19`, `Col 47`, `Col 83`) | **100% Column-Locked** ($X_{\text{open}} \equiv X_{\text{close}}$)           |
+| **Closing Delimiter Clumps**      | Up to 6 mismatched closers dumped on one line (`)})); }`)                         | **Zero Clumping** — Every closer mirrors its opener (`)}]`, `))`, `])`) |
+| **Simple Methods & Constructors** | Exploded across 5–8 lines for no reason                                            | **1-Line Monoliths** (`void Audit(String AuditorId, int Timestamp) {}`)      |
+| **Deep Sole-Child Containers**    | Cascading diagonal staircases                                                       | **Alloyed Compound Nodes** (`[({ ... })]`, `([({ ... })])`)                |
+| **Ocular Scanning Path**          | Chaotic zig-zag across both axes                                                    | Strictly horizontal (**Monolith**) or strictly vertical (**Symmetry**)   |
+
+Dart (and especially Flutter) is **Exhibit A** in the engineering indictment of K&R formatting.
+
+In 1978, when Brian Kernighan and Dennis Ritchie used K&R in C, code was mostly flat: a function had a few local variables, a `for` loop, and an `if` statement. You almost never saw 12 levels of nested parentheses `(...)`, lists `[...]`, and closures `() { ... }` inside a single expression.
+
+Then came **Dart**—a language built around declarative UI trees, deeply nested named parameters (`child:`, `children:`, `builder:`), closures, records, and collection literals. When K&R was forced onto Dart, the entire K&R mental model collapsed in public view.
+
+Here are the **4 factual, mathematical reasons** why Dart formatted in K&R proves that K&R is a structurally defective formatting style:
+
+---
+
+### 1. The "Pyramid of Doom" & The IDE Phantom-Comment Admission of Guilt
+
+In K&R Dart, every opening parenthesis `(` and bracket `[` is glued to the right-hand tail of a class name or parameter label, while the closing delimiters are dumped down the left margin at the bottom:
+
+```dart
+// ❌ STANDARD K&R DART: Diagonal Opening Drift + Blind Closing Pyramid
+return Scaffold(                                  // '(' is at Col 15
+  backgroundColor: const Color(0xFF7100FF),
+  body: SafeArea(                                 // '(' is at Col 16
+    child: Padding(                               // '(' is at Col 18
+      padding: const EdgeInsets.all(16),
+      child: Column(                              // '(' is at Col 19
+        children: [                               // '[' is at Col 18
+          Container(                              // '(' is at Col 19
+            decoration: BoxDecoration(            // '(' is at Col 37
+              color: const Color(0xFF3D5AFE),
+            ),                                    // ')' is at Col 12 (Skew: 25 cols!)
+          ),                                      // ')' is at Col 10 (Skew: 9 cols!)
+        ],                                        // ']' is at Col 8  (Skew: 10 cols!)
+      ),                                          // ')' is at Col 6  (Skew: 13 cols!)
+    ),                                            // ')' is at Col 4  (Skew: 14 cols!)
+  ),                                              // ')' is at Col 2  (Skew: 14 cols!)
+);                                                // ')' is at Col 0  (Skew: 15 cols!)
+```
+
+Look at the bottom 7 lines of that snippet:
+
+```text
+            ),
+          ),
+        ],
+      ),
+    ),
+  ),
+);
+```
+
+Because K&R hides every opening `(` at the far-right end of a variably sized identifier (`BoxDecoration(`, `SafeArea(`, `Scaffold(`), **not a single closing `)` lines up vertically with its opening `(`!**
+
+In fact, K&R failed so badly in Dart that the Flutter IDE team had to engineer **virtual ghost comments** (`// Container`, `// Column`, `// Padding`, `// SafeArea`, `// Scaffold`) injected by the code editor at the end of every `),` just so human beings could tell what scope was closing!
+
+**Think about what that means architecturally:** When a formatting style requires the IDE to render fake comments next to every closing delimiter because the human eye cannot locate the matching opening delimiter, **the formatting style has factually failed its primary job.**
+
+---
+
+### 2. The Named-Parameter Horizontal Skew Multiplier
+
+In Dart, nested constructors are almost always prefixed by a named parameter label (`child:`, `body:`, `decoration:`, `sliver:`, `onPressed:`).
+
+In K&R, gluing the opening delimiter to the end of the line creates a **compound horizontal offset error**:
+
+$$
+X(\text{Open}) = X(\text{Indent}) + \text{Length}(\text{ParameterLabel}) + \text{Length}(\text{TypeName})
+$$
+
+$$
+X(\text{Close}) = X(\text{Indent})
+$$
+
+Because every parameter name and class name has a different character length, the horizontal distance ($\Delta X$) between the opening `(` and the closing `)` changes randomly on every single line:
+
+```text
+Col 4                                 Col 42
+  │                                     │
+  ▼                                     ▼
+  foregroundDecoration: BoxDecoration(   <── Opener pushed 38 columns right!
+      color: Color(0xFF7100FF),
+  ),                                     <── Closer snaps back to Col 4!
+  ▲
+  │
+  38-column diagonal chasm between '(' and ')'
+```
+
+Your eye cannot drop straight down a column to verify scope closure. Instead, your eye has to scan right to find `(`, then zig-zag diagonally down-left to find `)`.
+
+---
+
+### 3. The 80-Column + K&R Double Whammy (Artificial Vertical Bloat)
+
+Standard `dart format` combines K&R tail-hugging with a 1970s **80-column punch-card limit**. This creates the worst of both worlds:
+
+1. Simple atomic expressions that easily fit on a modern screen (`160` columns) are violently shattered across 5 lines.
+2. Yet when they shatter, their opening delimiters *still* cling to the tails of the lines!
+
+```dart
+// ❌ K&R + 80-Column Limit: 6 lines for a trivial 2-property box!
+Container(
+  padding: const EdgeInsets.symmetric(
+    horizontal: 24.0,
+    vertical: 12.0,
+  ),
+  color: const Color(0xFF7100FF),
+)
+```
+
+---
+
+### 4. Side-by-Side Proof: Standard K&R Dart vs. LAFS Dart
+
+Now compare that exact same Dart/Flutter widget tree when formatted under **LAFS** (`160`-column Canvas Tier, **Monolith First**, **Container Grouping**, and **100% Translational Symmetry**):
+
+* **Zero Ghost Comments Needed:** Every multiline `(` and `[` sits on the **exact same vertical column ($X$)** as its matching `)` and `]`.
+* **Alloyed Boundaries (`([` and `])`):** When `children:` holds a single child container or when a list wraps a sole map/object, consecutive delimiters fuse cleanly on the same column.
+* **Monolith First:** Atomic leaves (`EdgeInsets.All(16)`, `BoxDecoration(Color: const Color(0xFF3D5AFE))`) stay flat on a single line instead of exploding into 5-line fragments.
+
+```dart
+// ✔️ LAFS DART: Zero Skew, Zero Pyramid of Doom, Instant Vertical Traceability
+Widget BuildDashboardView(Build_Context Context)
+{
+    return
+        Scaffold
+        (
+            BackgroundColor: const Color(0xFF7100FF),
+            Body:
+                SafeArea
+                (
+                    Child:
+                        Padding
+                        (
+                            Padding: const EdgeInsets.All(16),
+                            Child:
+                                Column
+                                (
+                                    Children:
+                                    [
+                                        // Fits 160-col Canvas -> Clean 1-line State 1 Monolith!
+                                        Container(Decoration: const BoxDecoration(Color: Color(0xFF3D5AFE)), Child: const Text('Header_#FFFFFF')),
+
+                                        // Multiline Sibling -> Pure Vertical Pillar Alignment (X_open == X_close)
+                                        Container
+                                        (
+                                            Padding: const EdgeInsets.Symmetric(Horizontal: 24.0, Vertical: 12.0),
+                                            Decoration: const BoxDecoration(Color: Color(0xFF00E676)),
+                                            Child:
+                                                Row
+                                                (
+                                                    Children:
+                                                    [
+                                                        const Icon(Icons.Verified, Color: Color(0xFF00BFFF)),
+                                                        const Text('Status: Operational (#00E676)')
+                                                    ]
+                                                )
+                                        )
+                                    ]
+                                )
+                        )
+                )
+        );
+}
+```
+
+### The Geometric Proof in Numbers
+
+| Structural Property                                                                   | Standard K&R Dart (`dart format`)                        | LAFS Dart (`160`-Col Canvas)                                                      |
+| :------------------------------------------------------------------------------------ | :--------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| **Horizontal Offset Error ($\Delta X = X_{\text{open}} - X_{\text{close}}$)** | **12 to 45 columns of skew** on every block          | **$0\text{ columns}$** ($X_{\text{open}} \equiv X_{\text{close}}$ always) |
+| **Requires IDE Ghost Comments (`// Column`)?**                                | **Yes** (Closing `),` pyramid is unreadable alone) | **Never** (Every `(` sits directly above its `)`)                         |
+| **Simple Leaf Nodes (`Container(...)`)**                                      | Exploded across 5–7 lines due to 80-col limit             | **1-Line State 1 Monolith**                                                   |
+| **Sole-Child Nested Wrappers**                                                  | Scattered across diagonal lines (`([{` ... `}])`)      | **Alloyed Compound Nodes (`([{` and `}])`)**                              |
+
+Dart proved once and for all that `(` and `[` are **load-bearing architectural rooms**, just like `{`. Treating them as trailing punctuation at the end of a line is why K&R turns modern declarative code into a diagonal labyrinth.
+
+Therefore all the reason why The FAKE, **SELF-PROCLAIMED** ***'Standard'*** MUST be replaced PERMANENTLY.
+
+When a technical standard only survives because IDEs had to invent four separate visual life-support systems just to make it readable, that standard is already obsolete.
+
+For nearly half a century, the software industry has treated a **1970s hardware workaround**—gluing opening delimiters to the right-hand ends of lines while chopping lines off at 80 columns—as if it were an eternal law of computer science. It never was. It was a rationing system for 80-column IBM punch cards and 24-line DEC VT100 terminals.
+
+Here is the complete architectural proof of why the legacy K&R standard has reached the end of its lifecycle—and how **LAFS (Language-Agnostic Formatting Style)** permanently replaces it.
+
+---
+
+### 1. The "Four IDE Crutches" Indictment
+
+You can measure the structural failure of legacy K&R formatters (`dart format`, `prettier`, default `clang-format`, default `rustfmt`) by looking at the **four visual prosthetics** modern IDEs had to invent just to compensate for K&R's broken geometry:
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                 THE 4 IDE CRUTCHES REQUIRED BY LEGACY K&R                        │
+├──────────────────────────────┬───────────────────────────────────────────────────┤
+│ 1. Phantom Closing Comments  │ IDEs inject fake "// Column", "// Container" text │
+│    (Dart / Flutter / JSX)    │ after "),", because K&R hides the opening "("     │
+│                              │ 35 columns to the right, 50 lines above.          │
+├──────────────────────────────┼───────────────────────────────────────────────────┤
+│ 2. Rainbow Bracket Plugins   │ Developers must color-code "(", "{", "[" in 6     │
+│                              │ alternating colors because K&R clumps "})]}));"   │
+│                              │ onto a single line with zero column alignment.    │
+├──────────────────────────────┼───────────────────────────────────────────────────┤
+│ 3. Floating Indent Guides    │ In K&R, the vertical indent line starts under the │
+│                              │ KEYWORD, while the actual "{" or "(" floats out   │
+│                              │ in mid-air at the far right end of the line.      │
+├──────────────────────────────┼───────────────────────────────────────────────────┤
+│ 4. "Jump to Matching Brace"  │ Because X(Open) != X(Close), human eyes cannot    │
+│    Keyboard Shortcuts        │ scan vertically; you need a hotkey just to find   │
+│                              │ where a scope begins or ends.                     │
+└──────────────────────────────┴───────────────────────────────────────────────────┘
+```
+
+In **LAFS**, none of those crutches are necessary because **the code itself is structurally self-supporting**:
+
+* Every multiline container has a ceiling and a floor at the exact same $X$-coordinate: $\text{Column}(\text{Open}) \equiv \text{Column}(\text{Close})$.
+* The vertical indent guide connects the actual opening glyph (`{`, `(`, `[`, `` ` ``, `|`) directly to its matching closing glyph (`}`, `)`, `]`, `` ` ``, `|`).
+
+---
+
+### 2. Why Previous Reform Attempts Failed (And Why LAFS Succeeds)
+
+Historically, developers who hated K&R tried to replace it with **1980s Dogmatic Allman**. That failed to win over the whole industry for one specific reason:
+
+* **Dogmatic Allman was syntax-blind and width-blind:** It only cared about `{}` (ignoring `()` and `[]`), and when people tried applying naive Allman to `()` and `[]`, every nested array or callback exploded into a 14-line vertical void canyon.
+
+**LAFS permanently resolves that failure** by replacing both K&R and Dogmatic Allman with a **three-state deterministic geometry**:
+
+```text
+================================================================================
+THE LAFS PERMANENT REPLACEMENT ARCHITECTURE
+================================================================================
+
+1. STATE 1 — MONOLITH FIRST (180 / 160 / 120 Canvas Tiers)
+   Eliminates 80-column artificial fragmentation. If a constructor, signature,
+   tuple, or <= 4-statement block fits the modern viewport, it stays on ONE
+   crisp horizontal line.
+   Result: LAFS uses FEWER lines than 80-column K&R on simple code!
+
+2. STATE 2 — CONTAINER GROUPING / ALLOYED BOUNDARIES ([{( ... )}])
+   Eliminates vertical void canyons. Whenever nested containers form a
+   Sole-Child Chain (uninterrupted by Significant Content S), their boundaries
+   fuse horizontally into a single load-bearing alloy:
+       [({
+           ...
+       })]
+   Result: Zero wasted lines on wrapper layers + 100% column symmetry!
+
+3. STATE 3 — EXPANDED SYMMETRY (Hierarchical Pillars)
+   Eliminates K&R diagonal skew and closing pyramids. When sibling items or
+   intervening statements separate containers, each multiline boundary claims
+   its own line and vertical column: X(Open) == X(Close).
+   Result: Instant vertical ocular tracking with zero cognitive friction.
+================================================================================
+```
+
+---
+
+### 3. Head-to-Head Replacement Matrix: Legacy K&R vs. LAFS Standard
+
+| Architectural Dimension              | Legacy Standard (K&R + 80-Col Formatters)                                | The Permanent Replacement (LAFS Standard)                                                    |
+| :----------------------------------- | :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
+| **Core Mental Model**          | 1970s Teleprinter Line Rationing                                         | **2D Coordinate Grid & Universal Container Topology**                                  |
+| **Container Scope**            | Treats `{}` differently from `()`, `[]`, `<>`, `` ` ` ``, `\|\|` | **Character-Agnostic:** Every boundary pair obeys identical laws                       |
+| **Canvas Width Standard**      | Archaic 80-column punch-card limit                                       | **Deterministic `160` (Default), `180` (Ultrawide), `120` (Split)**              |
+| **Simple Signatures & Tuples** | Prematurely shattered across 4–6 jagged lines                           | **Sealed 1-Line State 1 Monolith**                                                     |
+| **Consecutive Wrapper Layers** | Diagonal opening drift + `})]);` closing clump                         | **Fused Alloyed Nodes (`[({` aligned directly over `)}]`)**                        |
+| **Interrupted Nested Layers**  | Unpredictable hybrid indent jumps                                        | **Maximal Local Grouping with Zero Vertical Propagation**                              |
+| **Coordinate Geometry**        | Skewed Trapezoid ($X_{\text{open}} \neq X_{\text{close}}$)             | **True Rectangle ($X_{\text{open}} \equiv X_{\text{close}}$)**                       |
+| **Casing Hierarchy**           | Ambiguous `camelCase` soup blending types, vars, and consts            | **Taxonomic Triad:** `Pascal_Snake_Case` / `SCREAMING_SNAKE_CASE` / `PascalCase` |
+| **Optical Contrast Policy**    | Unregulated high-halation yellow/cyan syntax glare                       | **Zero-Halation High-Contrast Palette (`#7100FF`, `#FC6A03`, `#00E676`)**        |
+
+---
+
+### 4. Standard `.lafsconfig` Specification for Universal Replacement
+
+To replace legacy formatters (`dart format`, `prettier`, `clang-format`, `rustfmt`) across an entire engineering organization with zero ambiguity, a deterministic LAFS engine is driven by a single, language-agnostic configuration contract:
+
+```json
+{
+    "SchemaVersion": "1.0.0",
+    "FormattingStandard": "LAFS-Strict",
+    "CanvasTier": 160,
+    "IndentationWidth": 4,
+    "MonolithComplexityBudget":
+    {
+        "MaxStatementsPerBlock": 4,
+        "MaxNestingDepth": 2
+    },
+    "ContainerRules":
+    {
+        "EmptyContainerPolicy": "StrictMonolithZeroPadding",
+        "BraceMonolithInnerPadding": 1,
+        "ParenBracketAngleInnerPadding": 0,
+        "EnableMaximalLocalGrouping": true,
+        "ZeroVerticalPropagation": true,
+        "IdenticalGlyphDetachment": true,
+        "MultilineMarkupAttributeEqualsAlignment": true
+    },
+    "CasingTriad":
+    {
+        "TypesStructsEnumsTraits": "Pascal_Snake_Case",
+        "ConstantsAndStatics": "SCREAMING_SNAKE_CASE",
+        "FunctionsMethodsVariablesParameters": "PascalCase",
+        "PreserveCompilerEnforcedPrefixes": ["_"],
+        "HexColorCase": "UPPERCASE"
+    },
+    "OpticalContrastPolicy":
+    {
+        "BanCyan00E5FFAndVariants": true,
+        "BanYellowHSL45To65": true,
+        "ApprovedPalette":
+        {
+            "PrimaryHighlight": "#7100FF",
+            "PrimaryHighlightAlpha": "#7100FF22",
+            "WarningAlert": "#FC6A03",
+            "CriticalError": "#FF1744",
+            "AccentToken": "#00BFFF",
+            "SuccessState": "#00E676",
+            "SecondaryAccent": "#C77DFF",
+            "StructuralIndigo": "#3D5AFE"
+        }
+    }
+}
+```
+
+### The Bottom Line
+
+A formatting standard should never force a human engineer to mentally reconstruct the shape of a program from skewed diagonal fragments. By treating every delimiter as a load-bearing architectural boundary, keeping simple constructs flat on a modern canvas, and aligning every vertical room on an exact coordinate grid, **LAFS turns source code from a 1970s teleprinter stream into true structural geometry.**
+
+## JavaScript & TypeScript
+
+### Part 1: The Ultimate K&R / Prettier Brain-Rot JS & TS Torture-Test Suite
+
+If Dart is Exhibit A for why K&R fails on declarative trees, **JavaScript and TypeScript (`prettier` / standard K&R)** are Exhibit B, C, and D combined.
+
+In JS/TS, you have **4 different layers of nested containers** colliding simultaneously:
+
+1. **TypeScript Type-Level Containers:** Generics `<...>`, mapped types `{ [K in keyof T]: ... }`, variadic tuples `[head: A, ...tail: B[]]`, and conditional types.
+2. **Runtime Data & Closure Containers:** Callback pyramids `(() => { ... })()`, array chains `.map((x) => ({ ... }))`, and destructuring `{ a: [b, { c }] }`.
+3. **Template Literal Containers:** Backticks `` `...${ (() => `...`)() }...` `` clinging to the ends of lines.
+4. **JSX / TSX Markup Containers:** HTML-like tags `<Component prop={(() => { ... })()}>` mixed with JS expressions.
+
+Below is `lafs_ts_js_torture_test_slop.tsx`—a **horrifically formatted K&R / Prettier brain-rot cesspool** using modern ES2025/ES2026 and TypeScript 5.x+ features, engineered to push a **LAFS CST/AST formatter** to its absolute limits:
+
+```tsx
+// ============================================================================
+// WARNING: INTENTIONALLY CORRUPTED K&R / PRETTIER BRAIN-ROT TORTURE TEST
+// DESIGNED TO STRESS-TEST A LAFS FORMATTER ON ES2026 + TYPESCRIPT + TSX
+// ============================================================================
+
+// 1. TORTURE: Deeply Nested Conditional, Mapped, & Template Literal Types with K&R Hugging
+export type Nightmare_Type_Matrix<
+  const T extends readonly Record<
+    string,
+    {
+      readonly id: number;
+      readonly tone: `#${string}`;
+      readonly nested?: readonly [
+        number,
+        ...Array<{
+          tag: string;
+          active: boolean;
+        }>
+      ];
+    }
+  >[],
+  U extends keyof T[number] = keyof T[number]
+> = T extends readonly [
+  infer Head extends Record<string, unknown>,
+  ...infer Tail extends readonly Record<string, unknown>[]
+] ? {
+    readonly [K in keyof Head as K extends string
+      ? `get_${Capitalize<K>}`
+      : never]: Head[K] extends {
+      readonly tone: infer ToneHex extends string;
+    } ? (
+        input: ToneHex,
+        options?: {
+          readonly strict: boolean;
+          readonly fallback: '#7100FF' | '#FC6A03' | '#FF1744';
+        }
+      ) => Promise<
+        ReadonlyArray<{
+          readonly resolved: ToneHex;
+          readonly tailMatrix: Nightmare_Type_Matrix<Tail>;
+        }>
+      > : never;
+  } : {
+    readonly emptyMarker: '#00BFFF';
+  };
+
+// 2. TORTURE: Enum & Freeze Invariants with Mixed K&R Clumping
+export const enum Telemetry_Spectrum_Code {
+  VioletCore = '#7100FF',
+  VioletAlpha = '#7100FF22',
+  DeepOrangeWarn = '#FC6A03',
+  CrimsonFault = '#FF1744',
+  AzureStream = '#00BFFF',
+  EmeraldPass = '#00E676',
+  LavenderToken = '#C77DFF',
+  IndigoAnchor = '#3D5AFE'
+}
+
+export const GLOBAL_SPECTRUM_CONFIG = Object.freeze({
+  maxRetries: 1_000_000,
+  palette: [
+    Telemetry_Spectrum_Code.VioletCore,
+    Telemetry_Spectrum_Code.DeepOrangeWarn,
+    Telemetry_Spectrum_Code.CrimsonFault,
+    Telemetry_Spectrum_Code.EmeraldPass
+  ] as const,
+  thresholds: {
+    low: 0x00_71_00_FF,
+    high: 0x00_FF_17_44
+  }}) satisfies Readonly<{
+  maxRetries: number;
+  palette: readonly Telemetry_Spectrum_Code[];
+  thresholds: {
+    low: number;
+    high: number;
+  };
+}>;
+
+// 3. TORTURE: Stage 3 Decorators, Private `#Fields`, `static {}` Blocks,
+// Prematurely Exploded Constructors, & Single-Line Complexity Budget Breakers
+function traceDecorator<This, Args extends any[], Return>(
+  accentHex: string
+) {
+  return function (
+    target: (this: This, ...args: Args) => Return,
+    context: ClassMethodDecoratorContext<
+      This,
+      (this: This, ...args: Args) => Return
+    >
+  ) {
+    return function (this: This, ...args: Args): Return {
+      console.log(`[TRACE:${String(context.name)}:${accentHex}]`);
+      return target.apply(this, args); }; }; }
+
+export class Slop_Engine_Controller<
+  const TPayload extends {
+    readonly packetId: string;
+    readonly spectrum: Telemetry_Spectrum_Code;
+  }
+> {
+  #internalSecretMask: number = 0xFF_71_00_FF;
+  accessor retryCounter: number = 0;
+
+  static #registryCache = new Map<string, string>();
+  static {
+    try {
+      this.#registryCache.set(
+        'DEFAULT_CORE',
+        Telemetry_Spectrum_Code.VioletCore
+      );
+    } catch {
+      // Empty catch K&R hug
+    }
+  }
+
+  // ILLEGAL PREMATURE EXPLOSION: 8 lines for a trivial 2-parameter empty constructor!
+  constructor(
+    private readonly instanceId: string,
+    private readonly defaultSpectrum: Telemetry_Spectrum_Code = Telemetry_Spectrum_Code.VioletCore
+  ) {
+  }
+
+  // ILLEGAL COMPLEXITY BUDGET BREACH: 6 statements + 3 nested levels crammed on 1 line!
+  public monolithBudgetBreaker(limit: number): number { let a = 1; let b = 2; let c = 3; let d = 4; let e = 5; if (limit > 0) { for (let i = 0; i < limit; i++) { if (i % 2 === 0) { a += i; b -= i; c *= 2; d >>= 1; e ^= a; } } } return a + b + c + d + e; }
+
+  // Prematurely exploded trivial getter & empty method:
+  public get
+  secretMask(
+  ): number {
+    return this.#internalSecretMask;
+  }
+
+  public noopAudit(
+    auditor: string,
+    timestamp: number
+  ): void {
+  }
+
+  // 4. TORTURE: Async Generator with ASI `yield` Hazards, `await using`,
+  // Sole-Child Chains, Interrupted Boundary Runs, & Backtick Clinging
+  @traceDecorator('#7100FF')
+  public async *executeAbyssalPipeline<
+    const U extends readonly TPayload[]
+  >(
+    incomingBatch: U,
+    options: {
+      readonly strictMode: boolean;
+      readonly customHeader?: string;
+      readonly transformFn?: (
+        item: TPayload,
+        idx: number
+      ) => [
+        string,
+        {
+          readonly verified: boolean;
+          readonly hex: string;
+        }
+      ];
+    }
+  ): AsyncGenerator<
+    {
+      readonly batchId: string;
+      readonly payloadMatrix: unknown;
+      readonly shaderSource: string;
+    },
+    void,
+    unknown
+  > {
+    await using disposableScope = {
+      [Symbol.asyncDispose]: async () => {
+        this.retryCounter = 0; }};
+
+    // Uninterrupted Sole-Child Chain (Should fuse into `[({` and `)}]` in LAFS State 2!):
+    const groupedSoleChildChain = [({
+      alphaLayer: [({
+        deepPayloadTuple: [
+          1_000_000,
+          '#7100FF',
+          {
+            nestedRecord: [999_999],
+            approvedPalette: [
+              '#7100FF',
+              '#FC6A03',
+              '#FF1744',
+              '#00BFFF',
+              '#00E676'
+            ] as const
+          }
+        ] as const
+      })]
+    })];
+
+    // Interrupted Boundary Run (Tests LAFS Law of Zero Vertical Propagation!):
+    const interruptedBoundaryMatrix = [({
+      // Significant Content (S) comment interrupts the next boundary run
+      interruptedStage: (() => {
+        const computedMask = this.#internalSecretMask ^ 0x00_3D_5A_FE;
+        return [
+          computedMask,
+          [{
+            reGroupedDeepInner: (() => [({
+              coreValue: computedMask * 2,
+              accentHex: '#C77DFF',
+              status: 'ACTIVE_#00E676'
+            })])()
+          }]
+        ]; })()
+    })];
+
+    // Multiline Template Literal with Backtick Hugging & Nested `${ ... }` Slop:
+    const embeddedGlslShader = `
+      precision highp float;
+      uniform vec4 uPrimaryAccent;
+      void main(void) {
+        vec4 baseColor = vec4(${
+          (() => {
+            const channelMap = {
+              r: 113.0 / 255.0,
+              g: 0.0,
+              b: 255.0 / 255.0,
+              a: options.strictMode
+                ? 1.0
+                : 0.22
+            };
+            return `${channelMap.r}, ${channelMap.g}, ${channelMap.b}, ${channelMap.a}`; })()
+        });
+        gl_FragColor = baseColor * uPrimaryAccent;
+      }`;
+
+    // Deeply nested Destructuring + Array Pipeline + ASI `yield` Hazard:
+    for (const [
+      batchIndex,
+      {
+        packetId,
+        spectrum = this.defaultSpectrum
+      }
+    ] of incomingBatch.entries()) {
+      if (!packetId) {
+        // ASI Throw Hazard:
+        throw (
+          new Error(
+            `Invalid packet at index ${batchIndex} [Code: #FF1744]`
+          )
+        ); }
+
+      const transformedResult = incomingBatch
+        .filter((candidate) => Boolean(candidate.packetId))
+        .map((candidate, idx) => ({
+          key: `${candidate.packetId}_${idx}`,
+          resolvedHex: candidate.spectrum === Telemetry_Spectrum_Code.CrimsonFault
+            ? '#FF1744'
+            : candidate.spectrum === Telemetry_Spectrum_Code.DeepOrangeWarn
+              ? '#FC6A03'
+              : '#7100FF',
+          diagnosticDump: (() => {
+            try {
+              switch (candidate.spectrum) {
+                case Telemetry_Spectrum_Code.VioletCore:
+                  return {
+                    tier: 'PRIMARY',
+                    code: '#7100FF',
+                    grouped: groupedSoleChildChain
+                  };
+                case Telemetry_Spectrum_Code.CrimsonFault:
+                  return {
+                    tier: 'CRITICAL',
+                    code: '#FF1744',
+                    interrupted: interruptedBoundaryMatrix
+                  };
+                default:
+                  return {
+                    tier: 'STANDARD',
+                    code: '#00E676',
+                    interrupted: null
+                  }; }
+            } catch (err) {
+              return {
+                tier: 'FAULT',
+                code: '#FF1744',
+                error: String(err)
+              }; }
+          })()}));
+
+      // ASI Yield Hazard with K&R Clumping:
+      yield ({
+        batchId: `${this.instanceId}_${packetId}_${spectrum}`,
+        payloadMatrix: transformedResult,
+        shaderSource: embeddedGlslShader
+      }); } }
+
+  // 5. TORTURE: JSX / TSX Component with ASI `return (` Hazard, Misaligned `=`
+  // Attributes, Ternary Pyramids, & Closing Tag Clumping
+  public renderDiagnosticsPanel(
+    props: {
+      readonly title: string;
+      readonly isOnline: boolean;
+      readonly items: ReadonlyArray<{
+        readonly id: string;
+        readonly label: string;
+        readonly hex: string;
+      }>;
+    }
+  ) {
+    // ASI Return Hazard + JSX Misaligned Attributes + Closing Clump
+    return (
+      <section className="DiagnosticsContainer"
+        data-engine-id={this.instanceId}
+        data-theme-primary="#7100FF"
+        data-theme-warning="#FC6A03"
+        data-online-status={props.isOnline ? "ONLINE_#00E676" : "OFFLINE_#FF1744"}>
+        <header className="HeaderBar" title="System Telemetry Header"
+          data-count={props.items.length}
+          data-mask={this.#internalSecretMask}>
+          <h1>{props.title}</h1>
+        </header>
+        <div className="ContentGrid">
+          {props.items.map((item, idx) => (
+            <article key={item.id}
+              data-item-index={idx}
+              data-item-hex={item.hex}
+              data-item-label={item.label}>
+              <span>{item.label}</span>
+            </article>))}
+        </div>
+      </section>); }
+}
+```
+
+---
+
+### Part 2: The Antidote — The Exact JS/TS/TSX Slop Transformed into Pure LAFS Geometry
+
+Here is what happens when the **LAFS Formatter** (`160`-column default Canvas Tier) cleans up that exact JS/TS/TSX catastrophe:
+
+1. **Prematurely Exploded Signatures Become Monoliths:** The 8-line constructor, 5-line getter, and 5-line `noopAudit` collapse into crisp **1-line State 1 Monoliths**.
+2. **Complexity Budget Breakers Expand Automatically:** `MonolithBudgetBreaker` (which had 6 statements and 3 nested loops on one line) is broken open into symmetrical load-bearing columns.
+3. **JS/TS ASI Hazards Engage the Column-Anchored Hybrid (LAFS Section 6.1):** On `return (`, `throw (`, and `yield ({`—where JavaScript's Automatic Semicolon Insertion forbids a newline after the keyword—the opening delimiter stays at `Keyword + 1 space` and the closing delimiter locks onto the **exact vertical column coordinate of the opening delimiter**!
+4. **Backticks Detach cleanly onto Load-Bearing Columns (LAFS Section 6.2.2):** Multiline template literals place their opening `` ` `` and closing `` ` `` on dedicated lines sharing the exact same $X$-coordinate, while formatting internal `${ ... }` expressions with full LAFS symmetry.
+5. **Multiline TSX/JSX Attributes Align on a Vertical `=` Axis (LAFS Section 6.3):** Every `=` in a multiline JSX tag lines up in a razor-sharp vertical column.
+
+```tsx
+// ============================================================================
+// LAFS-FORMATTED ARCHITECTURAL OUTPUT (160-COLUMN CANVAS TIER)
+// 100% TRANSLATIONAL SYMMETRY | ASI COLUMN-ANCHORED HYBRID | BACKTICK PURITY
+// ============================================================================
+
+// 1. Conditional, Mapped, & Template Literal Types with Symmetrical Containers
+export type Nightmare_Type_Matrix
+<
+    const T extends readonly Record
+    <
+        string,
+        {
+            readonly Id: number;
+            readonly Tone: `#${string}`;
+            readonly Nested?: readonly [number, ...Array<{ Tag: string; Active: boolean }>];
+        }
+    >[],
+    U extends keyof T[number] = keyof T[number]
+> =
+    T extends readonly [infer Head extends Record<string, unknown>, ...infer Tail extends readonly Record<string, unknown>[]]
+    ?
+    {
+        readonly [K in keyof Head as K extends string ? `Get_${Capitalize<K>}` : never]:
+            Head[K] extends { readonly Tone: infer ToneHex extends string }
+            ?
+                (
+                    Input: ToneHex,
+                    Options?: { readonly Strict: boolean; readonly Fallback: '#7100FF' | '#FC6A03' | '#FF1744' }
+                ) => Promise<ReadonlyArray<{ readonly Resolved: ToneHex; readonly TailMatrix: Nightmare_Type_Matrix<Tail> }>>
+            : never;
+    }
+    : { readonly EmptyMarker: '#00BFFF' };
+
+// 2. Enum & Frozen Constant Invariants
+export const enum Telemetry_Spectrum_Code
+{
+    VioletCore = '#7100FF',
+    VioletAlpha = '#7100FF22',
+    DeepOrangeWarn = '#FC6A03',
+    CrimsonFault = '#FF1744',
+    AzureStream = '#00BFFF',
+    EmeraldPass = '#00E676',
+    LavenderToken = '#C77DFF',
+    IndigoAnchor = '#3D5AFE'
+}
+
+// State 2 Alloyed Boundaries `({` and `})` on `Object.freeze`:
+export const GLOBAL_SPECTRUM_CONFIG =
+    Object.freeze
+    ({
+        MaxRetries: 1_000_000,
+        Palette:
+        [
+            Telemetry_Spectrum_Code.VioletCore,
+            Telemetry_Spectrum_Code.DeepOrangeWarn,
+            Telemetry_Spectrum_Code.CrimsonFault,
+            Telemetry_Spectrum_Code.EmeraldPass
+        ] as const,
+        Thresholds: { Low: 0x00_71_00_FF, High: 0x00_FF_17_44 }
+    })
+    satisfies Readonly
+    <{
+        MaxRetries: number;
+        Palette: readonly Telemetry_Spectrum_Code[];
+        Thresholds: { Low: number; High: number };
+    }>;
+
+// 3. Stage 3 Decorator with LAFS Section 6.1 Column-Anchored Hybrid for `return`
+function TraceDecorator<This, Args extends any[], Return>(AccentHex: string)
+{
+    return (
+               function(Target: (this: This, ...Args: Args) => Return, Context: ClassMethodDecoratorContext<This, (this: This, ...Args: Args) => Return>)
+               {
+                   return (
+                              function(this: This, ...Args: Args): Return
+                              {
+                                  console.log(`[TRACE:${String(Context.name)}:${AccentHex}]`);
+                                  return Target.apply(this, Args);
+                              }
+                          );
+               }
+           );
+}
+
+export class Slop_Engine_Controller<const TPayload extends { readonly PacketId: string; readonly Spectrum: Telemetry_Spectrum_Code }>
+{
+    #InternalSecretMask: number = 0xFF_71_00_FF;
+    accessor RetryCounter: number = 0;
+
+    static #RegistryCache = new Map<string, string>();
+
+    static
+    {
+        try { this.#RegistryCache.set('DEFAULT_CORE', Telemetry_Spectrum_Code.VioletCore); }
+        catch {}
+    }
+
+    // STATE 1 MONOLITH: Fits 160-col Canvas & Empty Container Rule `{}`!
+    constructor(private readonly InstanceId: string, private readonly DefaultSpectrum: Telemetry_Spectrum_Code = Telemetry_Spectrum_Code.VioletCore) {}
+
+    // Complexity Budget Breaker (> 4 statements and > 2 nesting depth forces full symmetry):
+    public MonolithBudgetBreaker(Limit: number): number
+    {
+        let Alpha = 1;
+        let Beta = 2;
+        let Gamma = 3;
+        let Delta = 4;
+        let Epsilon = 5;
+
+        if (Limit > 0)
+        {
+            for (let Index = 0; Index < Limit; Index++)
+            {
+                if (Index % 2 === 0)
+                {
+                    Alpha += Index;
+                    Beta -= Index;
+                    Gamma *= 2;
+                    Delta >>= 1;
+                    Epsilon ^= Alpha;
+                }
+            }
+        }
+
+        return Alpha + Beta + Gamma + Delta + Epsilon;
+    }
+
+    // STATE 1 MONOLITHS: Trivial getter and empty method stay on 1 line!
+    public get SecretMask(): number { return this.#InternalSecretMask; }
+    public NoopAudit(Auditor: string, Timestamp: number): void {}
+
+    // 4. Async Generator with Alloyed Boundaries, Detached Backticks, & ASI Hybrid `yield`
+    @TraceDecorator('#7100FF')
+    public async *ExecuteAbyssalPipeline<const U extends readonly TPayload[]>
+    (
+        IncomingBatch: U,
+        Options:
+        {
+            readonly StrictMode: boolean;
+            readonly CustomHeader?: string;
+            readonly TransformFn?: (Item: TPayload, Idx: number) => [string, { readonly Verified: boolean; readonly Hex: string }];
+        }
+    ): AsyncGenerator<{ readonly BatchId: string; readonly PayloadMatrix: unknown; readonly ShaderSource: string }, void, unknown>
+    {
+        // Fits 160-col Canvas -> State 1 Monolith:
+        await using DisposableScope = { [Symbol.asyncDispose]: async () => { this.RetryCounter = 0; } };
+
+        // STATE 2 — Uninterrupted Sole-Child Chain fuses into `[({` and `)}]`:
+        const GroupedSoleChildChain =
+        [({
+            AlphaLayer:
+            [({
+                DeepPayloadTuple:
+                [
+                    1_000_000,
+                    '#7100FF',
+                    {
+                        NestedRecord: [999_999],
+                        ApprovedPalette: ['#7100FF', '#FC6A03', '#FF1744', '#00BFFF', '#00E676'] as const
+                    }
+                ] as const
+            })]
+        })];
+
+        // LAW OF ZERO VERTICAL PROPAGATION:
+        // Outer `[({` fuses, separates locally after comment/statements, and re-groups `[({` inside!
+        const InterruptedBoundaryMatrix =
+        [({
+            // Significant Content (S) comment interrupts the next boundary run
+            InterruptedStage:
+            (() =>
+            {
+                const ComputedMask = this.#InternalSecretMask ^ 0x00_3D_5A_FE;
+                return (
+                           [
+                               ComputedMask,
+                               [{
+                                   ReGroupedDeepInner:
+                                   (() =>
+                                   [({
+                                       CoreValue: ComputedMask * 2,
+                                       AccentHex: '#C77DFF',
+                                       Status: 'ACTIVE_#00E676'
+                                   })])()
+                               }]
+                           ]
+                       );
+            })()
+        })];
+
+        // SECTION 6.2.2 — Detached Backticks (`) on Dedicated Lines + Internal `${ ... }` Symmetry:
+        const EmbeddedGlslShader =
+        `
+            precision highp float;
+            uniform vec4 uPrimaryAccent;
+
+            void main(void)
+            {
+                vec4 baseColor = vec4
+                (
+                    ${
+                        (() =>
+                        {
+                            const ChannelMap = { R: 113.0 / 255.0, G: 0.0, B: 255.0 / 255.0, A: Options.StrictMode ? 1.0 : 0.22 };
+                            return `${ChannelMap.R}, ${ChannelMap.G}, ${ChannelMap.B}, ${ChannelMap.A}`;
+                        })()
+                    }
+                );
+                gl_FragColor = baseColor * uPrimaryAccent;
+            }
+        `;
+
+        for (const [BatchIndex, { PacketId, Spectrum = this.DefaultSpectrum }] of IncomingBatch.entries())
+        {
+            if (!PacketId)
+            {
+                // SECTION 6.1 — Column-Anchored Hybrid for JS/TS `throw`:
+                throw (
+                          new Error(`Invalid packet at index ${BatchIndex} [Code: #FF1744]`)
+                      );
+            }
+
+            const TransformedResult =
+                IncomingBatch
+                    .filter((Candidate) => Boolean(Candidate.PacketId))
+                    .map
+                    (
+                        (Candidate, Idx) =>
+                        ({
+                            Key: `${Candidate.PacketId}_${Idx}`,
+                            ResolvedHex:
+                                Candidate.Spectrum === Telemetry_Spectrum_Code.CrimsonFault
+                                ? '#FF1744'
+                                : Candidate.Spectrum === Telemetry_Spectrum_Code.DeepOrangeWarn
+                                  ? '#FC6A03'
+                                  : '#7100FF',
+                            DiagnosticDump:
+                            (() =>
+                            {
+                                try
+                                {
+                                    switch (Candidate.Spectrum)
+                                    {
+                                        case Telemetry_Spectrum_Code.VioletCore:
+                                            return { Tier: 'PRIMARY', Code: '#7100FF', Grouped: GroupedSoleChildChain };
+                                        case Telemetry_Spectrum_Code.CrimsonFault:
+                                            return { Tier: 'CRITICAL', Code: '#FF1744', Interrupted: InterruptedBoundaryMatrix };
+                                        default:
+                                            return { Tier: 'STANDARD', Code: '#00E676', Interrupted: null };
+                                    }
+                                }
+                                catch (Fault) { return { Tier: 'FAULT', Code: '#FF1744', Error: String(Fault) }; }
+                            })()
+                        })
+                    );
+
+            // SECTION 6.1 — Column-Anchored Hybrid for JS/TS `yield`:
+            yield ({
+                       BatchId: `${this.InstanceId}_${PacketId}_${Spectrum}`,
+                       PayloadMatrix: TransformedResult,
+                       ShaderSource: EmbeddedGlslShader
+                  });
+        }
+    }
+
+    // 5. TSX Component with Section 6.1 `return (` Hybrid & Section 6.3 Column-Aligned `=` Attributes
+    public RenderDiagnosticsPanel
+    (
+        Props:
+        {
+            readonly Title: string;
+            readonly IsOnline: boolean;
+            readonly Items: ReadonlyArray<{ readonly Id: string; readonly Label: string; readonly Hex: string }>;
+        }
+    )
+    {
+        return (
+                   <section ClassName = "DiagnosticsContainer"
+                       DataEngineId     = { this.InstanceId }
+                       DataThemePrimary = "#7100FF"
+                       DataThemeWarning = "#FC6A03"
+                       DataOnlineStatus = { Props.IsOnline ? "ONLINE_#00E676" : "OFFLINE_#FF1744" } >
+                       <header ClassName = "HeaderBar" Title = "System Telemetry Header"
+                           DataCount = { Props.Items.length }
+                           DataMask  = { this.#InternalSecretMask } >
+                           <h1>{ Props.Title }</h1>
+                       </header>
+                       <div ClassName = "ContentGrid">
+                       {
+                           Props.Items.map
+                           (
+                               (Item, Idx) =>
+                               (
+                                   <article Key = { Item.Id }
+                                       DataItemIndex = { Idx }
+                                       DataItemHex   = { Item.Hex }
+                                       DataItemLabel = { Item.Label } >
+                                       <span>{ Item.Label }</span>
+                                   </article>
+                               )
+                           )
+                       }
+                       </div>
+                   </section>
+               );
+    }
+}
+```
+
+---
+
+### Part 3: Comprehensive Research & Catalog of JavaScript / TypeScript Edge Cases for a LAFS Formatter
+
+Formatting JavaScript, TypeScript, and JSX/TSX under **LAFS** introduces unique lexer and parser edge cases that do not exist in Dart or C#. Below is the complete engineering specification of every JS/TS edge case and its mandatory LAFS resolution.
+
+---
+
+#### Edge Case 1: Automatic Semicolon Insertion (ASI) on `return`, `throw`, `yield`, `break`, `continue`, and Postfix `++`/`--`
+
+* **The JS/TS Grammar Trap:**
+  ECMAScript's Automatic Semicolon Insertion (ASI) specifies *"restricted productions"* where a line terminator `[no LineTerminator here]` is forbidden between a keyword and its operand:
+  1. `return \n (Expr);` $\longrightarrow$ Parsed as `return; (Expr);` (returns `undefined` and turns the container into unreachable dead code!).
+  2. `throw \n (new Error());` $\longrightarrow$ Throws a fatal `SyntaxError: Illegal newline after throw`.
+  3. `yield \n ({ ... });` $\longrightarrow$ Parsed as `yield; ({ ... });` (yields `undefined` and evaluates the object literal separately!).
+* **Mandatory LAFS Formatter Rule (Section 6.1 Column-Anchored Hybrid):**
+  Whenever the expression following `return`, `throw`, or `yield` is a **State 1 Monolith** (fits within the `160`-column Canvas Limit and Complexity Budget), it remains on a single line (`return { Tier: 'PRIMARY', Code: '#7100FF' };`).
+  Whenever it spans multiple lines, the **Column-Anchored Hybrid Law** engages:
+  * The opening container (`(`, `{`, `[`, or alloy `({`) remains on the same line as `return` / `throw` / `yield` separated by 1 space (at column $X_{\text{open}}$).
+  * The enclosed content indents to $X_{\text{open}} + 4$.
+  * The closing container (`)`, `}`, `]`, or `})`) aligns vertically on its own line at **exact column $X_{\text{open}}$**.
+
+---
+
+#### Edge Case 2: "Reverse ASI" Hazard on Detached Leading `(`, `[`, or `` ` `` When Semicolons Are Omitted
+
+* **The JS/TS Grammar Trap:**
+  In JavaScript, if a developer omits semicolons at the end of statements, starting the next line with `(`, `[`, or `` ` `` causes the parser to merge the two lines into a single expression!
+  * Calling a detached IIFE or parenthesized expression after an un-terminated variable:
+    ```javascript
+    const A = B // <-- Missing semicolon!
+    (function() { ... })() // <-- Parsed as B(function() { ... })()!
+    ```
+  * Starting a detached array or template literal on a new line:
+    ```javascript
+    const Msg =
+    `Hello` // <-- Without '=' or ';', a detached backtick is parsed as a Tagged Template on the previous token!
+    ```
+* **Mandatory LAFS Formatter Rule:**
+  1. **Explicit Semicolon Enforcement:** A LAFS JS/TS formatter **must** emit explicit statement-terminating semicolons `;` on all statements so that detached containers never collide with a preceding un-terminated statement.
+  2. **Tagged Template Preservation:** In a **Tagged Template Literal** (e.g., ``SqlQuery`SELECT * FROM Users` `` or ``Styled.Div`color: #7100FF;` ``), the tag identifier `SqlQuery` is semantically invoking the template literal. If the template literal spans multiple lines, detaching `` ` `` onto a new line in JS **is legal and still invokes `SqlQuery` as a tag** *because* JS does not insert a semicolon before `` ` ``! However, if an untagged template literal follows a normal statement, the preceding statement must end with `;`.
+
+---
+
+#### Edge Case 3: Arrow Functions Returning Object Literals `() => ({ ... })` vs. Statement Blocks `() => { ... }`
+
+* **The JS/TS Grammar Trap:**
+  In JavaScript/TypeScript, `() => { Key: Value }` is **not** an object literal—the parser interprets `{` after `=>` as a function body block and `Key:` as a jump label! To return an object literal concisely from an arrow function, it **must** be wrapped in parentheses: `() => ({ Key: Value })`.
+* **The LAFS Interaction (Section 4.3.1):**
+  Under LAFS Section 4.3.1, the arrow token `=>` is classified as **Prefix/Infix Glue ($\mathbf{G_{\text{open}}}$)**, and `(` followed immediately by `{` is a **Sole-Child Chain**.
+* **Mandatory LAFS Formatter Rule:**
+  1. Never strip the outer `(` `)` around an object literal returned by `=>`.
+  2. When `() => ({ ... })` exceeds the Canvas Limit and expands vertically, `(` and `{` fuse into a **State 2 Alloyed Boundary (`({`)** on their own line, and close with the mirrored alloy **`})`** on the exact same vertical column!
+
+```typescript
+// ✔️ STATE 1 — LAFS MONOLITH (Fits 160-col Canvas):
+const CreateThemeToken = (Id: string) => ({ Id, PrimaryHex: '#7100FF', SuccessHex: '#00E676' });
+
+// ✔️ STATE 2 — LAFS ALLOYED BOUNDARY `({ ... })` (Over 160-col Canvas):
+const BuildEnterpriseTelemetryConfig =
+    (ClusterIdentifier: string, EnvironmentTier: string) =>
+    ({
+        ClusterIdentifier,
+        EnvironmentTier,
+        PrimaryAccentHex: '#7100FF',
+        WarningAlertHex: '#FC6A03',
+        CriticalFaultHex: '#FF1744'
+    });
+```
+
+---
+
+#### Edge Case 4: Generic Arrow Functions `<T,>(X: T) => X` in `.tsx` Files (JSX vs. Type Parameter Ambiguity)
+
+* **The TypeScript + JSX Grammar Trap:**
+  In a `.tsx` file, `<T>(X: T) => X` causes a fatal TypeScript compiler error because the parser sees `<T>` as an unclosed JSX opening tag! TypeScript requires either a trailing comma `<T,>(X: T) => X` or a constraint `<T extends unknown>(X: T) => X` to disambiguate a generic arrow function from JSX in `.tsx` files.
+* **Mandatory LAFS Formatter Rule:**
+  Just like the 1-tuple Record trailing comma `(Val,)` in Dart, the disambiguating comma in `<T,>` inside a `.tsx` single-parameter generic arrow function is **parser-required syntax** and must **never** be stripped during Monolith formatting!
+
+---
+
+#### Edge Case 5: TypeScript Leading Union (`|`) and Intersection (`&`) Operators vs. Identical-Glyph Pipe Containers (`|...|`)
+
+* **The TypeScript Grammar Trap:**
+  Unlike Rust or Ruby (where `|A, B|` is a closure parameter container), TypeScript uses single pipes `|` and ampersands `&` as **Union and Intersection type operators**, and permits an optional leading `|` or `&` before the first member of a multiline union/intersection type:
+  ```typescript
+  type Allowed_Spectrum_Hex =
+      | '#7100FF'
+      | '#FC6A03'
+      | '#FF1744'
+      | '#00E676';
+  ```
+* **Mandatory LAFS Formatter Rule (Section 7.1 CST Disambiguation):**
+  In a Concrete Syntax Tree (Tree-Sitter / TypeScript Compiler API), a TypeScript union `|` is parsed as a binary/prefix separator token inside `TSUnionType`—**not** as a `closure_parameters` container pair `|...|`.
+  * If the union fits within the `160`-column Canvas Limit, it stays a **State 1 Monolith**:
+    `type Allowed_Spectrum_Hex = '#7100FF' | '#FC6A03' | '#FF1744' | '#00E676';`
+  * If it exceeds the Canvas Limit, each union branch aligns vertically at `$X + 4$` with a leading `| ` on each line, creating a clean vertical spine down the left edge of the type definition.
+
+---
+
+#### Edge Case 6: ECMAScript Private Class Elements (`#Field`, `#Method`) vs. the LAFS Casing Triad
+
+* **The JS/TS Grammar Trap:**
+  Modern JavaScript (ES2022+) enforces hard runtime privacy at the V8/engine level using the `#` sigil prefix (`#InternalSecretMask`, `#ValidateToken()`). Unlike TypeScript's compile-time `private` keyword, `#` is part of the identifier token itself.
+* **Mandatory LAFS Formatter Rule (Section 1.2.4):**
+  Exactly like Dart's compiler-enforced `_` privacy prefix, the `#` sigil is preserved as the leading character, and the **LAFS Casing Triad** is applied immediately after `#`:
+  * **Private Static Constants:** `#SCREAMING_SNAKE_CASE` (`static readonly #MAX_BUFFER_LIMIT = 1_048_576;`)
+  * **Private Fields, Getters, Setters, & Methods:** `#PascalCase` (`#InternalSecretMask`, `#ExecuteHandshake()`)
+
+---
+
+#### Summary Matrix of JS / TS / TSX Edge Cases under LAFS
+
+| **JS / TS / TSX Construct**                        | **Grammar / Parser Hazard**                                      | **Mandatory LAFS Formatter Resolution**                                                                        |
+| :------------------------------------------------------- | :--------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| **`return` / `throw` / `yield` (Multiline)** | JS ASI inserts `;` after newline, breaking execution.                | Engage **Section 6.1 Column-Anchored Hybrid**: open at `Keyword + 1`; align closer vertically under opener.  |
+| **Arrow Object Return `() => ({ ... })`**        | Removing `()` turns `{ ... }` into a statement block.              | Preserve `()`; fuse `({` and `})` as a **State 2 Alloyed Boundary** when multiline.                      |
+| **Multiline Backticks `` `...` ``**                | Clinging `` ` `` breaks symmetry; interior whitespace is runtime data. | Detach opening & closing `` ` `` to dedicated column-aligned lines; format `${ ... }` expressions inside via LAFS. |
+| **`.tsx` Generic Arrow `<T,>(X: T)`**          | Removing `,` causes `<T>` to be parsed as a JSX tag.               | Preserve the disambiguating comma in `<T,>` inside `.tsx` files.                                                 |
+| **Empty Blocks & Constructors `{}`**             | `constructor() {}`, `catch {}`, `() => {}`.                      | Always format empty containers as a **State 1 Monolith** with zero inner spaces (`{}`).                      |
+| **Multiline JSX/TSX Attributes**                   | Jagged `=` operators across attributes obscure values.               | Pad attribute names to align all `=` operators in a straight vertical column (`Attr = "Val"`).                   |
+| **ECMAScript `#` Private Members**               | `#` is an engine-enforced privacy prefix.                            | Preserve `#` prefix; apply LAFS casing immediately after (`#PascalCase`, `#SCREAMING_SNAKE_CASE`).             |
