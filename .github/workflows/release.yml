@@ -33,20 +33,25 @@ jobs:
 
       - name: Publish Tagged Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            Language-Agnostic Formatting Style.exe
-            LAFS.exe
-          generate_release_notes: true
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create $env:GITHUB_REF_NAME `
+            --title "$env:GITHUB_REF_NAME - Language-Agnostic Formatting Style (LAFS)" `
+            --generate-notes `
+            "Language-Agnostic Formatting Style.exe" `
+            "LAFS.exe"
 
       - name: Publish Rolling Latest Release
         if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest
-          name: "Latest Release"
-          files: |
-            Language-Agnostic Formatting Style.exe
-            LAFS.exe
-          prerelease: false
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --cleanup-tag -y 2>$null
+          gh release create latest `
+            --title "Latest Release" `
+            --notes "Continuous build from main branch." `
+            "Language-Agnostic Formatting Style.exe" `
+            "LAFS.exe"
