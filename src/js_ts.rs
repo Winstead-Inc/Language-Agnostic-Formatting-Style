@@ -113,7 +113,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == '('
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Paren),"(".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Paren), "(".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
                 continue;
@@ -122,7 +122,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == ')'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Paren),")".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Paren), ")".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
                 continue;
@@ -131,7 +131,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == '{'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace),"{".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace), "{".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
                 continue;
@@ -140,7 +140,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == '}'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace),"}".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
                 continue;
@@ -149,7 +149,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == '['
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Bracket),"[".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Bracket), "[".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
                 continue;
@@ -158,7 +158,7 @@ impl <'a> JS_Lexer<'a>
             if Ch == ']'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Bracket),"]".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Bracket), "]".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = false;
                 continue;
@@ -181,7 +181,7 @@ impl <'a> JS_Lexer<'a>
                 // Expression context tracking
                 if IsKw
                 {
-                    self.Expects_Expression = matches!(IdentText.as_str(),"return" | "throw" | "yield" | "case" | "typeof" | "delete" | "void" | "in" | "instanceof" | "of" | "new" | "await");
+                    self.Expects_Expression = matches!(IdentText.as_str(), "return" | "throw" | "yield" | "case" | "typeof" | "delete" | "void" | "in" | "instanceof" | "of" | "new" | "await");
                 }
                 else { self.Expects_Expression = false; }
 
@@ -197,7 +197,7 @@ impl <'a> JS_Lexer<'a>
                     self.Advance();
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("...".to_string()),"...".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("...".to_string()), "...".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     self.Expects_Expression = true;
                     continue;
@@ -207,7 +207,7 @@ impl <'a> JS_Lexer<'a>
                 {
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("?.".to_string()),"?.".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("?.".to_string()), "?.".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     self.Expects_Expression = false;
                     continue;
@@ -217,7 +217,7 @@ impl <'a> JS_Lexer<'a>
                 {
                     self.Advance();
                     self.Advance();
-                    let OpStr = if self.Peek() == Some('=') { self.Advance();"??=" }
+                    let OpStr = if self.Peek() == Some('=') { self.Advance(); "??=" }
                     else { "??" };
                     RawTokens.push(Token_Info::New(Token_Kind::Operator(OpStr.to_string()), OpStr.to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
@@ -508,7 +508,7 @@ fn ResolveJSAngleBrackets(Tokens: & mut [Token_Info])
     {
         if Tokens[I].Text == "<"
         {
-            let IsPrecededByGenericContext = I > 0 && match & Tokens[I - 1].Kind { Token_Kind::Identifier(_) => true, Token_Kind::Keyword(K) => matches ! (K.as_str(),"type" | "interface" | "class"), _ => false, };
+            let IsPrecededByGenericContext = I > 0 && match & Tokens[I - 1].Kind { Token_Kind::Identifier(_) => true, Token_Kind::Keyword(K) => matches ! (K.as_str(), "type" | "interface" | "class"), _ => false, };
 
             if IsPrecededByGenericContext
             {
@@ -520,7 +520,7 @@ fn ResolveJSAngleBrackets(Tokens: & mut [Token_Info])
                 {
                     if Tokens[J].Text == "<" { Depth += 1; }
                     else if Tokens[J].Text == ">" { Depth -= 1; if Depth == 0 { IsValidGeneric = true; break ; } }
-                    else if matches!(Tokens[J].Text.as_str(),";" | "{" | "}") { break ; }
+                    else if matches!(Tokens[J].Text.as_str(), ";" | "{" | "}") { break ; }
                     J += 1;
                 }
 
@@ -558,7 +558,7 @@ impl JS_Container
     pub fn IsSoleChildChain( & self) -> bool
     {
         let NonCommentChildren: Vec < & JS_Syntax_Node > = self.Children.iter().filter( | Node | match Node { JS_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), JS_Syntax_Node::Container(_) => true, })
-        .collect();
+       .collect();
 
         if NonCommentChildren.len() == 1 { matches ! (NonCommentChildren[0], JS_Syntax_Node::Container(_)) } else { false }
     }
@@ -566,7 +566,7 @@ impl JS_Container
     pub fn GetSoleChildContainer( & self) -> Option< & JS_Container>
     {
         let NonCommentChildren: Vec < & JS_Syntax_Node > = self.Children.iter().filter( | Node | match Node { JS_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), JS_Syntax_Node::Container(_) => true, })
-        .collect();
+       .collect();
 
         if NonCommentChildren.len() == 1 { if let JS_Syntax_Node::Container(C) = NonCommentChildren[0] { return Some(C); } }
         None
@@ -720,7 +720,7 @@ impl JS_Container_Builder
 
                     if ! CurrentToken.IsTrivia() && ! CurrentToken.IsComment()
                     {
-                        LastSignificantWasReturn = matches!(CurrentToken.Text.as_str(),"return" | "throw" | "yield");
+                        LastSignificantWasReturn = matches!(CurrentToken.Text.as_str(), "return" | "throw" | "yield");
                     }
 
                     Container.Children.push(JS_Syntax_Node::Token(CurrentToken));
@@ -828,7 +828,7 @@ impl <'a> JS_Emitter<'a>
                     // Check if followed by continuation keyword (else, catch, finally)
                     let NextContinuation = if Index + 1 < Total
                     {
-                        match & Nodes[Index + 1] { JS_Syntax_Node::Token(T) if matches ! (T.Text.as_str(),"else" | "catch" | "finally") => { Some(T.Text.clone()) } _ => None, }
+                        match & Nodes[Index + 1] { JS_Syntax_Node::Token(T) if matches ! (T.Text.as_str(), "else" | "catch" | "finally") => { Some(T.Text.clone()) } _ => None, }
                     }
                     else { None };
 
@@ -947,7 +947,7 @@ impl <'a> JS_Emitter<'a>
                         self.EmitSpace();
                     }
                     self.EmitRaw( & T.Text);
-                    PrevNeedsSpace = ! matches!(T.Text.as_str(),"." | "?." | "(" | "[" | "!" | "~");
+                    PrevNeedsSpace = ! matches!(T.Text.as_str(), "." | "?." | "(" | "[" | "!" | "~");
                 }
                 JS_Syntax_Node::Container(Sub) =>
                 {
@@ -1019,7 +1019,7 @@ impl <'a> JS_Emitter<'a>
     }
 }
 
-pub fn VerifyJSTokenEquivalence(OriginalSource: & str, FormattedSource: & str, Language: Source_Language,) -> Result<(), String>
+pub fn VerifyJSTokenEquivalence(OriginalSource: & str, FormattedSource: & str, Language: Source_Language,) -> Result < (), String >
 {
     let mut OriginalScanner = JS_Lexer::New(OriginalSource, Language);
     let OriginalTokens = OriginalScanner.TokenizeAll();
@@ -1028,10 +1028,10 @@ pub fn VerifyJSTokenEquivalence(OriginalSource: & str, FormattedSource: & str, L
     let FormattedTokens = FormattedScanner.TokenizeAll();
 
     let OrigSignificant: Vec < & str > = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
-    .collect();
+   .collect();
 
     let FormSignificant: Vec < & str > = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
-    .collect();
+   .collect();
 
     if OrigSignificant.len() != FormSignificant.len()
     {

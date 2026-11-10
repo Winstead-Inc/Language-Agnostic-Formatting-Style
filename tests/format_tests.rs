@@ -11,7 +11,7 @@ fn Test_Monolith_Function()
     Config.Canvas_Width = 120;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert_eq!(Formatted.trim(),"int Add(int A, int B) { return A + B; }");
+    assert_eq!(Formatted.trim(), "int Add(int A, int B) { return A + B; }");
 }
 
 #[test]
@@ -43,8 +43,8 @@ fn Test_Multiline_Call_Detaching_Paren()
     // Force expansion due to length
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("ProcessUserData\n("),"Opening paren must detach on multiline call");
-    assert!(Formatted.contains("\n);"),"Closing paren must align and have semicolon");
+    assert!(Formatted.contains("ProcessUserData\n("), "Opening paren must detach on multiline call");
+    assert!(Formatted.contains("\n);"), "Closing paren must align and have semicolon");
 }
 
 #[test]
@@ -59,8 +59,8 @@ fn Test_Compound_Delimiter_Sole_Child_Chain()
     Config.Canvas_Width = 60;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("[{(\n"),"Opening compound delimiter [{{( must sit on its own line");
-    assert!(Formatted.contains("\n)}];"),"Closing compound delimiter )}}] must sit on its own line with semicolon glue");
+    assert!(Formatted.contains("[{(\n"), "Opening compound delimiter [{{( must sit on its own line");
+    assert!(Formatted.contains("\n)}];"), "Closing compound delimiter )}}] must sit on its own line with semicolon glue");
 }
 
 #[test]
@@ -76,8 +76,8 @@ fn Test_Control_Flow_If_Else()
     // Canvas breach forces expansion of both clauses
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("if (Condition)\n{"),"Opening brace must detach after if condition");
-    assert!(Formatted.contains("else\n{"),"Opening brace must detach after else");
+    assert!(Formatted.contains("if (Condition)\n{"), "Opening brace must detach after if condition");
+    assert!(Formatted.contains("else\n{"), "Opening brace must detach after else");
 }
 
 #[test]
@@ -88,7 +88,7 @@ fn Test_Monolith_If_Else_Statement()
     Config.Canvas_Width = 120;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert_eq!(Formatted.trim(),"if (Condition) { Statement1(); } else { Statement2(); }");
+    assert_eq!(Formatted.trim(), "if (Condition) { Statement1(); } else { Statement2(); }");
 }
 
 #[test]
@@ -174,7 +174,7 @@ fn Test_Cpp_Nested_Generics_Closer_Splitting()
     Config.Canvas_Width = 120;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert_eq!(Formatted.trim(),"std::vector<std::vector<int>> Matrix;");
+    assert_eq!(Formatted.trim(), "std::vector<std::vector<int>> Matrix;");
 }
 
 #[test]
@@ -196,7 +196,7 @@ fn Test_Blank_Line_Between_Top_Level_Functions()
     let Config = Config_Settings:: default();
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("}\n\nfn Second()"),"Top level functions must be separated by a blank line");
+    assert!(Formatted.contains("}\n\nfn Second()"), "Top level functions must be separated by a blank line");
 }
 
 #[test]
@@ -206,7 +206,7 @@ fn Test_Blank_Line_Between_Struct_And_Impl()
     let Config = Config_Settings:: default();
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("}\n\nimpl Point"),"Struct and impl must be separated by a blank line");
+    assert!(Formatted.contains("}\n\nimpl Point"), "Struct and impl must be separated by a blank line");
 }
 
 #[test]
@@ -217,7 +217,7 @@ fn Test_Blank_Line_Between_Methods_In_Impl()
     Config.Canvas_Width = 40;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("\n\n    fn GetY"),"Methods in an impl must be separated by a blank line");
+    assert!(Formatted.contains("\n\n    fn GetY"), "Methods in an impl must be separated by a blank line");
 }
 
 #[test]
@@ -227,7 +227,7 @@ fn Test_Blank_Line_After_Import_Block()
     let Config = Config_Settings:: default();
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("use std::fs;\n\nfn Main()"),"Import block must be followed by a blank line before code");
+    assert!(Formatted.contains("use std::fs;\n\nfn Main()"), "Import block must be followed by a blank line before code");
 }
 
 #[test]
@@ -237,7 +237,7 @@ fn Test_Blank_Lines_Clamped_To_Max_Blank_Lines()
     let Config = Config_Settings:: default();
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!( ! Formatted.contains("\n\n\n"),"Multiple blank lines must be clamped to at most one empty line");
+    assert!( ! Formatted.contains("\n\n\n"), "Multiple blank lines must be clamped to at most one empty line");
     assert!(Formatted.contains("}\n\nfn Beta()"));
 }
 
@@ -249,8 +249,8 @@ fn Test_CSharp_Null_Coalescing_Operator()
     Config.Language = Source_Language::CSharp;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("Person?.Name ?? \"Default\""),"Got: {}", Formatted);
-    assert!(Formatted.contains("Person ??= new Person()"),"Got: {}", Formatted);
+    assert!(Formatted.contains("Person?.Name ?? \"Default\""), "Got: {}", Formatted);
+    assert!(Formatted.contains("Person ??= new Person()"), "Got: {}", Formatted);
 }
 
 #[test]
@@ -261,7 +261,7 @@ fn Test_Rust_Chained_Try_Operator_Double_Question_Mark()
     Config.Language = Source_Language::Rust;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("Val??;"),"Rust try operators must not be merged as ?? binary operator, got: {}", Formatted);
+    assert!(Formatted.contains("Val??;"), "Rust try operators must not be merged as ?? binary operator, got: {}", Formatted);
 }
 
 #[test]
@@ -286,9 +286,9 @@ chrono = "0.4.45"
     let Config = Config_Settings:: default();
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("edition = \"2021\"\n\n[lib]"),"Monolith [lib] must not eat preceding blank line/newline, got: {}", Formatted);
-    assert!(Formatted.contains("path = \"src/lib.rs\"\n\n[[bin]]"),"Monolith [[bin]] must not eat preceding blank line/newline, got: {}", Formatted);
-    assert!(Formatted.contains("path = \"src/main.rs\"\n\n[dependencies]"),"Monolith [dependencies] must not eat preceding blank line/newline, got: {}", Formatted);
+    assert!(Formatted.contains("edition = \"2021\"\n\n[lib]"), "Monolith [lib] must not eat preceding blank line/newline, got: {}", Formatted);
+    assert!(Formatted.contains("path = \"src/lib.rs\"\n\n[[bin]]"), "Monolith [[bin]] must not eat preceding blank line/newline, got: {}", Formatted);
+    assert!(Formatted.contains("path = \"src/main.rs\"\n\n[dependencies]"), "Monolith [dependencies] must not eat preceding blank line/newline, got: {}", Formatted);
 }
 
 #[test]
@@ -309,7 +309,7 @@ fn Test_Standalone_Container_Preserves_Preceding_Newlines()
     Config.Language = Source_Language::Rust;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("let x = 1;\n\n[1, 2, 3];"),"Standalone array must preserve preceding blank line, got: {}", Formatted);
+    assert!(Formatted.contains("let x = 1;\n\n[1, 2, 3];"), "Standalone array must preserve preceding blank line, got: {}", Formatted);
 }
 
 #[test]
@@ -320,8 +320,8 @@ fn Test_Rust_Closure_Return_Type_Arrow_Spacing()
     Config.Language = Source_Language::Rust;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("|| -> anyhow::Result<Output>"),"Closure return type arrow must preserve spaces around ->, got: {}", Formatted);
-    assert!( ! Formatted.contains("||->"),"Closure return type arrow must never fuse into ||->, got: {}", Formatted);
+    assert!(Formatted.contains("|| -> anyhow::Result<Output>"), "Closure return type arrow must preserve spaces around ->, got: {}", Formatted);
+    assert!( ! Formatted.contains("||->"), "Closure return type arrow must never fuse into ||->, got: {}", Formatted);
 }
 
 #[test]
@@ -332,7 +332,7 @@ fn Test_Rust_Function_Return_Type_Arrow_Spacing()
     Config.Language = Source_Language::Rust;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("fn disabled() -> bool"),"Function return type arrow must preserve spaces around ->, got: {}", Formatted);
+    assert!(Formatted.contains("fn disabled() -> bool"), "Function return type arrow must preserve spaces around ->, got: {}", Formatted);
 }
 
 #[test]
@@ -356,8 +356,8 @@ fn Test_Rust_Raw_String_Delimiter_Alignment()
     Config.Language = Source_Language::Rust;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("        r#\"\n            #[macro_use]"),"Opening r#\" and content must be aligned, got:\n{}", Formatted);
-    assert!(Formatted.contains("        \"#,\n"),"Closing \"# must align on exact same column as r#\", got:\n{}", Formatted);
+    assert!(Formatted.contains("        r#\"\n            #[macro_use]"), "Opening r#\" and content must be aligned, got:\n{}", Formatted);
+    assert!(Formatted.contains("        \"#,\n"), "Closing \"# must align on exact same column as r#\", got:\n{}", Formatted);
 }
 
 #[test]
@@ -421,7 +421,7 @@ fn Test_C_Preprocessor_Macro_Allman_Style()
 
     // Verify Allman style formatting:
     // 1. do is detached from {
-    assert!(Formatted.contains("#define GetPKeyEC(obj, pkey) do \\\n{ \\"),"do and open brace must be detached into Allman style, got:\n{}", Formatted);
+    assert!(Formatted.contains("#define GetPKeyEC(obj, pkey) do \\\n{ \\"), "do and open brace must be detached into Allman style, got:\n{}", Formatted);
     // 2. if is detached from {
     assert!
     (
@@ -429,7 +429,7 @@ fn Test_C_Preprocessor_Macro_Allman_Style()
         "if and open brace must be detached into Allman style, got:\n{}", Formatted
     );
     // 3. closing brace of do while
-    assert!(Formatted.contains("} while (0)"),"Closing brace and while (0) must be present, got:\n{}", Formatted);
+    assert!(Formatted.contains("} while (0)"), "Closing brace and while (0) must be present, got:\n{}", Formatted);
 
     // 4. Verify idempotence
     let SecondPass = Source_Formatter::Format( & Formatted, & Config).expect("Second pass failed");

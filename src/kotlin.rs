@@ -125,10 +125,10 @@ impl Kotlin_Container
     pub fn IsSoleChildChain( & self) -> bool
     {
         let NonCommentChildren: Vec < & Kotlin_Syntax_Node > = self
-        .Children
-        .iter()
-        .filter( | Node | match Node { Kotlin_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Kotlin_Syntax_Node::Container(_) => true, })
-        .collect();
+       .Children
+       .iter()
+       .filter( | Node | match Node { Kotlin_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Kotlin_Syntax_Node::Container(_) => true, })
+       .collect();
 
         if NonCommentChildren.len() == 1 { matches ! (NonCommentChildren[0], Kotlin_Syntax_Node::Container(_)) }
         else { false }
@@ -137,10 +137,10 @@ impl Kotlin_Container
     pub fn GetSoleChildContainer( & self) -> Option< & Kotlin_Container>
     {
         let NonCommentChildren: Vec < & Kotlin_Syntax_Node > = self
-        .Children
-        .iter()
-        .filter( | Node | match Node { Kotlin_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Kotlin_Syntax_Node::Container(_) => true, })
-        .collect();
+       .Children
+       .iter()
+       .filter( | Node | match Node { Kotlin_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Kotlin_Syntax_Node::Container(_) => true, })
+       .collect();
 
         if NonCommentChildren.len() == 1 { if let Kotlin_Syntax_Node::Container(C) = NonCommentChildren[0] { return Some(C); } }
         None
@@ -311,42 +311,42 @@ impl <'a> Kotlin_Lexer<'a>
             if Ch == '('
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Paren),"(".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Paren), "(".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
             if Ch == ')'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Paren),")".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Paren), ")".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
             if Ch == '{'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace),"{".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace), "{".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
             if Ch == '}'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace),"}".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
             if Ch == '['
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Bracket),"[".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Bracket), "[".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
             if Ch == ']'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Bracket),"]".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Bracket), "]".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -376,7 +376,7 @@ impl <'a> Kotlin_Lexer<'a>
             {
                 self.Advance();
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Operator("?.".to_string()),"?.".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Operator("?.".to_string()), "?.".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -384,7 +384,7 @@ impl <'a> Kotlin_Lexer<'a>
             {
                 self.Advance();
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Operator("?:".to_string()),"?:".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Operator("?:".to_string()), "?:".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -392,7 +392,7 @@ impl <'a> Kotlin_Lexer<'a>
             {
                 self.Advance();
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Operator("!!".to_string()),"!!".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Operator("!!".to_string()), "!!".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -400,7 +400,7 @@ impl <'a> Kotlin_Lexer<'a>
             {
                 self.Advance();
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Operator("::".to_string()),"::".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Operator("::".to_string()), "::".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -411,7 +411,7 @@ impl <'a> Kotlin_Lexer<'a>
                     self.Advance();
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("..<".to_string()),"..<".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("..<".to_string()), "..<".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     continue;
                 }
@@ -419,7 +419,7 @@ impl <'a> Kotlin_Lexer<'a>
                 {
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("..".to_string()),"..".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("..".to_string()), "..".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     continue;
                 }
@@ -428,7 +428,7 @@ impl <'a> Kotlin_Lexer<'a>
             {
                 self.Advance();
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Operator("->".to_string()),"->".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Operator("->".to_string()), "->".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -439,13 +439,13 @@ impl <'a> Kotlin_Lexer<'a>
                     self.Advance();
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("===".to_string()),"===".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("===".to_string()), "===".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 }
                 else
                 {
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("==".to_string()),"==".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("==".to_string()), "==".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 }
                 PrecedingNewlines = 0;
                 continue;
@@ -457,13 +457,13 @@ impl <'a> Kotlin_Lexer<'a>
                     self.Advance();
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("!==".to_string()),"!== ".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("!==".to_string()), "!== ".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 }
                 else
                 {
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("!=".to_string()),"!=".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("!=".to_string()), "!=".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 }
                 PrecedingNewlines = 0;
                 continue;
@@ -472,7 +472,7 @@ impl <'a> Kotlin_Lexer<'a>
             {
                 self.Advance();
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Operator("<=".to_string()),"<=".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Operator("<=".to_string()), "<=".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -480,7 +480,7 @@ impl <'a> Kotlin_Lexer<'a>
             {
                 self.Advance();
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Operator(">=".to_string()),">=".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Operator(">=".to_string()), ">=".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -488,7 +488,7 @@ impl <'a> Kotlin_Lexer<'a>
             {
                 self.Advance();
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Operator("&&".to_string()),"&&".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Operator("&&".to_string()), "&&".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -496,7 +496,7 @@ impl <'a> Kotlin_Lexer<'a>
             {
                 self.Advance();
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Operator("||".to_string()),"||".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Operator("||".to_string()), "||".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -513,7 +513,7 @@ impl <'a> Kotlin_Lexer<'a>
             {
                 self.Advance();
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Operator("++".to_string()),"++".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Operator("++".to_string()), "++".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -521,7 +521,7 @@ impl <'a> Kotlin_Lexer<'a>
             {
                 self.Advance();
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Operator("--".to_string()),"--".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Operator("--".to_string()), "--".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -761,7 +761,7 @@ fn ResolveKotlinAngleBrackets(Tokens: & mut Vec<Token_Info>)
                 match & Tokens[I - 1].Kind
                 {
                     Token_Kind::Identifier(_) => true,
-                    Token_Kind::Keyword(K) => matches!(K.as_str(),"class" | "interface" | "fun" | "typealias" | "where" | "is" | "as" | "as?"),
+                    Token_Kind::Keyword(K) => matches!(K.as_str(), "class" | "interface" | "fun" | "typealias" | "where" | "is" | "as" | "as?"),
                     Token_Kind::Operator(Op) if Op == "::" => true,
                     _ => false,
                 }
@@ -778,7 +778,7 @@ fn ResolveKotlinAngleBrackets(Tokens: & mut Vec<Token_Info>)
                 {
                     if Tokens[J].Text == "<" { Depth += 1; }
                     else if Tokens[J].Text == ">" { Depth -= 1; if Depth == 0 { MatchIndex = Some(J); break ; } }
-                    else if matches!(Tokens[J].Text.as_str(),";" | "{" | "}") { break ; }
+                    else if matches!(Tokens[J].Text.as_str(), ";" | "{" | "}") { break ; }
                     J += 1;
                 }
 
@@ -787,7 +787,7 @@ fn ResolveKotlinAngleBrackets(Tokens: & mut Vec<Token_Info>)
                     let FollowValid = if M + 1 < Tokens.len()
                     {
                         let Next = & Tokens[M + 1];
-                        matches!(Next.Text.as_str(),"(" | ")" | "]" | "}" | ":" | ";" | "," | "." | "?" | "==" | "!=" | "[" | "{" | "::" | "->" | ">") || matches!(Next.Kind, Token_Kind::Identifier(_) | Token_Kind::Keyword(_))
+                        matches!(Next.Text.as_str(), "(" | ")" | "]" | "}" | ":" | ";" | "," | "." | "?" | "==" | "!=" | "[" | "{" | "::" | "->" | ">") || matches!(Next.Kind, Token_Kind::Identifier(_) | Token_Kind::Keyword(_))
                         || Next.Preceding_Newlines > 0
                     }
                     else { true };
@@ -900,14 +900,14 @@ impl Kotlin_Container_Builder
                 {
                     if T.Text == "init" { return Kotlin_Container_Role::Init_Block; }
                     if T.Text == "when" { return Kotlin_Container_Role::When_Body; }
-                    if matches!(T.Text.as_str(),"else" | "do" | "try" | "finally") { return Kotlin_Container_Role::Control_Structure_Body; }
-                    if matches!(T.Text.as_str(),"return" | "throw") { return Kotlin_Container_Role::Lambda_Literal; }
+                    if matches!(T.Text.as_str(), "else" | "do" | "try" | "finally") { return Kotlin_Container_Role::Control_Structure_Body; }
+                    if matches!(T.Text.as_str(), "return" | "throw") { return Kotlin_Container_Role::Lambda_Literal; }
                     if T.Text == ")"
                     {
                         let PreParen = self.FindKeywordBeforeMatchingParen();
                         if let Some(K) = PreParen
                         {
-                            if matches!(K.as_str(),"if" | "while" | "for" | "catch") { return Kotlin_Container_Role::Control_Structure_Body; }
+                            if matches!(K.as_str(), "if" | "while" | "for" | "catch") { return Kotlin_Container_Role::Control_Structure_Body; }
                             if K == "when" { return Kotlin_Container_Role::When_Body; }
                             if K == "get" || K == "set" { return Kotlin_Container_Role::Getter_Setter_Body; }
                         }
@@ -927,8 +927,8 @@ impl Kotlin_Container_Builder
             {
                 if let Some(T) = Prev1
                 {
-                    if matches!(T.Text.as_str(),"if" | "while" | "for" | "when" | "catch") { return Kotlin_Container_Role::Control_Condition; }
-                    if matches!(T.Text.as_str(),"val" | "var") { return Kotlin_Container_Role::Destructuring_Declaration; }
+                    if matches!(T.Text.as_str(), "if" | "while" | "for" | "when" | "catch") { return Kotlin_Container_Role::Control_Condition; }
+                    if matches!(T.Text.as_str(), "val" | "var") { return Kotlin_Container_Role::Destructuring_Declaration; }
                 }
 
                 if self.IsPrecededByFunDeclaration() { return Kotlin_Container_Role::Function_Parameters; }
@@ -964,7 +964,7 @@ impl Kotlin_Container_Builder
     fn CheckPrecededByReturnOrThrow( & self) -> bool
     {
         let PrevTokens = self.GetPreviousSignificantTokens(2);
-        if let Some(T) = PrevTokens.first() { matches ! (T.Text.as_str(),"return" | "throw") }
+        if let Some(T) = PrevTokens.first() { matches ! (T.Text.as_str(), "return" | "throw") }
         else { false }
     }
 
@@ -1015,8 +1015,8 @@ impl Kotlin_Container_Builder
         let PrevTokens = self.GetPreviousSignificantTokens(15);
         for T in & PrevTokens
         {
-            if matches!(T.Text.as_str(),"class" | "interface" | "object" | "enum") { return true; }
-            if matches!(T.Text.as_str(),";" | "{" | "}") { break ; }
+            if matches!(T.Text.as_str(), "class" | "interface" | "object" | "enum") { return true; }
+            if matches!(T.Text.as_str(), ";" | "{" | "}") { break ; }
         }
         false
     }
@@ -1024,14 +1024,14 @@ impl Kotlin_Container_Builder
     fn IsPrecededByClassDeclaration( & self) -> bool
     {
         let PrevTokens = self.GetPreviousSignificantTokens(10);
-        for T in & PrevTokens { if matches ! (T.Text.as_str(),"class" | "constructor") { return true; } if matches ! (T.Text.as_str(),";" | "{" | "}") { break ; } }
+        for T in & PrevTokens { if matches ! (T.Text.as_str(), "class" | "constructor") { return true; } if matches ! (T.Text.as_str(), ";" | "{" | "}") { break ; } }
         false
     }
 
     fn IsPrecededByFunDeclaration( & self) -> bool
     {
         let PrevTokens = self.GetPreviousSignificantTokens(20);
-        for T in & PrevTokens { if T.Text == "fun" { return true; } if matches ! (T.Text.as_str(),";" | "{" | "}") { break ; } }
+        for T in & PrevTokens { if T.Text == "fun" { return true; } if matches ! (T.Text.as_str(), ";" | "{" | "}") { break ; } }
         false
     }
 }
@@ -1167,7 +1167,7 @@ impl <'a> Kotlin_Emitter<'a>
                     // Check if followed by continuation keyword (else, catch, finally)
                     let NextContinuation = if Index + 1 < Total
                     {
-                        match & Nodes[Index + 1] { Kotlin_Syntax_Node::Token(T) if matches ! (T.Text.as_str(),"else" | "catch" | "finally") => { Some(T.Text.clone()) } _ => None, }
+                        match & Nodes[Index + 1] { Kotlin_Syntax_Node::Token(T) if matches ! (T.Text.as_str(), "else" | "catch" | "finally") => { Some(T.Text.clone()) } _ => None, }
                     }
                     else { None };
 
@@ -1175,7 +1175,7 @@ impl <'a> Kotlin_Emitter<'a>
                     {
                         match & Nodes[Index + 1]
                         {
-                            Kotlin_Syntax_Node::Token(T) => { matches ! (T.Text.as_str(),":" | "." | "?." | "::" | "," | ";") }
+                            Kotlin_Syntax_Node::Token(T) => { matches ! (T.Text.as_str(), ":" | "." | "?." | "::" | "," | ";") }
                             Kotlin_Syntax_Node::Container(NextC) => { NextC.Role == Kotlin_Container_Role::Trailing_Lambda && self.Style == Kotlin_Style::Official }
                         }
                     }
@@ -1247,7 +1247,7 @@ impl <'a> Kotlin_Emitter<'a>
         }
         else if let Token_Kind::Operator(Op) = & Token.Kind
         {
-            if matches!(Op.as_str(),"=" | "==" | "===" | "!=" | "!==" | "<=" | ">=" | "&&" | "||" | "+=" | "-=" | "*=" | "/=" | "%=" | "+" | "-" | "*" | "/" | "%" | "->" | "?:")
+            if matches!(Op.as_str(), "=" | "==" | "===" | "!=" | "!==" | "<=" | ">=" | "&&" | "||" | "+=" | "-=" | "*=" | "/=" | "%=" | "+" | "-" | "*" | "/" | "%" | "->" | "?:")
             {
                 self.EmitSpace();
             }
@@ -1349,7 +1349,7 @@ impl <'a> Kotlin_Emitter<'a>
                     && ! self.Output.ends_with('@')
                     && ! self.Output.ends_with('?') { self.EmitSpace(); }
                     self.EmitRaw( & T.Text);
-                    PrevNeedsSpace = ! matches!(T.Text.as_str(),"." | "?." | "::" | "(" | "[" | "!" | "~" | "@" | ".." | "..<" | "?");
+                    PrevNeedsSpace = ! matches!(T.Text.as_str(), "." | "?." | "::" | "(" | "[" | "!" | "~" | "@" | ".." | "..<" | "?");
                 }
                 Kotlin_Syntax_Node::Container(Sub) =>
                 {
@@ -1441,7 +1441,7 @@ impl <'a> Kotlin_Emitter<'a>
 
         match & Nodes[StartIdx]
         {
-            Kotlin_Syntax_Node::Token(T) => { if let Token_Kind::Keyword(ref K) = T.Kind { return matches ! (K.as_str(),"import" | "package"); } false }
+            Kotlin_Syntax_Node::Token(T) => { if let Token_Kind::Keyword(ref K) = T.Kind { return matches ! (K.as_str(), "import" | "package"); } false }
             _ => false,
         }
     }
@@ -1455,7 +1455,7 @@ impl <'a> Kotlin_Emitter<'a>
             {
                 Kotlin_Syntax_Node::Token(T) =>
                 {
-                    if let Token_Kind::Keyword(ref K) = T.Kind { if ! matches ! (K.as_str(),"import" | "package") { return true; } }
+                    if let Token_Kind::Keyword(ref K) = T.Kind { if ! matches ! (K.as_str(), "import" | "package") { return true; } }
                     else if ! T.IsTrivia() && ! T.IsComment() { return true; }
                 }
                 Kotlin_Syntax_Node::Container(_) => { return true; }
@@ -1466,7 +1466,7 @@ impl <'a> Kotlin_Emitter<'a>
     }
 }
 
-pub fn VerifyKotlinTokenEquivalence(OriginalSource: & str, FormattedSource: & str) -> Result<(), String>
+pub fn VerifyKotlinTokenEquivalence(OriginalSource: & str, FormattedSource: & str) -> Result < (), String >
 {
     let mut OriginalScanner = Kotlin_Lexer::New(OriginalSource);
     let OriginalTokens = OriginalScanner.TokenizeAll();
@@ -1475,16 +1475,16 @@ pub fn VerifyKotlinTokenEquivalence(OriginalSource: & str, FormattedSource: & st
     let FormattedTokens = FormattedScanner.TokenizeAll();
 
     let OrigSignificant: Vec < & str > = OriginalTokens
-    .iter()
-    .filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
-    .map( | T | T.Text.as_str())
-    .collect();
+   .iter()
+   .filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
+   .map( | T | T.Text.as_str())
+   .collect();
 
     let FormSignificant: Vec < & str > = FormattedTokens
-    .iter()
-    .filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
-    .map( | T | T.Text.as_str())
-    .collect();
+   .iter()
+   .filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
+   .map( | T | T.Text.as_str())
+   .collect();
 
     if OrigSignificant.len() != FormSignificant.len()
     {

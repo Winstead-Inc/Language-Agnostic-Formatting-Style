@@ -5,7 +5,7 @@ pub struct Safety_Verifier;
 
 impl Safety_Verifier
 {
-    pub fn VerifyTokenEquivalence(OriginalSource: & str, FormattedSource: & str, Language: Source_Language,) -> Result<(), String>
+    pub fn VerifyTokenEquivalence(OriginalSource: & str, FormattedSource: & str, Language: Source_Language,) -> Result < (), String >
     {
         let mut OriginalScanner = Lexer_Scanner::New(OriginalSource, Language);
         let OriginalTokens = OriginalScanner.TokenizeAll();
@@ -16,7 +16,7 @@ impl Safety_Verifier
         let OrigSignificant: Vec < & str > = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str()).collect();
 
         let FormSignificant: Vec < & str > = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
-        .map( | T | T.Text.as_str()).collect();
+       .map( | T | T.Text.as_str()).collect();
 
         if OrigSignificant.len() != FormSignificant.len()
         {
@@ -181,7 +181,7 @@ impl Safety_Verifier
             if I + 1 < Len
             {
                 let TwoChars = format!("{}{}", Ch, Chars[I + 1]);
-                if matches!(TwoChars.as_str(),"==" | "!=" | "<=" | ">=" | "->" | "&&" | "||" | "<<" | ">>" | "++" | "--" | "+=" | "-=" | "*=" | "/=")
+                if matches!(TwoChars.as_str(), "==" | "!=" | "<=" | ">=" | "->" | "&&" | "||" | "<<" | ">>" | "++" | "--" | "+=" | "-=" | "*=" | "/=")
                 {
                     Tokens.push(TwoChars);
                     I += 2;
@@ -197,7 +197,7 @@ impl Safety_Verifier
         Tokens
     }
 
-    pub fn VerifyIdempotence<F>(FormattedSource: & str, FormatFn: F) -> Result<(), String> where F: Fn( & str) -> String,
+    pub fn VerifyIdempotence<F>(FormattedSource: & str, FormatFn: F) -> Result < (), String > where F: Fn( & str) -> String,
     {
         let SecondPass = FormatFn(FormattedSource);
         if SecondPass != FormattedSource { return Err("Safety Gate Warning: Formatting is not idempotent on second pass!".to_string(),); }

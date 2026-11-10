@@ -21,7 +21,10 @@ impl Container_Node
     pub fn GetSoleChildContainer( & self) -> Option< & Container_Node>
     {
         if self.Children.len() == 1
-        { if let Syntax_Node::Container(ref C) = self.Children[0] { return Some(C); } }
+        {
+            if let Syntax_Node::Container(ref C) = self.Children[0]
+            { if C.Tail_Glue.is_empty() { return Some(C); } }
+        }
         None
     }
 

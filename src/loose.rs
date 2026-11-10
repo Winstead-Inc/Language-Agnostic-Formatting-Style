@@ -50,7 +50,7 @@ impl ObjectMemoryMap
     fn len( & self) -> usize { self.to_compat.len() }
 
     /// Write this map to an interface implementing `std::io::Write`.
-    fn write<W: Write>( & self, wrtr: W) -> io::Result<()>
+    fn write<W: Write>( & self, wrtr: W) -> io::Result < () >
     {
         const VERSION_NUMBER: u32 = 1;
         const NUM_OBJECT_FORMATS: u32 = 2;
@@ -315,9 +315,9 @@ impl <'a> MmapedObjectMap<'a>
 
     fn u64_at_offset(slice: & [u8], offset: usize) -> u64 { u64::from_be_bytes(slice[offset..offset + 8].try_into().unwrap()) }
 
-    fn verify_aligned(offset: usize) -> Result<(), MmapedParseError> { if (offset & 3) != 0 { return Err(MmapedParseError::UnalignedData); } Ok(()) }
+    fn verify_aligned(offset: usize) -> Result < (), MmapedParseError > { if (offset & 3) != 0 { return Err(MmapedParseError::UnalignedData); } Ok(()) }
 
-    fn verify_valid(slice: & [u8], offset: u64) -> Result<(), MmapedParseError> { if offset >= slice.len() as u64 { return Err(MmapedParseError::OffsetTooLarge); } Ok(()) }
+    fn verify_valid(slice: & [u8], offset: u64) -> Result < (), MmapedParseError > { if offset >= slice.len() as u64 { return Err(MmapedParseError::OffsetTooLarge); } Ok(()) }
 }
 
 /// A map for loose and other non-packed object IDs that maps between a storage and compatibility
@@ -354,7 +354,7 @@ impl ObjectMap
     pub fn batch_len( & self) -> Option<usize> { self.batch.as_ref().map( | b | b.len()) }
 
     /// If a batch exists, write it to the writer.
-    pub fn finish_batch<W: Write>( & mut self, w: W) -> io::Result<()> { if let Some(txn) = self.batch.take() { txn.write(w)?; } Ok(()) }
+    pub fn finish_batch<W: Write>( & mut self, w: W) -> io::Result < () > { if let Some(txn) = self.batch.take() { txn.write(w)?; } Ok(()) }
 
     /// If a batch exists, write it to the writer.
     pub fn abort_batch( & mut self) { self.batch = None; }
@@ -371,7 +371,7 @@ impl ObjectMap
     /// into the memory map.
     pub fn insert( & mut self, oid1: & ObjectID, oid2: & ObjectID, kind: MapType, write: bool)
     {
-        let (compat_oid, storage_oid) = if HashAlgorithm::from_u32(oid1.algo) == Some(self.mem.compat) { (oid1, oid2) } else { (oid2, oid1) };
+        let (compat_oid, storage_oid) = if HashAlgorithm::from_u32(oid1 .algo) == Some(self.mem.compat) { (oid1, oid2) } else { (oid2, oid1) };
         Self::insert_into( & mut self.mem, storage_oid, compat_oid, kind);
         if write { if let Some(ref mut batch) = self.batch { Self::insert_into(batch, storage_oid, compat_oid, kind); } }
     }
@@ -428,7 +428,7 @@ mod tests
             Ok(data.len())
         }
 
-        fn flush( & mut self) -> io::Result<()> { self.hasher.flush()?; self.curs.flush()?; Ok(()) }
+        fn flush( & mut self) -> io::Result < () > { self.hasher.flush()?; self.curs.flush()?; Ok(()) }
     }
 
     fn sha1_oid(b: & [u8]) -> ObjectID

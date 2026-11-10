@@ -52,7 +52,7 @@ impl Write for HashFile
         Ok(data.len())
     }
 
-    fn flush( & mut self) -> io::Result<()> { unsafe { c::hashflush(self.ptr) }; Ok(()) }
+    fn flush( & mut self) -> io::Result < () > { unsafe { c::hashflush(self.ptr) }; Ok(()) }
 }
 
 pub mod c

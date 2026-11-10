@@ -109,7 +109,7 @@ impl <'a> Shell_Lexer<'a>
                 self.Advance();
                 RawTokens.push
                 (
-                    Token_Info::NewWithIndent(Token_Kind::Operator("<<<".to_string()),"<<<".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
+                    Token_Info::NewWithIndent(Token_Kind::Operator("<<<".to_string()), "<<<".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
                 );
                 PrecedingNewlines = 0;
                 continue;
@@ -210,7 +210,7 @@ impl <'a> Shell_Lexer<'a>
                 self.Advance();
                 RawTokens.push
                 (
-                    Token_Info::NewWithIndent(Token_Kind::Open_Delim(Container_Kind::Brace),"{".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
+                    Token_Info::NewWithIndent(Token_Kind::Open_Delim(Container_Kind::Brace), "{".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
                 );
                 PrecedingNewlines = 0;
                 continue;
@@ -221,7 +221,7 @@ impl <'a> Shell_Lexer<'a>
                 self.Advance();
                 RawTokens.push
                 (
-                    Token_Info::NewWithIndent(Token_Kind::Close_Delim(Container_Kind::Brace),"}".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
+                    Token_Info::NewWithIndent(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
                 );
                 PrecedingNewlines = 0;
                 continue;
@@ -232,7 +232,7 @@ impl <'a> Shell_Lexer<'a>
                 self.Advance();
                 RawTokens.push
                 (
-                    Token_Info::NewWithIndent(Token_Kind::Open_Delim(Container_Kind::Paren),"(".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
+                    Token_Info::NewWithIndent(Token_Kind::Open_Delim(Container_Kind::Paren), "(".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
                 );
                 PrecedingNewlines = 0;
                 continue;
@@ -243,7 +243,7 @@ impl <'a> Shell_Lexer<'a>
                 self.Advance();
                 RawTokens.push
                 (
-                    Token_Info::NewWithIndent(Token_Kind::Close_Delim(Container_Kind::Paren),")".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
+                    Token_Info::NewWithIndent(Token_Kind::Close_Delim(Container_Kind::Paren), ")".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
                 );
                 PrecedingNewlines = 0;
                 continue;
@@ -303,7 +303,7 @@ impl <'a> Shell_Lexer<'a>
                 // '\n'
                 RawTokens.push
                 (
-                    Token_Info::NewWithIndent(Token_Kind::Operator("\\\n".to_string()),"\\\n".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
+                    Token_Info::NewWithIndent(Token_Kind::Operator("\\\n".to_string()), "\\\n".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent,)
                 );
                 PrecedingNewlines = 1;
                 AtLineStart = true;
@@ -542,7 +542,7 @@ impl Shell_Container
     pub fn IsSoleChildChain( & self) -> bool
     {
         let NonTrivia: Vec < & Shell_Syntax_Node > = self.Children.iter().filter( | Node | match Node { Shell_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Shell_Syntax_Node::Container(_) => true, })
-        .collect();
+       .collect();
 
         if NonTrivia.len() == 1 { matches ! (NonTrivia[0], Shell_Syntax_Node::Container(_)) } else { false }
     }
@@ -550,7 +550,7 @@ impl Shell_Container
     pub fn GetSoleChildContainer( & self) -> Option< & Shell_Container>
     {
         let NonTrivia: Vec < & Shell_Syntax_Node > = self.Children.iter().filter( | Node | match Node { Shell_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Shell_Syntax_Node::Container(_) => true, })
-        .collect();
+       .collect();
 
         if NonTrivia.len() == 1 { if let Shell_Syntax_Node::Container(C) = NonTrivia[0] { return Some(C); } }
         None
@@ -983,7 +983,7 @@ impl <'a> Shell_Emitter<'a>
     }
 }
 
-pub fn VerifyShellTokenEquivalence(OriginalSource: & str, FormattedSource: & str,) -> Result<(), String>
+pub fn VerifyShellTokenEquivalence(OriginalSource: & str, FormattedSource: & str,) -> Result < (), String >
 {
     let mut OriginalScanner = Shell_Lexer::New(OriginalSource);
     let OriginalTokens = OriginalScanner.TokenizeAll();
@@ -992,10 +992,10 @@ pub fn VerifyShellTokenEquivalence(OriginalSource: & str, FormattedSource: & str
     let FormattedTokens = FormattedScanner.TokenizeAll();
 
     let OrigSignificant: Vec < & str > = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
-    .collect();
+   .collect();
 
     let FormSignificant: Vec < & str > = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
-    .collect();
+   .collect();
 
     if OrigSignificant.len() != FormSignificant.len()
     {

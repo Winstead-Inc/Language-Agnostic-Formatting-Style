@@ -1,7 +1,7 @@
 <html>
 <body>
 <?php
-if ($user_logged_in) { echo"Welcome back"; } else { echo"Please log in"; }
+if ($user_logged_in) { echo "Welcome back"; } else { echo "Please log in"; }
 ?>
 <script>
 if (ready) { do_something(); }

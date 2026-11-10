@@ -12,7 +12,7 @@ fn Test_Shell_Monolith_Function()
     Config.Canvas_Width = 120;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert_eq!(Formatted.trim(),"format_one() { source_dir=\"$1\"; command=\"$2\"; }");
+    assert_eq!(Formatted.trim(), "format_one() { source_dir=\"$1\"; command=\"$2\"; }");
 }
 
 #[test]
@@ -56,7 +56,7 @@ fn Test_Shell_Subshell_Monolith()
     Config.Canvas_Width = 80;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert_eq!(Formatted.trim(),"(cd \"$target_dir\" && git status)");
+    assert_eq!(Formatted.trim(), "(cd \"$target_dir\" && git status)");
 }
 
 #[test]

@@ -50,12 +50,12 @@ impl ObjectID
     /// If the algorithm set internally is not valid, this function panics.
     pub fn algo( & self) -> Result<HashAlgorithm, InvalidHashAlgorithm> { HashAlgorithm::from_u32(self.algo).ok_or(InvalidHashAlgorithm(self.algo)) }
 
-    pub fn as_slice( & self) -> Result< & [u8], InvalidHashAlgorithm>
+    pub fn as_slice( & self) -> Result < & [u8], InvalidHashAlgorithm >
     {
         match HashAlgorithm::from_u32(self.algo) { Some(algo) => Ok( & self.hash[0..algo.raw_len()]), None => Err(InvalidHashAlgorithm(self.algo)), }
     }
 
-    pub fn as_mut_slice( & mut self) -> Result< & mut [u8], InvalidHashAlgorithm>
+    pub fn as_mut_slice( & mut self) -> Result < & mut [u8], InvalidHashAlgorithm >
     {
         match HashAlgorithm::from_u32(self.algo) { Some(algo) => Ok( & mut self.hash[0..algo.raw_len()]), None => Err(InvalidHashAlgorithm(self.algo)), }
     }
@@ -162,7 +162,7 @@ impl Write for CryptoHasher
 {
     fn write( & mut self, data: & [u8]) -> io::Result<usize> { self.update(data); Ok(data.len()) }
 
-    fn flush( & mut self) -> io::Result<()> { Ok(()) }
+    fn flush( & mut self) -> io::Result < () > { Ok(()) }
 }
 /// A hash algorithm,
 #[repr(C)]
@@ -270,24 +270,24 @@ mod tests
 
    #[test] fn slices_have_correct_length()
     {
-        for algo in all_algos() { for oid in[algo.null_oid(), algo.empty_blob(), algo.empty_tree()] { assert_eq ! (oid.as_slice().unwrap().len(), algo.raw_len()); } }
+        for algo in all_algos() { for oid in [algo.null_oid(), algo.empty_blob(), algo.empty_tree()] { assert_eq ! (oid.as_slice().unwrap().len(), algo.raw_len()); } }
     }
 
    #[test] fn object_ids_format_correctly()
     {
         let entries = &
         [
-            (HashAlgorithm::SHA1.null_oid(),"0000000000000000000000000000000000000000", "0000000000000000000000000000000000000000:sha1",),
-            (HashAlgorithm::SHA1.empty_blob(),"e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391:sha1",),
-            (HashAlgorithm::SHA1.empty_tree(),"4b825dc642cb6eb9a060e54bf8d69288fbee4904", "4b825dc642cb6eb9a060e54bf8d69288fbee4904:sha1",),
+            (HashAlgorithm::SHA1 .null_oid(), "0000000000000000000000000000000000000000", "0000000000000000000000000000000000000000:sha1",),
+            (HashAlgorithm::SHA1 .empty_blob(), "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391:sha1",),
+            (HashAlgorithm::SHA1 .empty_tree(), "4b825dc642cb6eb9a060e54bf8d69288fbee4904", "4b825dc642cb6eb9a060e54bf8d69288fbee4904:sha1",),
             (
-                HashAlgorithm::SHA256.null_oid(), "0000000000000000000000000000000000000000000000000000000000000000", "0000000000000000000000000000000000000000000000000000000000000000:sha256",
+                HashAlgorithm::SHA256 .null_oid(), "0000000000000000000000000000000000000000000000000000000000000000", "0000000000000000000000000000000000000000000000000000000000000000:sha256",
             ),
             (
-                HashAlgorithm::SHA256.empty_blob(), "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813", "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813:sha256",
+                HashAlgorithm::SHA256 .empty_blob(), "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813", "473a0f4c3be8a93681a267e3b1e9a7dcda1185436fe141f7749120a303721813:sha256",
             ),
             (
-                HashAlgorithm::SHA256.empty_tree(), "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321", "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321:sha256",
+                HashAlgorithm::SHA256 .empty_tree(), "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321", "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321:sha256",
             ),
         ];
         for (oid, display, debug) in entries { assert_eq ! (format ! ("{}", oid), * display); assert_eq ! (format ! ("{:?}", oid), * debug); }
@@ -307,12 +307,12 @@ mod tests
                 h.update( & data[2..]);
 
                 let h2 = h.clone();
-                let h3 = h2.clone();
+                let h3 = h2 .clone();
 
                 let actual_oid = h.into_oid();
                 assert_eq!( ** oid, actual_oid);
 
-                let v = h2.into_vec();
+                let v = h2 .into_vec();
                 assert_eq!(( * oid).as_slice().unwrap(), & v);
 
                 let mut h = algo.hasher();

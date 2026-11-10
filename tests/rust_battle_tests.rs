@@ -39,7 +39,7 @@ fn Test_Rust_Cargo_Source_Tree_Battle()
                                 match Source_Formatter::Format( & Pass1, Config)
                                 {
                                     Ok(Pass2) =>
-                                    { if Pass1 != Pass2 { Errors.push(format ! ("{}: Not idempotent! (Pass1 len: {}, Pass2 len: {})", P.display(), Pass1.len(), Pass2.len())); } }
+                                    { if Pass1 != Pass2 { Errors.push(format ! ("{}: Not idempotent! (Pass1 len: {}, Pass2 len: {})", P.display(), Pass1 .len(), Pass2 .len())); } }
                                     Err(E) =>
                                     { Errors.push(format ! ("{}: Pass 2 failed: {}", P.display(), E)); }
                                 }
@@ -80,8 +80,8 @@ where
     Config.Language = Source_Language::Rust;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("<'a, 'b: 'a, T>"),"Lifetimes must be preserved");
-    assert!(Formatted.contains("for < 'c >"),"HRTB lifetime must be preserved");
+    assert!(Formatted.contains("<'a, 'b: 'a, T>"), "Lifetimes must be preserved");
+    assert!(Formatted.contains("for < 'c >"), "HRTB lifetime must be preserved");
 
     let SecondPass = Source_Formatter::Format( & Formatted, & Config).expect("Second pass failed");
     assert_eq!(Formatted, SecondPass, "Must be idempotent");
@@ -101,8 +101,8 @@ fn Test_Rust_Turbofish_And_Generics()
     Config.Language = Source_Language::Rust;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("collect::<Result<Vec<Option<HashMap<String, Vec<u8>>>>, MyError>>()"),"Turbofish must not be broken");
-    assert!(Formatted.contains("flags >> 2"),"Right shift operator must be preserved");
+    assert!(Formatted.contains("collect::<Result<Vec<Option<HashMap<String, Vec<u8>>>>, MyError>>()"), "Turbofish must not be broken");
+    assert!(Formatted.contains("flags >> 2"), "Right shift operator must be preserved");
 
     let SecondPass = Source_Formatter::Format( & Formatted, & Config).expect("Second pass failed");
     assert_eq!(Formatted, SecondPass, "Must be idempotent");

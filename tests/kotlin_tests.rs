@@ -12,7 +12,7 @@ fn Test_Kotlin_Monolith_Function()
     Config.Canvas_Width = 120;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert_eq!(Formatted.trim(),"fun Add(A: Int, B: Int): Int { return A + B; }");
+    assert_eq!(Formatted.trim(), "fun Add(A: Int, B: Int): Int { return A + B; }");
 }
 
 #[test]
@@ -50,8 +50,8 @@ fn Test_Kotlin_V1_Function_Parameters_Multiline_Detached()
     Config.Canvas_Width = 40;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("fun ExecuteLongTask\n(\n"),"In Version 1, multiline parameters detach '(' onto its own line.\nGot:\n{}", Formatted);
-    assert!(Formatted.contains("): Boolean\n{\n"),"Closing paren must be followed by ': Boolean' and detached body brace.\nGot:\n{}", Formatted);
+    assert!(Formatted.contains("fun ExecuteLongTask\n(\n"), "In Version 1, multiline parameters detach '(' onto its own line.\nGot:\n{}", Formatted);
+    assert!(Formatted.contains("): Boolean\n{\n"), "Closing paren must be followed by ': Boolean' and detached body brace.\nGot:\n{}", Formatted);
 }
 
 #[test]
@@ -90,7 +90,7 @@ fn Test_Kotlin_V1_Call_Arguments_Detached()
     Config.Canvas_Width = 30;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("CalculateTask\n(\n"),"In Version 1, call parentheses must detach onto their own line.\nGot:\n{}", Formatted);
+    assert!(Formatted.contains("CalculateTask\n(\n"), "In Version 1, call parentheses must detach onto their own line.\nGot:\n{}", Formatted);
 }
 
 #[test]
@@ -113,7 +113,7 @@ fn Test_Kotlin_V2_Trailing_Lambda_Hugs()
         "In Version 2 (Official Kotlin), trailing lambda must hug the call on the same line (Column-Anchored Hybrid).\nGot:\n{}",
         Formatted
     );
-    assert!(Formatted.contains("\n}\n") || Formatted.contains("\n};"),"Closing brace must align correctly");
+    assert!(Formatted.contains("\n}\n") || Formatted.contains("\n};"), "Closing brace must align correctly");
 }
 
 #[test]
@@ -154,7 +154,7 @@ fn Test_Kotlin_V2_Call_Arguments_Hugs()
     Config.Canvas_Width = 30;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("CalculateTask(\n"),"In Version 2, call arguments must hug the callee on the same line.\nGot:\n{}", Formatted);
+    assert!(Formatted.contains("CalculateTask(\n"), "In Version 2, call arguments must hug the callee on the same line.\nGot:\n{}", Formatted);
 }
 
 #[test]
@@ -173,8 +173,8 @@ fn Test_Kotlin_V2_Function_And_Class_Detached_Braces()
     Config.Canvas_Width = 40;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("class UserService(val Repo: Repository)\n{\n"),"Class body must have detached brace in Version 2.\nGot:\n{}", Formatted);
-    assert!(Formatted.contains("fun FindUser(Id: Int): User?\n    {\n"),"Function body must have detached brace in Version 2.\nGot:\n{}", Formatted);
+    assert!(Formatted.contains("class UserService(val Repo: Repository)\n{\n"), "Class body must have detached brace in Version 2.\nGot:\n{}", Formatted);
+    assert!(Formatted.contains("fun FindUser(Id: Int): User?\n    {\n"), "Function body must have detached brace in Version 2.\nGot:\n{}", Formatted);
 }
 
 #[test]
@@ -191,7 +191,7 @@ fn Test_Kotlin_V2_Indexing_Hugs()
     Config.Canvas_Width = 25;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("Matrix[\n"),"In Version 2, indexing bracket must hug the expression.\nGot:\n{}", Formatted);
+    assert!(Formatted.contains("Matrix[\n"), "In Version 2, indexing bracket must hug the expression.\nGot:\n{}", Formatted);
 }
 
 #[test]

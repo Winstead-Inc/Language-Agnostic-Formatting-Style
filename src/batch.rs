@@ -381,7 +381,7 @@ impl <'a> Batch_Emitter<'a>
     { for _ in 0..Count { self.Output.push(' '); } }
 }
 
-pub fn VerifyBatchTokenEquivalence(OriginalSource: & str, FormattedSource: & str) -> Result<(), String>
+pub fn VerifyBatchTokenEquivalence(OriginalSource: & str, FormattedSource: & str) -> Result < (), String >
 {
     let OrigTokens = ExtractBatchSignificantTokens(OriginalSource);
     let FormTokens = ExtractBatchSignificantTokens(FormattedSource);
@@ -438,7 +438,7 @@ fn ExtractBatchSignificantTokens(Source: & str) -> Vec<String>
             // Check for "rem" followed by space/tab/eol, or "::"
             let Remaining: String = Chars[I..std::cmp::min(I + 4, Len)].iter().collect();
             let Lower4 = Remaining.to_ascii_lowercase();
-            let IsRem = Lower4.starts_with("rem ") || Lower4.starts_with("rem\t") || Lower4.starts_with("rem\r") || Lower4.starts_with("rem\n") || Lower4 == "rem";
+            let IsRem = Lower4 .starts_with("rem ") || Lower4 .starts_with("rem\t") || Lower4 .starts_with("rem\r") || Lower4 .starts_with("rem\n") || Lower4 == "rem";
             let IsColonColon = Remaining.starts_with("::");
 
             if IsRem || IsColonColon

@@ -39,8 +39,15 @@ impl <'a> Lexer_Scanner<'a>
             // 3. Preprocessor Directive
             if Ch == '#' && (PrecedingNewlines > 0 || RawTokens.is_empty())
             {
-                if self.Language.SupportsPreprocessor()
-                || (self.Line == 1 && self.PeekAhead(1) == Some('!') && self.PeekAhead(2) != Some('['))
+                let IsShebang = self.Line == 1 && self.PeekAhead(1) == Some('!') &&
+                {
+                    let mut Offset = 2;
+                    while let Some(C) = self.PeekAhead(Offset)
+                    { if C.is_whitespace() { Offset += 1; } else { break ; } }
+                    self.PeekAhead(Offset) != Some('[')
+                };
+
+                if self.Language.SupportsPreprocessor() || IsShebang
                 {
                     let DirectiveText = self.ScanPreprocessor();
                     RawTokens.push(Token_Info::New(Token_Kind::Preprocessor(DirectiveText.clone()), DirectiveText, StartLine, StartCol, PrecedingNewlines,));
@@ -173,7 +180,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '('
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Paren),"(".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Paren), "(".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -181,7 +188,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == ')'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Paren),")".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Paren), ")".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -189,7 +196,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '{'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace),"{".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Brace), "{".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -197,7 +204,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '}'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace),"}".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -205,7 +212,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == '['
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Bracket),"[".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Open_Delim(Container_Kind::Bracket), "[".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -213,7 +220,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch == ']'
             {
                 self.Advance();
-                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Bracket),"]".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                RawTokens.push(Token_Info::New(Token_Kind::Close_Delim(Container_Kind::Bracket), "]".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -321,7 +328,7 @@ impl <'a> Lexer_Scanner<'a>
                 {
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("::".to_string()),"::".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("::".to_string()), "::".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     continue;
                 }
@@ -332,7 +339,7 @@ impl <'a> Lexer_Scanner<'a>
                         self.Advance();
                         self.Advance();
                         self.Advance();
-                        RawTokens.push(Token_Info::New(Token_Kind::Operator("...".to_string()),"...".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                        RawTokens.push(Token_Info::New(Token_Kind::Operator("...".to_string()), "...".to_string(), StartLine, StartCol, PrecedingNewlines,));
                         PrecedingNewlines = 0;
                         continue;
                     }
@@ -341,13 +348,13 @@ impl <'a> Lexer_Scanner<'a>
                         self.Advance();
                         self.Advance();
                         self.Advance();
-                        RawTokens.push(Token_Info::New(Token_Kind::Operator("..=".to_string()),"..=".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                        RawTokens.push(Token_Info::New(Token_Kind::Operator("..=".to_string()), "..=".to_string(), StartLine, StartCol, PrecedingNewlines,));
                         PrecedingNewlines = 0;
                         continue;
                     }
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("..".to_string()),"..".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("..".to_string()), "..".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     continue;
                 }
@@ -355,7 +362,7 @@ impl <'a> Lexer_Scanner<'a>
                 {
                     self.Advance();
                     self.Advance();
-                    RawTokens.push(Token_Info::New(Token_Kind::Operator("?.".to_string()),"?.".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("?.".to_string()), "?.".to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     continue;
                 }
@@ -363,7 +370,7 @@ impl <'a> Lexer_Scanner<'a>
                 {
                     self.Advance();
                     self.Advance();
-                    let OpStr = if self.Peek() == Some('=') { self.Advance();"??=" }
+                    let OpStr = if self.Peek() == Some('=') { self.Advance(); "??=" }
                     else { "??" };
                     RawTokens.push(Token_Info::New(Token_Kind::Operator(OpStr.to_string()), OpStr.to_string(), StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
@@ -682,11 +689,12 @@ impl <'a> Lexer_Scanner<'a>
             '<' =>
             {
                 if Next == Some('<')
-                { if Next2 == Some('=') { self.Advance(); self.Advance();"<<=".to_string() } else { self.Advance();"<<".to_string() } }
+                { if Next2 == Some('=') { self.Advance(); self.Advance(); "<<=".to_string() } else { self.Advance(); "<<".to_string() } }
                 else if Next == Some('=')
-                { if Next2 == Some('>') { self.Advance(); self.Advance();"<=>".to_string() } else { self.Advance();"<=".to_string() } }
-                else if Next == Some('-') { self.Advance();"<-".to_string() }
-                else if Next == Some('>') { self.Advance();"<>".to_string() }
+                { if Next2 == Some('>') { self.Advance(); self.Advance(); "<=>".to_string() } else { self.Advance(); "<=".to_string() } }
+                else if Next == Some('-') { self.Advance(); "<-".to_string() }
+                else if Next == Some('>') && self.Language == Source_Language::Php
+                { self.Advance(); "<>".to_string() }
                 else { "<".to_string() }
             }
             '>' =>
@@ -695,70 +703,70 @@ impl <'a> Lexer_Scanner<'a>
                 {
                     if Next2 == Some('>') && (self.Language.IsJavaScriptOrTypeScript())
                     {
-                        if self.PeekAhead(2) == Some('=') { self.Advance(); self.Advance(); self.Advance();">>>=".to_string() }
-                        else { self.Advance(); self.Advance();">>>".to_string() }
+                        if self.PeekAhead(2) == Some('=') { self.Advance(); self.Advance(); self.Advance(); ">>>=".to_string() }
+                        else { self.Advance(); self.Advance(); ">>>".to_string() }
                     }
-                    else if Next2 == Some('=') { self.Advance(); self.Advance();">>=".to_string() }
-                    else { self.Advance();">>".to_string() }
+                    else if Next2 == Some('=') { self.Advance(); self.Advance(); ">>=".to_string() }
+                    else { self.Advance(); ">>".to_string() }
                 }
-                else if Next == Some('=') { self.Advance();">=".to_string() }
+                else if Next == Some('=') { self.Advance(); ">=".to_string() }
                 else { ">".to_string() }
             }
             '=' =>
             {
                 if Next == Some('=')
-                { if Next2 == Some('=') { self.Advance(); self.Advance();"===".to_string() } else { self.Advance();"==".to_string() } }
-                else if Next == Some('>') { self.Advance();"=>".to_string() }
+                { if Next2 == Some('=') { self.Advance(); self.Advance(); "===".to_string() } else { self.Advance(); "==".to_string() } }
+                else if Next == Some('>') { self.Advance(); "=>".to_string() }
                 else { "=".to_string() }
             }
             '!' =>
             {
                 if Next == Some('=')
-                { if Next2 == Some('=') { self.Advance(); self.Advance();"!==".to_string() } else { self.Advance();"!=".to_string() } }
+                { if Next2 == Some('=') { self.Advance(); self.Advance(); "!==".to_string() } else { self.Advance(); "!=".to_string() } }
                 else { "!".to_string() }
             }
             '&' =>
             {
                 if Next == Some('&')
-                { if Next2 == Some('=') { self.Advance(); self.Advance();"&&=".to_string() } else { self.Advance();"&&".to_string() } }
-                else if Next == Some('=') { self.Advance();"&=".to_string() }
+                { if Next2 == Some('=') { self.Advance(); self.Advance(); "&&=".to_string() } else { self.Advance(); "&&".to_string() } }
+                else if Next == Some('=') { self.Advance(); "&=".to_string() }
                 else { "&".to_string() }
             }
             '|' =>
             {
                 if Next == Some('|')
-                { if Next2 == Some('=') { self.Advance(); self.Advance();"||=".to_string() } else { self.Advance();"||".to_string() } }
-                else if Next == Some('=') { self.Advance();"|=".to_string() }
+                { if Next2 == Some('=') { self.Advance(); self.Advance(); "||=".to_string() } else { self.Advance(); "||".to_string() } }
+                else if Next == Some('=') { self.Advance(); "|=".to_string() }
                 else { "|".to_string() }
             }
             '+' =>
             {
-                if Next == Some('+') { self.Advance();"++".to_string() }
-                else if Next == Some('=') { self.Advance();"+=".to_string() }
+                if Next == Some('+') { self.Advance(); "++".to_string() }
+                else if Next == Some('=') { self.Advance(); "+=".to_string() }
                 else { "+".to_string() }
             }
             '-' =>
             {
-                if Next == Some('-') { self.Advance();"--".to_string() }
-                else if Next == Some('=') { self.Advance();"-=".to_string() }
-                else if Next == Some('>') { self.Advance();"->".to_string() }
+                if Next == Some('-') { self.Advance(); "--".to_string() }
+                else if Next == Some('=') { self.Advance(); "-=".to_string() }
+                else if Next == Some('>') { self.Advance(); "->".to_string() }
                 else { "-".to_string() }
             }
             '*' =>
             {
                 if Next == Some('*')
-                { if Next2 == Some('=') { self.Advance(); self.Advance();"**=".to_string() } else { self.Advance();"**".to_string() } }
-                else if Next == Some('=') { self.Advance();"*=".to_string() }
+                { if Next2 == Some('=') { self.Advance(); self.Advance(); "**=".to_string() } else { self.Advance(); "**".to_string() } }
+                else if Next == Some('=') { self.Advance(); "*=".to_string() }
                 else { "*".to_string() }
             }
             '/' =>
-            { if Next == Some('=') { self.Advance();"/=".to_string() } else { "/".to_string() } }
+            { if Next == Some('=') { self.Advance(); "/=".to_string() } else { "/".to_string() } }
             '%' =>
-            { if Next == Some('=') { self.Advance();"%=".to_string() } else { "%".to_string() } }
+            { if Next == Some('=') { self.Advance(); "%=".to_string() } else { "%".to_string() } }
             '^' =>
             {
-                if Next == Some('^') && Next2 == Some('=') { self.Advance(); self.Advance();"^^=".to_string() }
-                else if Next == Some('=') { self.Advance();"^=".to_string() }
+                if Next == Some('^') && Next2 == Some('=') { self.Advance(); self.Advance(); "^^=".to_string() }
+                else if Next == Some('=') { self.Advance(); "^=".to_string() }
                 else { "^".to_string() }
             }
             '~' => "~".to_string(),
@@ -771,7 +779,7 @@ fn IsKeyword(Text: & str) -> bool
 {
     matches!
     (
-        Text, "if" | "else" | "while" | "for" | "do" | "switch" | "case" | "default" | "return" | "break" | "continue" | "goto" | "class" | "struct" | "union" | "enum" | "namespace" | "template" | "typename" | "public" | "private" | "protected" | "internal" | "virtual" | "override" | "static" | "const" | "constexpr" | "try" | "catch" | "finally" | "throw" | "new" | "delete" | "typedef" | "using" | "auto" | "var" | "void" | "int" | "bool" | "char" | "float" | "double" | "long" | "short" | "signed" | "unsigned" | "sizeof" | "decltype" | "interface" | "record" | "async" | "await" | "get" | "set" | "init" | "where" | "impl" | "fn" | "trait" | "match" | "loop" | "mod" | "let" | "pub" | "mut" | "use" | "type" | "as" | "ref" | "extern"
+        Text, "if" | "else" | "while" | "for" | "do" | "switch" | "case" | "default" | "return" | "break" | "continue" | "goto" | "class" | "struct" | "union" | "enum" | "namespace" | "template" | "typename" | "public" | "private" | "protected" | "internal" | "virtual" | "override" | "static" | "const" | "constexpr" | "try" | "catch" | "finally" | "throw" | "new" | "delete" | "typedef" | "using" | "auto" | "var" | "void" | "int" | "bool" | "char" | "float" | "double" | "long" | "short" | "signed" | "unsigned" | "sizeof" | "decltype" | "interface" | "record" | "async" | "await" | "get" | "set" | "init" | "where" | "impl" | "fn" | "trait" | "match" | "loop" | "mod" | "let" | "pub" | "mut" | "use" | "type" | "as" | "ref" | "extern" | "in" | "dyn"
     )
 }
 
@@ -787,7 +795,7 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>)
             {
                 match & Tokens[I - 1].Kind
                 {
-                    Token_Kind::Identifier(_) => true, Token_Kind::Keyword(K) => matches!(K.as_str(),"template" | "typename" | "class" | "struct" | "interface" | "new" | "where" | "using" | "impl" | "fn" | "trait" | "enum" | "type"),
+                    Token_Kind::Identifier(_) => true, Token_Kind::Keyword(K) => matches!(K.as_str(), "template" | "typename" | "class" | "struct" | "interface" | "new" | "where" | "using" | "impl" | "fn" | "trait" | "enum" | "type"),
                     Token_Kind::Operator(Op) if Op == "::" => true, _ => false,
                 }
             }
@@ -813,15 +821,20 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>)
                         Tokens[J].Text = ">".to_string();
                         for Offset in 1..Count
                         {
-                            Tokens.insert(J + Offset, Token_Info::New(Token_Kind::Operator(">".to_string()),">".to_string(), Tok.Line, Tok.Column + Offset, 0));
+                            Tokens.insert(J + Offset, Token_Info::New(Token_Kind::Operator(">".to_string()), ">".to_string(), Tok.Line, Tok.Column + Offset, 0));
                         }
                         Depth -= 1;
                         if Depth == 0 { MatchIndex = Some(J); break ; }
                     }
-                    else if matches!(Tokens[J].Text.as_str(),";" | "{" | "}")
+                    else if matches!(Tokens[J].Text.as_str(), ";" | "{" | "}" | "||" | "&&" | "=")
                     {
                         break;
-                        // statement boundary aborts
+                        // statement / expression boundary aborts
+                    }
+                    else if Tokens[J].Text == ")" || Tokens[J].Text == "]"
+                    {
+                        break;
+                        // unmatched closing delimiter aborts angle bracket scan
                     }
                     J += 1;
                 }
@@ -832,7 +845,7 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>)
                     let FollowValid = if M + 1 < Tokens.len()
                     {
                         let Next = & Tokens[M + 1];
-                        matches!(Next.Text.as_str(),"(" | ")" | "]" | "}" | ":" | ";" | "," | "." | "?" | "==" | "!=" | "[" | "{" | "::" | "&" | "*" | "->" | ">")
+                        matches!(Next.Text.as_str(), "(" | ")" | "]" | "}" | ":" | ";" | "," | "." | "?" | "==" | "!=" | "[" | "{" | "::" | "&" | "*" | "->" | ">")
                         || matches!(Next.Kind, Token_Kind::Identifier(_) | Token_Kind::Keyword(_)) || Next.Preceding_Newlines > 0
                     }
                     else { true };

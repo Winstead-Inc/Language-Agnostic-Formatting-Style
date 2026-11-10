@@ -134,7 +134,7 @@ impl <'a> Code_Emitter<'a>
                     // Check if followed by continuation keyword (else, catch, finally, while)
                     let NextContinuation = if Index + 1 < Total
                     {
-                        match & Nodes[Index + 1] { Syntax_Node::Token(T) if matches ! (T.Text.as_str(),"else" | "catch" | "finally" | "while") => { Some(T.Text.clone()) } _ => None, }
+                        match & Nodes[Index + 1] { Syntax_Node::Token(T) if matches ! (T.Text.as_str(), "else" | "catch" | "finally" | "while") => { Some(T.Text.clone()) } _ => None, }
                     }
                     else { None };
 
@@ -238,7 +238,7 @@ impl <'a> Code_Emitter<'a>
                 if let Token_Kind::Preprocessor(ref Text) = T.Kind { return Text.starts_with("#include"); }
                 if let Token_Kind::Keyword(ref K) = T.Kind
                 {
-                    if matches!(K.as_str(),"use" | "using" | "import") { return true; }
+                    if matches!(K.as_str(), "use" | "using" | "import") { return true; }
                     if K == "extern" && StartIdx + 1 < Nodes.len() { if let Syntax_Node::Token(NextT) = & Nodes[StartIdx + 1] { return NextT.Text == "crate"; } }
                 }
                 false
@@ -310,14 +310,14 @@ impl <'a> Code_Emitter<'a>
                     if T.Text == "=" { HasEquals = true; }
                     if let Token_Kind::Keyword(ref K) = T.Kind
                     {
-                        if matches!(K.as_str(),"if" | "else" | "while" | "for" | "loop" | "match" | "switch" | "catch" | "finally" | "do" | "try" | "with" | "synchronized" | "lock")
+                        if matches!(K.as_str(), "if" | "else" | "while" | "for" | "loop" | "match" | "switch" | "catch" | "finally" | "do" | "try" | "with" | "synchronized" | "lock")
                         {
                             return false;
                         }
 
-                        if matches!(K.as_str(),"use" | "using" | "import") { return false; }
+                        if matches!(K.as_str(), "use" | "using" | "import") { return false; }
 
-                        if matches!(K.as_str(),"fn" | "func" | "function" | "def" | "struct" | "class" | "enum" | "trait" | "impl" | "interface" | "mod" | "namespace")
+                        if matches!(K.as_str(), "fn" | "func" | "function" | "def" | "struct" | "class" | "enum" | "trait" | "impl" | "interface" | "mod" | "namespace")
                         {
                             return true;
                         }
@@ -386,7 +386,23 @@ impl <'a> Code_Emitter<'a>
                 }
                 else { self.EmitRaw(":"); self.EmitSpace(); }
             }
-            Token_Kind::Punctuation('.') => { self.EmitRaw("."); }
+            Token_Kind::Punctuation('.') =>
+            {
+                if self.Output.ends_with(' ')
+                {
+                    let Trimmed = self.Output.trim_end();
+                    if ! Trimmed.ends_with( | c: char | c.is_ascii_digit()) && ! Trimmed.ends_with('.')
+                    {
+                        self.Output.pop();
+                        self.Current_Line_Len -= 1;
+                    }
+                }
+                else if self.Output.ends_with('.')
+                { self.EmitSpace(); }
+                else if self.Config.Language == Source_Language::Rust && self.Output.ends_with( | c: char | c.is_ascii_digit())
+                { self.EmitSpace(); }
+                self.EmitRaw(".");
+            }
             Token_Kind::Operator(Op) =>
             {
                 let IsArrowReturnType = Op == "->" &&
@@ -417,9 +433,12 @@ impl <'a> Code_Emitter<'a>
                 {
                     if (Op == ".." || Op == "..=" || Op == "..." || Op == "#") && self.Output.ends_with(' ')
                     {
-                        self.Output.pop();
-                        self.Current_Line_Len -= 1;
+                        let Trimmed = self.Output.trim_end();
+                        if ! Trimmed.ends_with('.')
+                        { self.Output.pop(); self.Current_Line_Len -= 1; }
                     }
+                    if (Op == ".." || Op == "..=" || Op == "...") && self.Output.ends_with('.')
+                    { self.EmitSpace(); }
                     self.EmitRaw(Op);
                 }
                 else { self.EmitSpace(); self.EmitRaw(Op); self.EmitSpace(); }
@@ -430,7 +449,7 @@ impl <'a> Code_Emitter<'a>
                 self.EmitRaw(K);
                 if matches!
                 (
-                    K.as_str(), "if" | "while" | "for" | "switch" | "catch" | "return" | "class" | "struct" | "enum" | "namespace" | "using" | "new" | "case" | "throw" | "public" | "private" | "protected" | "static" | "virtual" | "override" | "const" | "impl" | "fn" | "trait" | "match" | "loop" | "mod" | "let" | "pub" | "mut" | "use" | "extern"
+                    K.as_str(), "if" | "while" | "for" | "switch" | "catch" | "return" | "class" | "struct" | "enum" | "namespace" | "using" | "new" | "case" | "throw" | "public" | "private" | "protected" | "static" | "virtual" | "override" | "const" | "impl" | "fn" | "trait" | "match" | "loop" | "mod" | "let" | "pub" | "mut" | "use" | "extern" | "in"
                 )
                 { self.EmitSpace(); }
             }
@@ -456,6 +475,15 @@ impl <'a> Code_Emitter<'a>
                 }
                 let Realigned = Self::RealignMultilineString(Text, self.Current_Line_Len);
                 self.EmitRaw( & Realigned);
+            }
+            Token_Kind::Char_Lit(Text) =>
+            {
+                if self.Line_Has_Content && self.Current_Line_Len > 0 && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n') && ! self.Output.ends_with('.')
+                && ! self.Output.ends_with("->") && ! self.Output.ends_with("::") && ! self.Output.ends_with('(') && ! self.Output.ends_with('[')
+                {
+                    self.EmitSpace();
+                }
+                self.EmitRaw(Text);
             }
             _ => { self.EmitRaw( & Token.Text); }
         }
@@ -551,7 +579,19 @@ impl <'a> Code_Emitter<'a>
                     else if T.Text == "," { self.EmitRaw(","); self.EmitSpace(); }
                     else if T.Text == "."
                     {
-                        if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
+                        if self.Output.ends_with(' ')
+                        {
+                            let Trimmed = self.Output.trim_end();
+                            if ! Trimmed.ends_with( | c: char | c.is_ascii_digit()) && ! Trimmed.ends_with('.')
+                            {
+                                self.Output.pop();
+                                self.Current_Line_Len -= 1;
+                            }
+                        }
+                        else if self.Output.ends_with('.')
+                        { self.EmitSpace(); }
+                        else if self.Config.Language == Source_Language::Rust && self.Output.ends_with( | c: char | c.is_ascii_digit())
+                        { self.EmitSpace(); }
                         self.EmitRaw(".");
                     }
                     else if T.Text == ":"
@@ -596,7 +636,14 @@ impl <'a> Code_Emitter<'a>
                     {
                         if Op == ".." || Op == "..=" || Op == "..." || Op == "#"
                         {
-                            if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; }
+                            if self.Output.ends_with(' ')
+                            {
+                                let Trimmed = self.Output.trim_end();
+                                if ! Trimmed.ends_with('.')
+                                { self.Output.pop(); self.Current_Line_Len -= 1; }
+                            }
+                            if (Op == ".." || Op == "..=" || Op == "...") && self.Output.ends_with('.')
+                            { self.EmitSpace(); }
                             self.EmitRaw( & T.Text);
                         }
                         else { self.EmitSpace(); self.EmitRaw( & T.Text); self.EmitSpace(); }
@@ -606,7 +653,13 @@ impl <'a> Code_Emitter<'a>
                         let NeedSpace = if self.Output.ends_with('(') || self.Output.ends_with('[') || self.Output.ends_with('<') || self.Output.ends_with('{') || self.Output.ends_with(' ')
                         || self.Output.ends_with("::") || self.Output.ends_with("->") || self.Output.ends_with('.')
                         || self.Output.ends_with("..=") || self.Output.ends_with("..") { false }
-                        else { matches ! (T.Kind, Token_Kind::Keyword(_) | Token_Kind::Identifier(_) | Token_Kind::Number(_)) };
+                        else
+                        {
+                            matches!
+                            (
+                                T.Kind, Token_Kind::Keyword(_) | Token_Kind::Identifier(_) | Token_Kind::Number(_) | Token_Kind::String_Lit(_) | Token_Kind::Char_Lit(_)
+                            )
+                        };
 
                         if NeedSpace { self.EmitSpace(); }
                         self.EmitRaw( & T.Text);
@@ -692,7 +745,7 @@ impl <'a> Code_Emitter<'a>
         if RawLines.len() < 2 { return Text.to_string(); }
 
         let Line0 = RawLines[0].trim_end_matches('\r');
-        let Line0Trimmed = Line0.trim();
+        let Line0Trimmed = Line0 .trim();
         let LastLine = RawLines[RawLines.len() - 1].trim_end_matches('\r');
         let LastTrimmed = LastLine.trim();
 

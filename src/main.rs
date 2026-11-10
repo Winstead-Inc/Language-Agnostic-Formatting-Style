@@ -501,7 +501,7 @@ fn PromptConfirmation(Logger: & Terminal_Logger, Count: usize, TargetDesc: & str
     Logger.Print( & format ! ("Found {} files in '{}'. Apply LAFS formatting and save in-place? [Y/N]: ", Count, TargetDesc));
 
     let mut Input = String:: new ();
-    if io::stdin().read_line( & mut Input).is_ok() { let Trimmed = Input.trim().to_lowercase(); matches ! (Trimmed.as_str(),"y" | "yes") } else { false }
+    if io::stdin().read_line( & mut Input).is_ok() { let Trimmed = Input.trim().to_lowercase(); matches ! (Trimmed.as_str(), "y" | "yes") } else { false }
 }
 
 fn Main()
@@ -534,7 +534,7 @@ fn Main()
             if io::stdin().read_line( & mut Input).is_ok()
             {
                 let Trimmed = Input.trim().to_lowercase();
-                if matches!(Trimmed.as_str(),"y" | "yes") { FormatAll = true; AutoYes = true; RawTargets.push(".".to_string()); }
+                if matches!(Trimmed.as_str(), "y" | "yes") { FormatAll = true; AutoYes = true; RawTargets.push(".".to_string()); }
                 else { Logger.Set_Disable_Logs(true); PrintUsage( & Logger); return ; }
             }
             else { Logger.Set_Disable_Logs(true); PrintUsage( & Logger); return ; }
@@ -567,7 +567,7 @@ fn Main()
                 while I + 1 < Args.len() && ! Args[I + 1].starts_with('-')
                 {
                     let NextArg = & Args[I + 1];
-                    if matches!(NextArg.as_str(),"format" | "apply" | "run" | "failed" | "all" | "check") { break ; }
+                    if matches!(NextArg.as_str(), "format" | "apply" | "run" | "failed" | "all" | "check") { break ; }
                     I += 1;
                     for Part in Args[I].split(',')
                     {
@@ -807,7 +807,7 @@ fn Main()
             if io::stdin().read_line( & mut Input).is_ok()
             {
                 let Trimmed = Input.trim().to_lowercase();
-                if matches!(Trimmed.as_str(),"y" | "yes") { FormatAll = true; AutoYes = true; RawTargets.push(".".to_string()); }
+                if matches!(Trimmed.as_str(), "y" | "yes") { FormatAll = true; AutoYes = true; RawTargets.push(".".to_string()); }
                 else { Logger.Set_Disable_Logs(true); PrintUsage( & Logger); return ; }
             }
             else { Logger.Set_Disable_Logs(true); PrintUsage( & Logger); return ; }
@@ -1047,7 +1047,7 @@ fn Main()
                         {
                             Logger.Println( & format ! ("Requires formatting: {}", FilePathStr));
                             ErrorCount.fetch_add(1, Ordering::Relaxed);
-                            let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(),"Requires formatting");
+                            let Entry = FormatFailedEntry(FilePathStr, Source_Language::FromExtension(FilePathStr).ShortName(), "Requires formatting");
                             AppendFailedEntry( & Entry, & OutputFailedPath);
                             FailedPaths.lock().unwrap().push(Entry);
                         }
@@ -1280,7 +1280,7 @@ mod Tests
 
    #[test] fn Test_Directory_Exclusion()
     {
-        let CustomExcludes = vec!["vendor".to_string(),"build*".to_string(),"cache".to_string(),];
+        let CustomExcludes = vec!["vendor".to_string(), "build*".to_string(), "cache".to_string(),];
         // Default exclusions
         assert!(IsDirExcluded(".git", Path::new (".git"), & CustomExcludes));
         assert!(IsDirExcluded("target", Path::new ("target"), & CustomExcludes));
@@ -1299,7 +1299,7 @@ mod Tests
    #[test] fn Test_File_Exclusion_Patterns()
     {
         let EmptyExts: Vec < String > = Vec:: new ();
-        let CustomExcludes = vec!["*.min.js".to_string(),"generated_*".to_string(),"secret.key".to_string(),];
+        let CustomExcludes = vec!["*.min.js".to_string(), "generated_*".to_string(), "secret.key".to_string(),];
 
         assert!( ! IsFileEligible(Path::new ("bundle.min.js"), true, & EmptyExts, & CustomExcludes));
         assert!( ! IsFileEligible(Path::new ("generated_code.c"), true, & EmptyExts, & CustomExcludes));
@@ -1312,7 +1312,7 @@ mod Tests
    #[test] fn Test_Allowed_Extension_Filter()
     {
         let EmptyExcludes: Vec < String > = Vec:: new ();
-        let AllowedC = vec!["c".to_string(),"h".to_string()];
+        let AllowedC = vec!["c".to_string(), "h".to_string()];
         let AllowedSh = vec!["sh".to_string()];
 
         assert!(IsFileEligible(Path::new ("main.c"), false, & AllowedC, & EmptyExcludes));
@@ -1328,14 +1328,14 @@ mod Tests
 
    #[test] fn Test_Matches_Specified_File()
     {
-        assert!(MatchesSpecifiedFile(Path::new ("examples/sample.c"),"examples/sample.c"));
-        assert!(MatchesSpecifiedFile(Path::new ("examples\\sample.c"),"examples/sample.c"));
-        assert!(MatchesSpecifiedFile(Path::new ("examples/sample.c"),"sample.c"));
-        assert!(MatchesSpecifiedFile(Path::new ("src/main.rs"),"main.rs"));
-        assert!(MatchesSpecifiedFile(Path::new ("examples/sample.c"),"*.c"));
-        assert!(MatchesSpecifiedFile(Path::new ("examples/sample.cpp"),"*.cpp"));
-        assert!( ! MatchesSpecifiedFile(Path::new ("examples/sample.cpp"),"sample.c"));
-        assert!( ! MatchesSpecifiedFile(Path::new ("src/main.rs"),"lexer.rs"));
+        assert!(MatchesSpecifiedFile(Path::new ("examples/sample.c"), "examples/sample.c"));
+        assert!(MatchesSpecifiedFile(Path::new ("examples\\sample.c"), "examples/sample.c"));
+        assert!(MatchesSpecifiedFile(Path::new ("examples/sample.c"), "sample.c"));
+        assert!(MatchesSpecifiedFile(Path::new ("src/main.rs"), "main.rs"));
+        assert!(MatchesSpecifiedFile(Path::new ("examples/sample.c"), "*.c"));
+        assert!(MatchesSpecifiedFile(Path::new ("examples/sample.cpp"), "*.cpp"));
+        assert!( ! MatchesSpecifiedFile(Path::new ("examples/sample.cpp"), "sample.c"));
+        assert!( ! MatchesSpecifiedFile(Path::new ("src/main.rs"), "lexer.rs"));
     }
 
    #[test] fn Test_Specified_File_Eligibility()
@@ -1366,14 +1366,14 @@ mod Tests
     fn Test_Matches_Specified_Target()
     {
         // Trailing slash (shallow): matches direct child only
-        assert!(MatchesSpecifiedTarget(Path::new ("scratch/test.js"),"scratch/"));
-        assert!(MatchesSpecifiedTarget(Path::new ("scratch\\test.js"),"scratch\\"));
-        assert!( ! MatchesSpecifiedTarget(Path::new ("scratch/nested/test.js"),"scratch/"));
-        assert!( ! MatchesSpecifiedTarget(Path::new ("scratch\\nested\\test.js"),"scratch\\"));
+        assert!(MatchesSpecifiedTarget(Path::new ("scratch/test.js"), "scratch/"));
+        assert!(MatchesSpecifiedTarget(Path::new ("scratch\\test.js"), "scratch\\"));
+        assert!( ! MatchesSpecifiedTarget(Path::new ("scratch/nested/test.js"), "scratch/"));
+        assert!( ! MatchesSpecifiedTarget(Path::new ("scratch\\nested\\test.js"), "scratch\\"));
 
         // Direct file matching
-        assert!(MatchesSpecifiedTarget(Path::new ("src/main.rs"),"main.rs"));
-        assert!(MatchesSpecifiedTarget(Path::new ("src/main.rs"),"src/main.rs"));
+        assert!(MatchesSpecifiedTarget(Path::new ("src/main.rs"), "main.rs"));
+        assert!(MatchesSpecifiedTarget(Path::new ("src/main.rs"), "src/main.rs"));
     }
 
    #[test]
@@ -1421,6 +1421,6 @@ mod Tests
     fn Test_Default_Failed_Log_Path()
     {
         let PathStr = GetDefaultFailedLogPath();
-        assert!(PathStr.ends_with("failed.txt"),"Default failed log path must end with failed.txt");
+        assert!(PathStr.ends_with("failed.txt"), "Default failed log path must end with failed.txt");
     }
 }

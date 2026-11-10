@@ -12,7 +12,7 @@ fn Test_JS_Monolith_Function()
     Config.Canvas_Width = 120;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert_eq!(Formatted.trim(),"function Add(A, B) { return A + B; }");
+    assert_eq!(Formatted.trim(), "function Add(A, B) { return A + B; }");
 }
 
 #[test]
@@ -63,8 +63,8 @@ fn Test_JS_ASI_Column_Anchored_Hybrid_On_Return()
     Config.Canvas_Width = 40;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("return {\n"),"Opening brace after return must remain on the return line (Column-Anchored Hybrid)");
-    assert!(Formatted.contains("\n    };\n"),"Closing brace must align with the return statement baseline");
+    assert!(Formatted.contains("return {\n"), "Opening brace after return must remain on the return line (Column-Anchored Hybrid)");
+    assert!(Formatted.contains("\n    };\n"), "Closing brace must align with the return statement baseline");
 }
 
 #[test]
@@ -194,8 +194,8 @@ fn Test_JS_Nullish_Coalescing_Operator()
     Config.Language = Source_Language::JavaScript;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("A ?? B"),"Formatter should keep ?? intact without whitespace, got: {}", Formatted);
-    assert!(Formatted.contains("X ??= Y"),"Formatter should keep ??= intact without whitespace, got: {}", Formatted);
+    assert!(Formatted.contains("A ?? B"), "Formatter should keep ?? intact without whitespace, got: {}", Formatted);
+    assert!(Formatted.contains("X ??= Y"), "Formatter should keep ??= intact without whitespace, got: {}", Formatted);
 }
 
 #[test]
@@ -206,7 +206,7 @@ fn Test_JS_Nullish_Coalescing_With_Optional_Chaining()
     Config.Language = Source_Language::JavaScript;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("User?.Profile?.Name ?? \"Guest\""),"Got: {}", Formatted);
+    assert!(Formatted.contains("User?.Profile?.Name ?? \"Guest\""), "Got: {}", Formatted);
 }
 
 #[test]
@@ -217,7 +217,7 @@ fn Test_JS_Nullish_Coalescing_Chained_And_Ternary()
     Config.Language = Source_Language::JavaScript;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("A ?? B ?? C"),"Got: {}", Formatted);
+    assert!(Formatted.contains("A ?? B ?? C"), "Got: {}", Formatted);
 }
 
 #[test]
@@ -243,6 +243,6 @@ fn Test_JS_One_Liner_If_Parenthesis_Monolith()
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("if (index.indexOf(queries[0]) == - 1)"),"Expected monolithic if paren, got:\n{}", Formatted);
-    assert!(Formatted.contains("if (!index.match(regexps[i]) && !longIndex.match(regexps[i]))"),"Expected monolithic if paren, got:\n{}", Formatted);
+    assert!(Formatted.contains("if (index.indexOf(queries[0]) == - 1)"), "Expected monolithic if paren, got:\n{}", Formatted);
+    assert!(Formatted.contains("if (!index.match(regexps[i]) && !longIndex.match(regexps[i]))"), "Expected monolithic if paren, got:\n{}", Formatted);
 }
