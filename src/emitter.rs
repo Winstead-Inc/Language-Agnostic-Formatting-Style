@@ -64,10 +64,7 @@ impl <'a> Code_Emitter<'a>
             self.Line_Has_Content = self.Current_Line_Len > 0;
         }
         else
-        {
-            self.Current_Line_Len += Text.len();
-            self.Line_Has_Content = true;
-        }
+        { self.Current_Line_Len += Text.len(); self.Line_Has_Content = true; }
     }
 
     fn EmitSpace( & mut self)
