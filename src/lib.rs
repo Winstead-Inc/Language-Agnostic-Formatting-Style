@@ -11,6 +11,7 @@ pub mod verifier;
 
 // Re-export language modules and formatters for clean top-level API and backward compatibility
 pub use languages::batch;
+pub use languages::dart;
 pub use languages::go;
 pub use languages::js_ts;
 pub use languages::kotlin;
@@ -18,6 +19,7 @@ pub use languages::polyglot;
 pub use languages::shell;
 
 pub use languages::batch::Batch_Formatter;
+pub use languages::dart::Dart_Formatter;
 pub use languages::go::Go_Formatter;
 pub use languages::js_ts::JS_TS_Formatter;
 pub use languages::kotlin::Kotlin_Formatter;

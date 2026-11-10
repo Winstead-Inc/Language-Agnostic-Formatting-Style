@@ -18,6 +18,8 @@ impl Source_Formatter
 
         if Config.Language.IsKotlin() { return crate::languages::kotlin::Kotlin_Formatter::Format(Source, Config); }
 
+        if Config.Language.IsDart() { return crate::languages::dart::Dart_Formatter::Format(Source, Config); }
+
         if Config.Language.IsBatch() { return crate::languages::batch::Batch_Formatter::Format(Source, Config); }
 
         if matches!(Config.Language, crate::types::Source_Language::Html | crate::types::Source_Language::Php)
