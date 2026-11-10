@@ -471,10 +471,17 @@ impl <'a> Code_Emitter<'a>
     {
         if self.Config.Language.IsCargoLock() && (Container.Kind == Container_Kind::Bracket || Container.Kind == Container_Kind::Brace) && IsPrecededByEquals
         {
-            match Layout
+            let HasNonTrivia = Container.Children.iter().any(|C| match C {
+                Syntax_Node::Token(T) => !T.IsTrivia(),
+                Syntax_Node::Container(_) => true,
+            });
+            if HasNonTrivia
             {
-                Layout_State::Monolith => { self.EmitMonolith(Container, Level); }
-                Layout_State::Grouped | Layout_State::Expanded => { self.EmitCargoLockColumnAnchoredHybrid(Container, Level); }
+                self.EmitCargoLockColumnAnchoredHybrid(Container, Level);
+            }
+            else
+            {
+                self.EmitMonolith(Container, Level);
             }
             return ;
         }
@@ -518,7 +525,11 @@ impl <'a> Code_Emitter<'a>
             }
         }
 
-        if self.Line_Has_Content { self.WriteNewline(); }
+        if self.Line_Has_Content
+        {
+            if ! self.Output.ends_with(',') { self.EmitRaw(","); }
+            self.WriteNewline();
+        }
 
         let CloseIndent = " ".repeat(OpenCol);
         self.EmitRaw( & CloseIndent);

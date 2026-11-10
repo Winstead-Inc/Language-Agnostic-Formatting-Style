@@ -259,7 +259,7 @@ std = []
 }
 
 #[test]
-fn Test_Cargo_Lock_Pure_Monolith()
+fn Test_Cargo_Lock_Enforces_Column_Anchored_Hybrid_Over_Monolith()
 {
     let Input = r#"version = 4
 
@@ -273,26 +273,33 @@ dependencies = [
 [[package]]
 name = "other"
 version = "0.2.0"
+empty = []
 dependencies = [
     "find-msvc-tools",
     "shlex",
 ]
 "#;
-    let mut Config = Config_Settings:: default();
+    let mut Config = Config_Settings::default();
     Config.Language = Source_Language::CargoLock;
     Config.Canvas_Width = 160;
 
-    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting Cargo.lock failed");
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting Cargo.lock failed");
 
-    // Pure monoliths for short dependency arrays
-    assert!(Formatted.contains("dependencies = [\"chrono\",]"),"Short dependency array must be a Pure Monolith, got:\n{}", Formatted);
-    assert!(Formatted.contains("dependencies = [\"find-msvc-tools\", \"shlex\",]"),"Multiple dependency array must be a Pure Monolith, got:\n{}", Formatted);
+    // Must enforce Column-Anchored Hybrid even when short enough for monolith
+    let ExpectedChrono = format!("dependencies = [\n{:19}\"chrono\",\n{:15}]\n", "", "");
+    assert!(Formatted.contains(&ExpectedChrono), "Non-empty dependencies must be Column-Anchored Hybrid, got:\n{}", Formatted);
+
+    let ExpectedTools = format!("dependencies = [\n{:19}\"find-msvc-tools\",\n{:19}\"shlex\",\n{:15}]\n", "", "", "");
+    assert!(Formatted.contains(&ExpectedTools), "Multiple dependencies must be Column-Anchored Hybrid, got:\n{}", Formatted);
+
+    // Empty array remains monolith
+    assert!(Formatted.contains("empty = []"), "Empty array must remain Monolith, got:\n{}", Formatted);
 
     // Must NOT contain detached Allman
-    assert!( ! Formatted.contains("dependencies =\n["),"Cargo.lock must NEVER have detached [ after =, got:\n{}", Formatted);
+    assert!(!Formatted.contains("dependencies =\n["), "Cargo.lock must NEVER have detached [ after =, got:\n{}", Formatted);
 
     // Verify idempotence
-    let SecondPass = Source_Formatter::Format( & Formatted, & Config).expect("Second pass failed");
+    let SecondPass = Source_Formatter::Format(&Formatted, &Config).expect("Second pass failed");
     assert_eq!(Formatted, SecondPass, "Formatting must be idempotent");
 }
 
