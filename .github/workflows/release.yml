@@ -28,7 +28,6 @@ jobs:
       - name: Prepare Release Asset
         shell: pwsh
         run: |
-          Copy-Item "target/release/Language-Agnostic-Formatting-Style.exe" "Language-Agnostic Formatting Style.exe"
           Copy-Item "target/release/Language-Agnostic-Formatting-Style.exe" "LAFS.exe"
 
       - name: Publish Tagged Release
@@ -38,10 +37,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create $env:GITHUB_REF_NAME `
-            --title "$env:GITHUB_REF_NAME - Language-Agnostic Formatting Style (LAFS)" `
+            --title "$env:GITHUB_REF_NAME - LAFS" `
             --generate-notes `
             --latest `
-            "Language-Agnostic Formatting Style.exe" `
             "LAFS.exe"
 
       - name: Publish Main Branch Release
@@ -52,8 +50,7 @@ jobs:
         run: |
           $ReleaseTag = "v0.1.$env:GITHUB_RUN_NUMBER"
           gh release create $ReleaseTag `
-            --title "Release $ReleaseTag - Language-Agnostic Formatting Style (LAFS)" `
+            --title "Release $ReleaseTag - LAFS" `
             --notes "Continuous build from commit $env:GITHUB_SHA." `
             --latest `
-            "Language-Agnostic Formatting Style.exe" `
             "LAFS.exe"

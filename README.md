@@ -55,12 +55,11 @@ LAFS treats code containers (`()`, `{}`, `[]`, `<>`) as structural rooms whose b
 ## Build & Installation
 
 ```powershell
-cd "b:\Language-Agnostic Formatting Style"
 cargo build --release
 ```
 
 The compiled binary will be located at:
-`b:\Language-Agnostic Formatting Style\target\release\LAFS.exe`
+`target/release/LAFS.exe`
 
 ---
 
@@ -104,25 +103,6 @@ A custom, LAFS-compliant release binary of `cargo.exe` has been compiled and int
   - Works seamlessly with **`rust-analyzer`** in background language server diagnostics.
   - Works across all command shells (**PowerShell**, **CMD**, **Bash**, **Git Bash**).
   - Survives subprocess calls, build scripts, and Git hooks.
-
-### Toolchain File Paths
-
-| Component                         | Path                                                                                              |
-| :-------------------------------- | :------------------------------------------------------------------------------------------------ |
-| **Active Toolchain Binary** | `C:\Users\0.USS-OPPENHEIMER\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\cargo.exe`     |
-| **Stock Cargo Backup**      | `C:\Users\0.USS-OPPENHEIMER\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\cargo.exe.bak` |
-| **Cargo Source Repository** | `b:\cargo\`                                                                                     |
-| **Compiled Release Binary** | `b:\cargo\target\release\cargo.exe`                                                             |
-
-### Rebuilding & Updating the Toolchain
-
-If you update or pull new Cargo features in `b:\cargo\`, recompile and re-deploy using:
-
-```powershell
-cd b:\cargo
-cargo build --release --bin cargo
-Copy-Item "target\release\cargo.exe" "$HOME\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\cargo.exe" -Force
-```
 
 ---
 
