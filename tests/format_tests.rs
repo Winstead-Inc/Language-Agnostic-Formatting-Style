@@ -435,3 +435,21 @@ fn Test_C_Preprocessor_Macro_Allman_Style()
     let SecondPass = Source_Formatter::Format( & Formatted, & Config).expect("Second pass failed");
     assert_eq!(Formatted, SecondPass, "Formatting must be idempotent");
 }
+
+#[test]
+fn Test_Raw_String_With_Non_Ascii_Unicode_Characters()
+{
+    // Test that non-ASCII Unicode characters (such as \u{85} NEL, emojis, Cyrillic)
+    // preceding C# and C++ raw string literals do not panic due to char/byte index mismatch.
+    let Input = "string x = \"\u{85}\u{85}🦀🚀\";\nstring Raw = \"\"\"Hello \"\" World\"\"\";\n";
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::CSharp;
+
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed for C# raw string with non-ASCII chars");
+    assert!(Formatted.contains("\"\"\"Hello \"\" World\"\"\""));
+
+    let CppInput = "const char* s = \"\u{85}🌍\";\nconst char* r = R\"delim(content)delim\";\n";
+    Config.Language = Source_Language::Cpp;
+    let FormattedCpp = Source_Formatter::Format(CppInput, & Config).expect("Formatting failed for C++ raw string with non-ASCII chars");
+    assert!(FormattedCpp.contains("R\"delim(content)delim\""));
+}
