@@ -1,14 +1,10 @@
-#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] mod batch;
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
 mod container_tree;
 mod emitter;
 mod formatter;
-mod go;
-mod js_ts;
-mod kotlin;
+mod languages;
 mod lexer;
 mod planner;
-mod polyglot;
-mod shell;
 mod types;
 mod verifier;
 
