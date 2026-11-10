@@ -1,7 +1,7 @@
 #![allow(
 non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Source_Language { C, Cpp, CSharp, JavaScript, TypeScript, Shell, Go, Php, Html, Css, Rust, Kotlin, KotlinOfficial, Batch, Generic, }
+pub enum Source_Language { C, Cpp, CSharp, JavaScript, TypeScript, Shell, Go, Php, Html, Css, Rust, Kotlin, KotlinOfficial, Batch, Toml, CargoLock, Generic, }
 
 impl Source_Language
 {
@@ -22,6 +22,8 @@ impl Source_Language
         if Lower.ends_with(".css") { return Source_Language::Css; }
         if Lower.ends_with(".kt") || Lower.ends_with(".kts") { return Source_Language::Kotlin; }
         if Lower.ends_with(".bat") || Lower.ends_with(".cmd") { return Source_Language::Batch; }
+        if Lower.ends_with("cargo.lock") || Lower.ends_with(".lock") || Lower == "lock" { return Source_Language::CargoLock; }
+        if Lower.ends_with(".toml") || Lower == "toml" { return Source_Language::Toml; }
         Source_Language::Generic
     }
 
@@ -46,6 +48,10 @@ impl Source_Language
 
     pub fn IsBatch( & self) -> bool { matches ! (self, Source_Language::Batch) }
 
+    pub fn IsToml( & self) -> bool { matches ! (self, Source_Language::Toml | Source_Language::CargoLock) }
+
+    pub fn IsCargoLock( & self) -> bool { matches ! (self, Source_Language::CargoLock) }
+
     pub fn DefaultExtensions( & self) -> & 'static[ & 'static str]
     {
         match self
@@ -55,6 +61,8 @@ impl Source_Language
             Source_Language::Go => & ["go"], Source_Language::Php => & ["php"], Source_Language::Html => & ["html", "htm"], Source_Language::Css => & ["css"], Source_Language::Rust => & ["rs"],
             Source_Language::Kotlin | Source_Language::KotlinOfficial => & ["kt", "kts"],
             Source_Language::Batch => & ["bat", "cmd"],
+            Source_Language::Toml => & ["toml"],
+            Source_Language::CargoLock => & ["lock"],
             Source_Language::Generic => & [],
         }
     }
@@ -63,7 +71,7 @@ impl Source_Language
     {
         match self
         {
-            Source_Language::C => "c", Source_Language::Cpp => "cpp", Source_Language::CSharp => "cs", Source_Language::JavaScript => "js", Source_Language::TypeScript => "ts", Source_Language::Shell => "sh", Source_Language::Go => "go", Source_Language::Php => "php", Source_Language::Html => "html", Source_Language::Css => "css", Source_Language::Rust => "rs", Source_Language::Kotlin => "kt", Source_Language::KotlinOfficial => "kt-official", Source_Language::Batch => "bat", Source_Language::Generic => "generic",
+            Source_Language::C => "c", Source_Language::Cpp => "cpp", Source_Language::CSharp => "cs", Source_Language::JavaScript => "js", Source_Language::TypeScript => "ts", Source_Language::Shell => "sh", Source_Language::Go => "go", Source_Language::Php => "php", Source_Language::Html => "html", Source_Language::Css => "css", Source_Language::Rust => "rs", Source_Language::Kotlin => "kt", Source_Language::KotlinOfficial => "kt-official", Source_Language::Batch => "bat", Source_Language::Toml => "toml", Source_Language::CargoLock => "cargo-lock", Source_Language::Generic => "generic",
         }
     }
 }

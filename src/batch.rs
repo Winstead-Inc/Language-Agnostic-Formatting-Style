@@ -139,10 +139,7 @@ impl<'a> Batch_Parser<'a>
             }
         }
 
-        Some(Batch_Item::Command(Batch_Command {
-            Text: CmdText,
-            Continuations,
-        }))
+        Some(Batch_Item::Command(Batch_Command { Text: CmdText, Continuations, }))
     }
 
     fn ParseBlock(&mut self) -> Option<Batch_Item>

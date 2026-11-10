@@ -47,6 +47,14 @@ impl <'a> Lexer_Scanner<'a>
                 }
             }
             // 4. Comments
+            if Ch == '#' && self.Language.IsToml()
+            {
+                let CommentText = self.ScanLineComment();
+                RawTokens.push(Token_Info::New(Token_Kind::Comment_Line(CommentText.clone()), CommentText, StartLine, StartCol, PrecedingNewlines,));
+                PrecedingNewlines = 0;
+                continue;
+            }
+
             if Ch == '/' && self.PeekAhead(1) == Some('/')
             {
                 let CommentText = self.ScanLineComment();
@@ -94,9 +102,9 @@ impl <'a> Lexer_Scanner<'a>
 
             if Ch == '"'
             {
-                if self.PeekAhead(1) == Some('"') && self.PeekAhead(2) == Some('"') && self.Language == Source_Language::CSharp
+                if self.PeekAhead(1) == Some('"') && self.PeekAhead(2) == Some('"')
                 {
-                    let StringText = self.ScanCSharpRawString();
+                    let StringText = if self.Language.IsToml() { self.ScanTomlMultilineBasicString() } else { self.ScanCSharpRawString() };
                     RawTokens.push(Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,));
                 }
                 else
@@ -118,6 +126,21 @@ impl <'a> Lexer_Scanner<'a>
 
             if Ch == '\''
             {
+                if self.Language.IsToml()
+                {
+                    let StringText = if self.PeekAhead(1) == Some('\'') && self.PeekAhead(2) == Some('\'')
+                    {
+                        self.ScanTomlMultilineLiteralString()
+                    }
+                    else
+                    {
+                        self.ScanTomlLiteralString()
+                    };
+                    RawTokens.push(Token_Info::New(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                    continue;
+                }
+
                 if self.Language == Source_Language::Rust
                 {
                     if let Some(NextCh) = self.PeekAhead(1)
@@ -198,7 +221,8 @@ impl <'a> Lexer_Scanner<'a>
             }
             // 7. Numbers
             let IsNumberStart = Ch.is_ascii_digit()
-                || (Ch == '.' && self.Language != Source_Language::Rust && self.PeekAhead(1).map_or(false, | C | C.is_ascii_digit()));
+                || (Ch == '.' && self.Language != Source_Language::Rust && self.PeekAhead(1).map_or(false, | C | C.is_ascii_digit()))
+                || (self.Language.IsToml() && (Ch == '-' || Ch == '+') && self.PeekAhead(1).map_or(false, | C | C.is_ascii_digit()));
             if IsNumberStart
             {
                 let NumberText = self.ScanNumber();
@@ -206,20 +230,76 @@ impl <'a> Lexer_Scanner<'a>
                 PrecedingNewlines = 0;
                 continue;
             }
-            // Check for Rust raw string literal
-            if Ch == 'r'
+            // Check for Rust raw string literal or byte / c-string literals:
+            // r"...", r#"..."#, br"...", br#"..."#, cr"...", cr#"..."#, b"...", c"...", b'...'
+            if self.Language == Source_Language::Rust
             {
-                let mut HashCount = 0;
-                let mut Lookahead = 1;
-                while let Some(c) = self.PeekAhead(Lookahead) { if c == '#' { HashCount += 1; Lookahead += 1; } else { break ; } }
-                if let Some(c) = self.PeekAhead(Lookahead)
+                // 1. "br" or "cr" prefix
+                if (Ch == 'b' || Ch == 'c') && self.PeekAhead(1) == Some('r')
                 {
-                    if c == '"'
+                    let mut HashCount = 0;
+                    let mut Lookahead = 2;
+                    while let Some(c) = self.PeekAhead(Lookahead) { if c == '#' { HashCount += 1; Lookahead += 1; } else { break ; } }
+                    if let Some(c) = self.PeekAhead(Lookahead)
                     {
-                        let RawStringText = self.ScanRawRustString(HashCount);
-                        RawTokens.push(Token_Info::New(Token_Kind::String_Lit(RawStringText.clone()), RawStringText, StartLine, StartCol, PrecedingNewlines,));
-                        PrecedingNewlines = 0;
-                        continue;
+                        if c == '"'
+                        {
+                            let Prefix = format!("{}r", Ch);
+                            let RawStringText = self.ScanRawRustStringWithPrefix(&Prefix, HashCount);
+                            RawTokens.push(Token_Info::New(Token_Kind::String_Lit(RawStringText.clone()), RawStringText, StartLine, StartCol, PrecedingNewlines,));
+                            PrecedingNewlines = 0;
+                            continue;
+                        }
+                    }
+                }
+
+                // 2. "b" prefix for byte string or byte char
+                if Ch == 'b' && self.PeekAhead(1) == Some('"')
+                {
+                    self.Advance(); // 'b'
+                    let StringText = self.ScanStandardString();
+                    let Full = format!("b{}", StringText);
+                    RawTokens.push(Token_Info::New(Token_Kind::String_Lit(Full.clone()), Full, StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                    continue;
+                }
+
+                if Ch == 'b' && self.PeekAhead(1) == Some('\'')
+                {
+                    self.Advance(); // 'b'
+                    let CharText = self.ScanCharLiteral();
+                    let Full = format!("b{}", CharText);
+                    RawTokens.push(Token_Info::New(Token_Kind::Char_Lit(Full.clone()), Full, StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                    continue;
+                }
+
+                // 3. "c" prefix for C-string literal
+                if Ch == 'c' && self.PeekAhead(1) == Some('"')
+                {
+                    self.Advance(); // 'c'
+                    let StringText = self.ScanStandardString();
+                    let Full = format!("c{}", StringText);
+                    RawTokens.push(Token_Info::New(Token_Kind::String_Lit(Full.clone()), Full, StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                    continue;
+                }
+
+                // 4. "r" prefix for raw string
+                if Ch == 'r'
+                {
+                    let mut HashCount = 0;
+                    let mut Lookahead = 1;
+                    while let Some(c) = self.PeekAhead(Lookahead) { if c == '#' { HashCount += 1; Lookahead += 1; } else { break ; } }
+                    if let Some(c) = self.PeekAhead(Lookahead)
+                    {
+                        if c == '"'
+                        {
+                            let RawStringText = self.ScanRawRustStringWithPrefix("r", HashCount);
+                            RawTokens.push(Token_Info::New(Token_Kind::String_Lit(RawStringText.clone()), RawStringText, StartLine, StartCol, PrecedingNewlines,));
+                            PrecedingNewlines = 0;
+                            continue;
+                        }
                     }
                 }
             }
@@ -227,7 +307,7 @@ impl <'a> Lexer_Scanner<'a>
             if Ch.is_alphabetic() || Ch == '_' || Ch == '$' || (self.Language == Source_Language::Css && (Ch == '@' || Ch == '#' || Ch == '.'))
             {
                 let IdentText = self.ScanIdentifier();
-                let Kind = if IsKeyword( & IdentText) { Token_Kind::Keyword(IdentText.clone()) } else { Token_Kind::Identifier(IdentText.clone()) };
+                let Kind = if ! self.Language.IsToml() && IsKeyword( & IdentText) { Token_Kind::Keyword(IdentText.clone()) } else { Token_Kind::Identifier(IdentText.clone()) };
                 RawTokens.push(Token_Info::New(Kind, IdentText, StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 continue;
@@ -344,11 +424,10 @@ impl <'a> Lexer_Scanner<'a>
         Result
     }
 
-    fn ScanRawRustString( & mut self, HashCount: usize) -> String
+    fn ScanRawRustStringWithPrefix(&mut self, Prefix: &str, HashCount: usize) -> String
     {
-        let mut Result = String:: new ();
-        Result.push(self.Advance().unwrap());
-        // 'r'
+        let mut Result = String::new();
+        for _ in 0..Prefix.len() { Result.push(self.Advance().unwrap()); }
         for _ in 0..HashCount { Result.push(self.Advance().unwrap()); }
         // '#'
         Result.push(self.Advance().unwrap());
@@ -474,12 +553,77 @@ impl <'a> Lexer_Scanner<'a>
         Result
     }
 
+    fn ScanTomlMultilineBasicString(&mut self) -> String
+    {
+        let mut Result = String::new();
+        for _ in 0..3 { Result.push(self.Advance().unwrap()); } // """
+        let mut Escaped = false;
+        while self.Index < self.Chars.len()
+        {
+            if Escaped
+            {
+                Result.push(self.Advance().unwrap());
+                Escaped = false;
+            }
+            else if self.Peek() == Some('\\')
+            {
+                Result.push(self.Advance().unwrap());
+                Escaped = true;
+            }
+            else if self.Peek() == Some('"') && self.PeekAhead(1) == Some('"') && self.PeekAhead(2) == Some('"')
+            {
+                for _ in 0..3 { Result.push(self.Advance().unwrap()); }
+                break;
+            }
+            else
+            {
+                Result.push(self.Advance().unwrap());
+            }
+        }
+        Result
+    }
+
+    fn ScanTomlMultilineLiteralString(&mut self) -> String
+    {
+        let mut Result = String::new();
+        for _ in 0..3 { Result.push(self.Advance().unwrap()); } // '''
+        while self.Index < self.Chars.len()
+        {
+            if self.Peek() == Some('\'') && self.PeekAhead(1) == Some('\'') && self.PeekAhead(2) == Some('\'')
+            {
+                for _ in 0..3 { Result.push(self.Advance().unwrap()); }
+                break;
+            }
+            Result.push(self.Advance().unwrap());
+        }
+        Result
+    }
+
+    fn ScanTomlLiteralString(&mut self) -> String
+    {
+        let mut Result = String::new();
+        Result.push(self.Advance().unwrap()); // '\''
+        while let Some(Ch) = self.Peek()
+        {
+            if Ch == '\''
+            {
+                Result.push(self.Advance().unwrap());
+                break;
+            }
+            if Ch == '\n' { break; }
+            Result.push(self.Advance().unwrap());
+        }
+        Result
+    }
+
     fn ScanIdentifier( & mut self) -> String
     {
         let mut Result = String:: new ();
         while let Some(Ch) = self.Peek()
         {
-            if Ch.is_alphanumeric() || Ch == '_' || Ch == '$' || (self.Language == crate::types::Source_Language::Css && (Ch == '-' || Ch == '.'))
+            if Ch.is_alphanumeric() || Ch == '_' || Ch == '$'
+                || (self.Language == crate::types::Source_Language::Css && (Ch == '-' || Ch == '.'))
+                || (self.Language.IsToml() && Ch == '-')
             { Result.push(self.Advance().unwrap()); }
             else { break ; }
         }
@@ -490,6 +634,12 @@ impl <'a> Lexer_Scanner<'a>
     {
         let mut Result = String:: new ();
         let mut HasDecimal = false;
+
+        // Leading sign in TOML (+ or -)
+        if self.Language.IsToml() && (self.Peek() == Some('-') || self.Peek() == Some('+'))
+        {
+            Result.push(self.Advance().unwrap());
+        }
 
         while let Some(Ch) = self.Peek()
         {
@@ -502,7 +652,14 @@ impl <'a> Lexer_Scanner<'a>
                 continue;
             }
 
+            if (Ch == '+' || Ch == '-') && (Result.ends_with('e') || Result.ends_with('E'))
+            {
+                Result.push(self.Advance().unwrap());
+                continue;
+            }
+
             if Ch.is_ascii_alphanumeric() || Ch == '_' || Ch == '\''
+                || (self.Language.IsToml() && (Ch == '-' || Ch == ':'))
             {
                 Result.push(self.Advance().unwrap());
             }

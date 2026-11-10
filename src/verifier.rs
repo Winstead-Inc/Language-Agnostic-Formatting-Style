@@ -65,7 +65,7 @@ impl Safety_Verifier
     {
         if Orig == Form { return true; }
 
-        if (Orig.starts_with("//") && Form.starts_with("//")) || (Orig.starts_with("/*") && Form.starts_with("/*"))
+        if (Orig.starts_with("//") && Form.starts_with("//")) || (Orig.starts_with("/*") && Form.starts_with("/*")) || (Orig.starts_with('#') && Form.starts_with('#'))
         {
             if Orig.trim_end() == Form.trim_end() { return true; }
         }
@@ -75,8 +75,8 @@ impl Safety_Verifier
             if Self::ArePreprocessorDirectivesEquivalent(Orig, Form) { return true; }
         }
 
-        if (Orig.starts_with('"') || Orig.starts_with("r\"") || Orig.starts_with("r#") || Orig.starts_with("br") || Orig.starts_with("cr") || Orig.starts_with("b\"") || Orig.starts_with('`'))
-            && (Form.starts_with('"') || Form.starts_with("r\"") || Form.starts_with("r#") || Form.starts_with("br") || Form.starts_with("cr") || Form.starts_with("b\"") || Form.starts_with('`'))
+        if (Orig.starts_with('"') || Orig.starts_with("r\"") || Orig.starts_with("r#") || Orig.starts_with("br") || Orig.starts_with("cr") || Orig.starts_with("b\"") || Orig.starts_with('`') || Orig.starts_with('\''))
+            && (Form.starts_with('"') || Form.starts_with("r\"") || Form.starts_with("r#") || Form.starts_with("br") || Form.starts_with("cr") || Form.starts_with("b\"") || Form.starts_with('`') || Form.starts_with('\''))
         {
             let OrigLines: Vec < & str > = Orig.lines().collect();
             let FormLines: Vec < & str > = Form.lines().collect();

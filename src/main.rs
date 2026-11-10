@@ -37,7 +37,7 @@ const DOCUMENT_EXTENSIONS: & [ & str] = &
 
 const BINARY_EXTENSIONS: & [ & str] = &
 [
-    "exe", "dll", "so", "dylib", "obj", "o", "a", "lib", "bin", "iso", "img", "zip", "tar", "gz", "tgz", "7z", "rar", "bz2", "xz", "zst", "png", "jpg", "jpeg", "gif", "webp", "ico", "bmp", "tiff", "tif", "psd", "ai", "svgz", "mp3", "mp4", "wav", "ogg", "mkv", "avi", "mov", "flv", "webm", "m4a", "flac", "woff", "woff2", "ttf", "eot", "otf", "pyc", "pyo", "class", "pdb", "idb", "suo", "db", "sqlite", "sqlite3", "lock", "lockb",
+    "exe", "dll", "so", "dylib", "obj", "o", "a", "lib", "bin", "iso", "img", "zip", "tar", "gz", "tgz", "7z", "rar", "bz2", "xz", "zst", "png", "jpg", "jpeg", "gif", "webp", "ico", "bmp", "tiff", "tif", "psd", "ai", "svgz", "mp3", "mp4", "wav", "ogg", "mkv", "avi", "mov", "flv", "webm", "m4a", "flac", "woff", "woff2", "ttf", "eot", "otf", "pyc", "pyo", "class", "pdb", "idb", "suo", "db", "sqlite", "sqlite3", "lockb",
 ];
 
 const PYTHON_EXTENSIONS: & [ & str] = &
@@ -47,7 +47,7 @@ const PYTHON_EXTENSIONS: & [ & str] = &
 
 const DEFAULT_SUPPORTED_EXTENSIONS: & [ & str] = &
 [
-    "c", "h", "cpp", "hpp", "cc", "cxx", "hh", "hxx", "inl", "cu", "cs", "rs", "java", "kt", "kts", "scala", "js", "mjs", "cjs", "jsx", "ts", "tsx", "mts", "cts", "go", "dart", "php", "swift", "m", "mm", "sh", "bash", "zsh", "ksh", "json", "jsonc", "json5", "toml", "css", "scss", "less", "sql", "graphql", "proto", "html", "htm", "bat", "cmd",
+    "c", "h", "cpp", "hpp", "cc", "cxx", "hh", "hxx", "inl", "cu", "cs", "rs", "java", "kt", "kts", "scala", "js", "mjs", "cjs", "jsx", "ts", "tsx", "mts", "cts", "go", "dart", "php", "swift", "m", "mm", "sh", "bash", "zsh", "ksh", "json", "jsonc", "json5", "toml", "lock", "css", "scss", "less", "sql", "graphql", "proto", "html", "htm", "bat", "cmd",
 ];
 
 #[derive(Clone)]
@@ -619,7 +619,7 @@ fn Main()
                     let LangStr = Args[I].to_lowercase();
                     Config.Language = match LangStr.as_str()
                     {
-                        "c" => Source_Language::C, "cpp" | "c++" => Source_Language::Cpp, "cs" | "csharp" | "c#" => Source_Language::CSharp, "js" | "javascript" => Source_Language::JavaScript, "ts" | "typescript" => Source_Language::TypeScript, "sh" | "shell" | "bash" | "zsh" | "ksh" => Source_Language::Shell, "go" => Source_Language::Go, "php" => Source_Language::Php, "html" | "htm" => Source_Language::Html, "css" => Source_Language::Css, "kt" | "kotlin" | "kotlin-allman" | "kt-allman" | "kotlin-v1" | "kt-v1" =>
+                        "c" => Source_Language::C, "cpp" | "c++" => Source_Language::Cpp, "cs" | "csharp" | "c#" => Source_Language::CSharp, "js" | "javascript" => Source_Language::JavaScript, "ts" | "typescript" => Source_Language::TypeScript, "sh" | "shell" | "bash" | "zsh" | "ksh" => Source_Language::Shell, "go" => Source_Language::Go, "php" => Source_Language::Php, "html" | "htm" => Source_Language::Html, "css" => Source_Language::Css, "rs" | "rust" => Source_Language::Rust, "bat" | "cmd" => Source_Language::Batch, "toml" => Source_Language::Toml, "cargo-lock" | "cargolock" | "lock" => Source_Language::CargoLock, "kt" | "kotlin" | "kotlin-allman" | "kt-allman" | "kotlin-v1" | "kt-v1" =>
                         { Config.Kotlin_Style = Kotlin_Style::Allman; Source_Language::Kotlin },
                         "kt-official" | "kotlin-official" | "kotlin-v2" | "kt-v2" =>
                         { Config.Kotlin_Style = Kotlin_Style::Official; Source_Language::KotlinOfficial },

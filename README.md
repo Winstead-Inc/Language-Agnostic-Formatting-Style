@@ -1,6 +1,6 @@
-# LAFS / OLAFS Container Formatter
+# LAFS Container Formatter
 
-A pure-Rust, high-performance container formatter implementing the **Omniversal Language-Agnostic Formatting Style (OLAFS) / Improvised Allman Style (IAS)** for **C**, **C++**, **C#**, **Go**, **JavaScript**, **TypeScript**, **PHP**, **HTML**, and **CSS**.
+A pure-Rust, high-performance container formatter implementing the **Language-Agnostic Formatting Style (LAFS)** for **C**, **C++**, **C#**, **Go**, **JavaScript**, **TypeScript**, **PHP**, **HTML**, and **CSS**.
 
 ---
 
@@ -53,17 +53,22 @@ The compiled binary will be located at:
 ## LAFS-Compliant Cargo Toolchain (`stable-x86_64-pc-windows-msvc`)
 
 ### Background & Architectural Problem
+
 Stock `cargo.exe` enforces standard TOML 1.0 ABNF grammar (`keyval-sep = ws %x3D ws`), where a newline immediately following an assignment operator (`=`) is treated as a hard lexer syntax error:
+
 ```text
 error: key with no value, expected `=`
  --> Cargo.toml:10:8
 ```
+
 This constraint prevents developers from formatting TOML manifests and lockfiles according to pure Allman / LAFS symmetry (`dependencies =\n[\n ... \n]`).
 
 ### The Native Compiler Solution
+
 A custom, LAFS-compliant release binary of `cargo.exe` has been compiled and integrated directly into your global Rustup toolchain (`stable-x86_64-pc-windows-msvc`). It eliminates the K&R delimiter restriction without fragile shims or on-the-fly file rewriting.
 
 #### Key Features:
+
 - **Pure Allman Manifest Support:** Natively parses `Cargo.toml` and `.cargo/config.toml` containing detached delimiter blocks:
   ```toml
   [dependencies]
@@ -94,15 +99,18 @@ A custom, LAFS-compliant release binary of `cargo.exe` has been compiled and int
   - Survives subprocess calls, build scripts, and Git hooks.
 
 ### Toolchain File Paths
-| Component | Path |
-| :--- | :--- |
-| **Active Toolchain Binary** | `C:\Users\0.USS-OPPENHEIMER\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\cargo.exe` |
-| **Stock Cargo Backup** | `C:\Users\0.USS-OPPENHEIMER\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\cargo.exe.bak` |
-| **Cargo Source Repository** | `b:\cargo\` |
-| **Compiled Release Binary** | `b:\cargo\target\release\cargo.exe` |
+
+| Component                         | Path                                                                                              |
+| :-------------------------------- | :------------------------------------------------------------------------------------------------ |
+| **Active Toolchain Binary** | `C:\Users\0.USS-OPPENHEIMER\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\cargo.exe`     |
+| **Stock Cargo Backup**      | `C:\Users\0.USS-OPPENHEIMER\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\cargo.exe.bak` |
+| **Cargo Source Repository** | `b:\cargo\`                                                                                     |
+| **Compiled Release Binary** | `b:\cargo\target\release\cargo.exe`                                                             |
 
 ### Rebuilding & Updating the Toolchain
+
 If you update or pull new Cargo features in `b:\cargo\`, recompile and re-deploy using:
+
 ```powershell
 cd b:\cargo
 cargo build --release --bin cargo
@@ -148,6 +156,7 @@ lafs -d "E:\Typst\scratch\" -e js
 ```
 
 > **Trailing Slash Differentiation for Folders**:
+>
 > - Paths ending with a trailing slash (`/` or `\`, e.g. `"scratch\"` or `"scratch/"`) target only the files located **directly inside that folder** (shallow / non-recursive, without descending into subdirectories).
 > - Paths without a trailing slash (e.g. `"scratch"`) target the folder and **all its subdirectories recursively**.
 
@@ -184,29 +193,30 @@ If all previously failed files succeed, `failed.txt` is automatically cleared.
 ### Automated Terminal & Error Logs
 
 During execution, LAFS automatically logs all console output and errors with generation timestamps:
+
 - `lafs {YYYY-MM-DD HH-MM-SS}.log`: All console output produced during the session.
 - `lafs error {YYYY-MM-DD HH-MM-SS}.log`: Captured error diagnostics (generated whenever errors occur).
 
 To disable automatic file logging, supply `--no-log`:
+
 ```powershell
 lafs --no-log -w .
 ```
 
 ### CLI Reference
 
-| Flag                           | Description                                                   |
-| -------------------------------- | --------------------------------------------------------------- |
-| `-w`, `--write`                | Overwrite files in-place with formatted output                |
-| `-f`, `--file <FILES>`         | Format only the specified file(s) (comma-separated or multiple) |
-| `--check`                      | Check if files are formatted (exit code 1 if unformatted)     |
-| `format failed`                | Reformat all files listed in `failed.txt`                     |
-| `-of`, `--output-failed <FILE>`| Log paths (with language and reason) of files that failed or require formatting|
-| `--no-log`                     | Disable automatic log file generation                         |
-| `-c`, `--canvas-width <WIDTH>` | Maximum column width before vertical expansion (default: 160) |
-| `-i`, `--indent <SIZE>`        | Indentation size in spaces (default: 4)                       |
-| `-t`, `--tabs`                 | Use tabs instead of spaces for indentation                    |
-| `-l`, `--language <LANG>`      | Force language mode (`c`, `cpp`, `cs`, `go`, `php`, `html`, `css`) |
-| `--stdin-filepath <PATH>`      | Virtual file path when formatting from stdin                  |
-| `-h`, `--help`                 | Show usage help                                               |
-| `-v`, `--version`              | Show version info                                             |
-
+| Flag                                | Description                                                                      |
+| ----------------------------------- | -------------------------------------------------------------------------------- |
+| `-w`, `--write`                 | Overwrite files in-place with formatted output                                   |
+| `-f`, `--file <FILES>`          | Format only the specified file(s) (comma-separated or multiple)                  |
+| `--check`                         | Check if files are formatted (exit code 1 if unformatted)                        |
+| `format failed`                   | Reformat all files listed in `failed.txt`                                      |
+| `-of`, `--output-failed <FILE>` | Log paths (with language and reason) of files that failed or require formatting  |
+| `--no-log`                        | Disable automatic log file generation                                            |
+| `-c`, `--canvas-width <WIDTH>`  | Maximum column width before vertical expansion (default: 160)                    |
+| `-i`, `--indent <SIZE>`         | Indentation size in spaces (default: 4)                                          |
+| `-t`, `--tabs`                  | Use tabs instead of spaces for indentation                                       |
+| `-l`, `--language <LANG>`       | Force language mode (`c`, `cpp`, `cs`, `go`, `php`, `html`, `css`) |
+| `--stdin-filepath <PATH>`         | Virtual file path when formatting from stdin                                     |
+| `-h`, `--help`                  | Show usage help                                                                  |
+| `-v`, `--version`               | Show version info                                                                |

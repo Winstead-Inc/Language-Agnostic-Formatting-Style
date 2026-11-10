@@ -4,11 +4,11 @@ use crate::container_tree:: { Container_Node, Syntax_Node };
 use crate::planner::Layout_Planner;
 use crate::types:: { Config_Settings, Container_Kind, Layout_State, Source_Language, Token_Info, Token_Kind };
 
-pub struct Code_Emitter<'a> { Config: & 'a Config_Settings, Planner: Layout_Planner<'a>, Output: String, Current_Line_Len: usize, Line_Has_Content: bool , }
+pub struct Code_Emitter<'a> { Config: & 'a Config_Settings, Planner: Layout_Planner<'a>, Output: String, Current_Line_Len: usize, Prev_Line_Len: usize, Line_Has_Content: bool , }
 
 impl <'a> Code_Emitter<'a>
 {
-    pub fn New(Config: & 'a Config_Settings) -> Self { Code_Emitter { Config, Planner: Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, } }
+    pub fn New(Config: & 'a Config_Settings) -> Self { Code_Emitter { Config, Planner: Layout_Planner::New(Config), Output: String::new (), Current_Line_Len: 0, Prev_Line_Len: 0, Line_Has_Content: false, } }
 
     pub fn Emit(mut self, Nodes: & [Syntax_Node]) -> String
     { self.EmitNodeList(Nodes, 0); if ! self.Output.ends_with('\n') { self.Output.push('\n'); } self.Output }
@@ -16,6 +16,7 @@ impl <'a> Code_Emitter<'a>
     fn WriteNewline( & mut self)
     {
         while self.Output.ends_with(' ') { self.Output.pop(); }
+        self.Prev_Line_Len = self.Current_Line_Len;
         self.Output.push('\n');
         self.Current_Line_Len = 0;
         self.Line_Has_Content = false;
@@ -100,13 +101,26 @@ impl <'a> Code_Emitter<'a>
                     else
                     { false };
 
-                    if C.Open_Token.Preceding_Newlines > 0 && ! ShouldAttachInline
+                    let IsPrecededByEquals = Index > 0 && matches!( & Nodes[Index - 1], Syntax_Node::Token(T) if T.Text == "=");
+
+                    if C.Open_Token.Preceding_Newlines > 0 && ! ShouldAttachInline && ! IsPrecededByEquals
                     { self.EnsureNewline(); if C.Open_Token.Preceding_Newlines >= 2 { self.EnsureBlankLine(); } }
 
                     let StartedAtLineStart = ! self.Line_Has_Content;
-                    let EffectiveCol = if self.Line_Has_Content { self.Current_Line_Len } else { Level * self.Config.Indent_Width };
+                    let EffectiveCol = if self.Line_Has_Content
+                    {
+                        self.Current_Line_Len
+                    }
+                    else if C.Open_Token.Preceding_Newlines > 0 && C.Statement_Count > 0 && self.Prev_Line_Len > Level * self.Config.Indent_Width
+                    {
+                        self.Prev_Line_Len
+                    }
+                    else
+                    {
+                        Level * self.Config.Indent_Width
+                    };
                     let Layout = self.Planner.DecideLayout(C, Level, EffectiveCol);
-                    self.EmitContainerNodeWithLayout(C, Level, Layout);
+                    self.EmitContainerNodeWithLayout(C, Level, Layout, IsPrecededByEquals);
                     // Check if followed by continuation keyword (else, catch, finally, while)
                     let NextContinuation = if Index + 1 < Total
                     {
@@ -142,16 +156,18 @@ impl <'a> Code_Emitter<'a>
                         else { self.EnsureNewline(); }
                     }
                     else if C.Tail_Glue.iter().any( | G | G.Text == ";") || C.Kind == Container_Kind::Brace || (C.Kind == Container_Kind::Angle && IsTemplate)
+                        || self.Config.Language.IsToml()
                     {
                         let IsTrailingPunct = Index + 1 < Total && matches!( & Nodes[Index + 1], Syntax_Node::Token(T) if T.Text == ";" || T.Text == ",");
-                        if C.Kind == Container_Kind::Brace && ! IsTrailingPunct && Index + 1 < Total
+                        if C.Kind == Container_Kind::Brace && ! IsTrailingPunct && Index + 1 < Total && ! self.Config.Language.IsToml()
                         {
                             if Self::IsDeclaration(Nodes, Index) && (Level == 0 || Level == 1) { self.EnsureBlankLine(); }
                             else if Level == 0 && Self::IsImportStatementEnding(Nodes, Index) && Self::HasMoreNonImportStatements(Nodes, Index + 1)
                             { self.EnsureBlankLine(); }
                             else { self.EnsureNewline(); }
                         }
-                        else { self.EnsureNewline(); }
+                        else if ! IsTrailingPunct
+                        { self.EnsureNewline(); }
                     }
                     else if StartedAtLineStart
                     {
@@ -399,7 +415,8 @@ impl <'a> Code_Emitter<'a>
             Token_Kind::Number(Num) =>
             {
                 if self.Line_Has_Content && self.Current_Line_Len > 0 && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n') && ! self.Output.ends_with('.')
-                && ! self.Output.ends_with("->") && ! self.Output.ends_with("::") && ! self.Output.ends_with("-") { self.EmitSpace(); }
+                && ! self.Output.ends_with("->") && ! self.Output.ends_with("::") && ! self.Output.ends_with("-")
+                && ! self.Output.ends_with("..=") && ! self.Output.ends_with("..") { self.EmitSpace(); }
                 self.EmitRaw(Num);
             }
             Token_Kind::String_Lit(Text) =>
@@ -419,11 +436,21 @@ impl <'a> Code_Emitter<'a>
     fn EmitContainerNode( & mut self, Container: & Container_Node, Level: usize)
     {
         let Layout = self.Planner.DecideLayout(Container, Level, self.Current_Line_Len);
-        self.EmitContainerNodeWithLayout(Container, Level, Layout);
+        self.EmitContainerNodeWithLayout(Container, Level, Layout, false);
     }
 
-    fn EmitContainerNodeWithLayout( & mut self, Container: & Container_Node, Level: usize, Layout: Layout_State,)
+    fn EmitContainerNodeWithLayout( & mut self, Container: & Container_Node, Level: usize, Layout: Layout_State, IsPrecededByEquals: bool,)
     {
+        if self.Config.Language.IsCargoLock() && (Container.Kind == Container_Kind::Bracket || Container.Kind == Container_Kind::Brace) && IsPrecededByEquals
+        {
+            match Layout
+            {
+                Layout_State::Monolith => { self.EmitMonolith(Container, Level); }
+                Layout_State::Grouped | Layout_State::Expanded => { self.EmitCargoLockColumnAnchoredHybrid(Container, Level); }
+            }
+            return;
+        }
+
         match Layout
         {
             Layout_State::Monolith => { self.EmitMonolith(Container, Level); }
@@ -432,12 +459,65 @@ impl <'a> Code_Emitter<'a>
         }
     }
 
+    fn EmitCargoLockColumnAnchoredHybrid( & mut self, Container: & Container_Node, _Level: usize)
+    {
+        if ! self.Output.ends_with(' ') { self.EmitSpace(); }
+        let OpenCol = self.Current_Line_Len;
+        self.EmitRaw(Container.Kind.OpenGlyph());
+        self.WriteNewline();
+
+        let ChildIndent = " ".repeat(OpenCol + self.Config.Indent_Width);
+        for Child in & Container.Children
+        {
+            match Child
+            {
+                Syntax_Node::Token(T) =>
+                {
+                    if T.Text == ","
+                    {
+                        if self.Line_Has_Content && ! self.Output.ends_with(',') { self.EmitRaw(","); }
+                        self.WriteNewline();
+                    }
+                    else if matches!(T.Kind, Token_Kind::Comment_Line(_))
+                    {
+                        self.EnsureNewline();
+                        self.EmitRaw( & ChildIndent);
+                        self.EmitRaw( & T.Text);
+                        self.WriteNewline();
+                    }
+                    else if ! T.IsTrivia()
+                    {
+                        self.EnsureNewline();
+                        self.EmitRaw( & ChildIndent);
+                        self.EmitRaw( & T.Text);
+                    }
+                }
+                Syntax_Node::Container(SubC) =>
+                {
+                    self.EnsureNewline();
+                    self.EmitRaw( & ChildIndent);
+                    self.EmitMonolith(SubC, 0);
+                }
+            }
+        }
+
+        if self.Line_Has_Content { self.WriteNewline(); }
+
+        let CloseIndent = " ".repeat(OpenCol);
+        self.EmitRaw( & CloseIndent);
+        self.EmitRaw(Container.Kind.CloseGlyph());
+        for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
+        self.WriteNewline();
+    }
+
     fn EmitMonolith( & mut self, Container: & Container_Node, Level: usize)
     {
         if ! self.Line_Has_Content { self.EmitIndent(Level); }
         // For Monolith: openers and closers remain horizontal on the same line
         let IsAtLineStart = self.Output.is_empty() || self.Output.trim_end_matches([' ', '\t']).ends_with('\n');
-        if Container.Kind == Container_Kind::Brace && ! IsAtLineStart { self.EmitSpace(); }
+        let NeedSpace = ! IsAtLineStart && ! self.Output.ends_with(' ') && ! self.Output.ends_with('[')
+            && (Container.Kind == Container_Kind::Brace || (Container.Kind == Container_Kind::Bracket && self.Output.ends_with('=')));
+        if NeedSpace { self.EmitSpace(); }
 
         self.EmitRaw(Container.Kind.OpenGlyph());
 
@@ -495,7 +575,8 @@ impl <'a> Code_Emitter<'a>
                     else
                     {
                         let NeedSpace = if self.Output.ends_with('(') || self.Output.ends_with('[') || self.Output.ends_with('<') || self.Output.ends_with('{') || self.Output.ends_with(' ')
-                        || self.Output.ends_with("::") || self.Output.ends_with("->") || self.Output.ends_with('.') { false }
+                        || self.Output.ends_with("::") || self.Output.ends_with("->") || self.Output.ends_with('.')
+                        || self.Output.ends_with("..=") || self.Output.ends_with("..") { false }
                         else { matches ! (T.Kind, Token_Kind::Keyword(_) | Token_Kind::Identifier(_) | Token_Kind::Number(_)) };
 
                         if NeedSpace { self.EmitSpace(); }

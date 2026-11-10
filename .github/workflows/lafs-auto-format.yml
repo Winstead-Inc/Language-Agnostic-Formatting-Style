@@ -27,7 +27,7 @@ jobs:
         run: cargo build --release
 
       - name: Format Repository In-Place
-        run: ./target/release/lafs -a -y -w
+        run: ./target/release/Language-Agnostic-Formatting-Style -a -y -w
 
       - name: Commit and Push Reformatted Changes
         uses: stefanzweifel/git-auto-commit-action@v5
