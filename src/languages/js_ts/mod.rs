@@ -669,9 +669,10 @@ fn OutputEndsWithControlKeyword(Output: & str) -> bool
     false
 }
 
-fn IsHtmlTagName(name: &str) -> bool
+fn IsHtmlTagName(name: & str) -> bool
 {
-    matches!(
+    matches!
+    (
         name,
         "a" | "abbr" | "address" | "area" | "article" | "aside" | "audio" | "b" | "base"
         | "bdi" | "bdo" | "blockquote" | "body" | "br" | "button" | "canvas" | "caption"
@@ -697,11 +698,8 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
     {
         if Tokens[I].Text != "<" { I += 1; continue ; }
 
-        if I + 1 < Tokens.len() && IsHtmlTagName(&Tokens[I + 1].Text)
-        {
-            I += 1;
-            continue;
-        }
+        if I + 1 < Tokens.len() && IsHtmlTagName( & Tokens[I + 1].Text)
+        { I += 1; continue ; }
 
         let PrecedingValid = if I == 0 { false }
         else
@@ -715,7 +713,7 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
         if ! PrecedingValid { I += 1; continue ; }
 
         let mut Depth: usize = 0;
-        let mut MatchIndex: Option<usize> = None;
+        let mut MatchIndex: Option < usize > = None;
         let mut J = I;
         let mut ContainsInvalidTypeToken = false;
         let mut ParenDepth: usize = 0;
@@ -742,10 +740,7 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
             else if TText == ">"
             {
                 if Depth > 0
-                {
-                    Depth -= 1;
-                    if Depth == 0 && ParenDepth == 0 && BracketDepth == 0 && BraceDepth == 0 { MatchIndex = Some(J); break ; }
-                }
+                { Depth -= 1; if Depth == 0 && ParenDepth == 0 && BracketDepth == 0 && BraceDepth == 0 { MatchIndex = Some(J); break ; } }
             }
             else if Tokens[J].Text.chars().all( | c | c == '>') && Tokens[J].Text.len() > 1 && Depth >= 1
             {
@@ -761,10 +756,10 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
                 if Depth == 0 && ParenDepth == 0 && BracketDepth == 0 && BraceDepth == 0 { MatchIndex = Some(J); break ; }
             }
             else if ParenDepth == 0 && BracketDepth == 0 && BraceDepth == 0
-            && (TText == ";" || matches!(TText, "==" | "!=" | "<=" | ">=" | "if" | "while" | "return" | "throw" | "yield"))
+            && (TText == ";" || matches ! (TText, "==" | "!=" | "<=" | ">=" | "if" | "while" | "return" | "throw" | "yield"))
             {
                 ContainsInvalidTypeToken = true;
-                break ;
+                break;
             }
             J += 1;
         }
@@ -818,12 +813,9 @@ impl JS_Container
         }
     }
 
-    pub fn TotalStatements(&self) -> usize
+    pub fn TotalStatements( & self) -> usize
     {
-        let TailStmts = self.Children.iter().filter(|c| match c {
-            JS_Syntax_Node::Container(c) => c.Tail_Glue.iter().any(|g| g.Text == ";"),
-            _ => false,
-        }).count();
+        let TailStmts = self.Children.iter().filter( | c | match c { JS_Syntax_Node::Container(c) => c.Tail_Glue.iter().any( | g | g.Text == ";"), _ => false, }).count();
         self.Statement_Count + TailStmts
     }
 
@@ -855,7 +847,10 @@ impl JS_Container
         let mut Current = self;
         while let Some(Child) = Current.GetSoleChildContainer()
         {
-            if (Current.Kind == Container_Kind::Angle && Child.Kind != Container_Kind::Brace) || (Child.Kind == Container_Kind::Angle && Current.Kind != Container_Kind::Angle) { break ; }
+            if (Current.Kind == Container_Kind::Angle && Child.Kind != Container_Kind::Brace) || (Child.Kind == Container_Kind::Angle && Current.Kind != Container_Kind::Angle)
+            {
+                break;
+            }
             Chain.push(Child);
             Current = Child;
         }
@@ -1051,58 +1046,44 @@ impl <'a> JS_Layout_Planner<'a>
 
     pub fn DecideLayout( & self, Container: & JS_Container, CurrentIndentLevel: usize, CurrentColumn: usize,) -> Layout_State
     {
-        let HasComma = Container.Children.iter().any(|c| match c {
-            JS_Syntax_Node::Token(t) => t.Text == ",",
-            JS_Syntax_Node::Container(sub) => sub.Tail_Glue.iter().any(|g| g.Text == ","),
-        });
+        let HasComma = Container.Children.iter().any
+        (
+            | c | match c { JS_Syntax_Node::Token(t) => t.Text == ",", JS_Syntax_Node::Container(sub) => sub.Tail_Glue.iter().any( | g | g.Text == ","), }
+        );
 
         // Variadic tuple in conditional extends
-        if Container.Kind == Container_Kind::Bracket && Container.Children.iter().any(|c| match c {
-            JS_Syntax_Node::Token(t) => t.Text == "infer",
-            _ => false,
-        }) && HasComma
+        if Container.Kind == Container_Kind::Bracket && Container.Children.iter().any( | c | match c { JS_Syntax_Node::Token(t) => t.Text == "infer", _ => false, }) && HasComma
         {
             return Layout_State::Expanded;
         }
 
         // Multiline function parameter list containing complex types / objects
-        if Container.Kind == Container_Kind::Paren && Container.Children.iter().any(|c| match c {
-            JS_Syntax_Node::Container(sub) => sub.Kind == Container_Kind::Brace,
-            _ => false,
-        }) && HasComma && Container.CalculateSingleLineSpan() > 70
+        if Container.Kind == Container_Kind::Paren && Container.Children.iter().any( | c | match c { JS_Syntax_Node::Container(sub) => sub.Kind == Container_Kind::Brace, _ => false, }) && HasComma && Container.CalculateSingleLineSpan() > 70
         {
             return Layout_State::Expanded;
         }
 
         // Brace container with 3 or more statements/properties
         if Container.Kind == Container_Kind::Brace && Container.TotalStatements() >= 3
-        {
-            return Layout_State::Expanded;
-        }
+        { return Layout_State::Expanded; }
 
         // If a generic container is a Sole-Child Chain whose inner Brace has multiple statements
         if Container.Kind == Container_Kind::Angle && Container.IsSoleChildChain()
         {
             if let Some(inner) = Container.GetSoleChildContainer()
-            {
-                if inner.Kind == Container_Kind::Brace && inner.TotalStatements() > 1
-                {
-                    return Layout_State::Grouped;
-                }
-            }
+            { if inner.Kind == Container_Kind::Brace && inner.TotalStatements() > 1 { return Layout_State::Grouped; } }
         }
 
         // Nested generic containing multiline/multi-property child container
-        if Container.Kind == Container_Kind::Angle && Container.Children.iter().any(|c| match c {
-            JS_Syntax_Node::Container(sub) => sub.Kind == Container_Kind::Angle && sub.Children.iter().any(|gc| match gc {
-                JS_Syntax_Node::Container(gsc) => gsc.Kind == Container_Kind::Brace && gsc.TotalStatements() > 1,
+        if Container.Kind == Container_Kind::Angle && Container.Children.iter().any
+        (
+            | c | match c
+            {
+                JS_Syntax_Node::Container(sub) => sub.Kind == Container_Kind::Angle && sub.Children.iter().any( | gc | match gc { JS_Syntax_Node::Container(gsc) => gsc.Kind == Container_Kind::Brace && gsc.TotalStatements() > 1, _ => false, }),
                 _ => false,
-            }),
-            _ => false,
-        })
-        {
-            return Layout_State::Expanded;
-        }
+            }
+        )
+        { return Layout_State::Expanded; }
 
         // 1. Monolith First (Horizontal Density)
         if ! Container.Has_Forced_Break && Container.Statement_Count <= self.Config.Max_Statements_In_Monolith && Container.CalculateBlockDepth() <= self.Config.Max_Block_Depth && Container.CountTotalContainers()
@@ -1212,69 +1193,52 @@ impl <'a> JS_Emitter<'a>
             {
                 JS_Syntax_Node::Token(T) =>
                 {
-                    if T.Text == "?" && (InPropertyValue || (Index + 1 < Total && matches!(& Nodes[Index + 1], JS_Syntax_Node::Container(c) if c.Kind == Container_Kind::Brace || c.Kind == Container_Kind::Paren)))
-                    {
-                        self.EnsureNewline();
-                        self.EmitIndent(EffectiveLevel);
-                        self.EmitRaw("?");
-                        self.WriteNewline();
-                    }
+                    if T.Text == "?" &&
+                    (
+                        InPropertyValue ||
+                        (
+                            Index + 1 < Total && matches!( & Nodes[Index + 1], JS_Syntax_Node::Container(c) if c.Kind == Container_Kind::Brace || c.Kind == Container_Kind::Paren)
+                        )
+                    )
+                    { self.EnsureNewline(); self.EmitIndent(EffectiveLevel); self.EmitRaw("?"); self.WriteNewline(); }
                     else if T.Text == ":" && ! self.Line_Has_Content
-                    {
-                        self.EmitIndent(EffectiveLevel);
-                        self.EmitRaw(":");
-                        self.EmitSpace();
-                    }
+                    { self.EmitIndent(EffectiveLevel); self.EmitRaw(":"); self.EmitSpace(); }
                     else
-                    {
-                        self.EmitSingleToken(T, EffectiveLevel, Nodes, Index);
-                    }
+                    { self.EmitSingleToken(T, EffectiveLevel, Nodes, Index); }
 
                     if T.Text == ";"
-                    {
-                        InPropertyValue = false;
-                    }
+                    { InPropertyValue = false; }
                 }
                 JS_Syntax_Node::Container(C) =>
                 {
                     if C.Open_Token.Text == "${"
                     { self.EmitStringInterpolation(C, EffectiveLevel); Index += 1; continue ; }
 
-                    let NextTokenText: Option<&str> = if Index + 1 < Total
+                    let NextTokenText: Option < & str > = if Index + 1 < Total
                     {
                         match & Nodes[Index + 1]
-                        {
-                            JS_Syntax_Node::Token(T) => Some(T.Text.as_str()),
-                            JS_Syntax_Node::Container(Sub) => Some(Sub.Open_Token.Text.as_str()),
-                        }
+                        { JS_Syntax_Node::Token(T) => Some(T.Text.as_str()), JS_Syntax_Node::Container(Sub) => Some(Sub.Open_Token.Text.as_str()), }
                     }
                     else
-                    {
-                        None
-                    };
+                    { None };
 
                     let Layout = self.Planner.DecideLayout(C, EffectiveLevel, self.Current_Line_Len);
                     self.EmitContainerNodeWithLayout(C, EffectiveLevel, Layout, NextTokenText);
 
-                    if C.Tail_Glue.iter().any(|g| g.Text == ",") && EffectiveLevel > 0
-                    {
-                        self.WriteNewline();
-                    }
+                    if C.Tail_Glue.iter().any( | g | g.Text == ",") && EffectiveLevel > 0
+                    { self.WriteNewline(); }
 
-                    if C.Tail_Glue.iter().any(|g| g.Text == ":")
+                    if C.Tail_Glue.iter().any( | g | g.Text == ":")
                     {
                         let HasMultiLineValue = Nodes[Index + 1..].iter()
-                            .take_while(|n| match n { JS_Syntax_Node::Token(t) => t.Text != ";" && t.Text != ",", _ => true })
-                            .any(|n| match n {
-                                JS_Syntax_Node::Container(_) => true,
-                                JS_Syntax_Node::Token(t) => t.Preceding_Newlines > 0 || t.Text == "?" || t.Text == ":",
-                            });
+                       .take_while( | n | match n { JS_Syntax_Node::Token(t) => t.Text != ";" && t.Text != ",", _ => true })
+                       .any
+                        (
+                            | n | match n { JS_Syntax_Node::Container(_) => true, JS_Syntax_Node::Token(t) => t.Preceding_Newlines > 0 || t.Text == "?" || t.Text == ":", }
+                        );
 
                         if HasMultiLineValue
-                        {
-                            self.EnsureNewline();
-                            InPropertyValue = true;
-                        }
+                        { self.EnsureNewline(); InPropertyValue = true; }
                     }
 
                     // Check if followed by continuation keyword (else, catch, finally)
@@ -1333,19 +1297,12 @@ impl <'a> JS_Emitter<'a>
         }
 
         if ! self.Line_Has_Content
-        {
-            self.EmitIndent(Level);
-        }
+        { self.EmitIndent(Level); }
         else
         {
-            let NextIsColon = Index + 1 < Nodes.len() && match & Nodes[Index + 1] {
-                JS_Syntax_Node::Token(next_t) => next_t.Text == ":",
-                _ => false,
-            };
-            if ! (Token.Text == "?" && NextIsColon)
-            {
-                self.EmitSpaceBeforeToken(Token);
-            }
+            let NextIsColon = Index + 1 < Nodes.len() && match & Nodes[Index + 1] { JS_Syntax_Node::Token(next_t) => next_t.Text == ":", _ => false, };
+            if !(Token.Text == "?" && NextIsColon)
+            { self.EmitSpaceBeforeToken(Token); }
         }
 
         self.EmitRaw( & Token.Text);
@@ -1374,9 +1331,7 @@ impl <'a> JS_Emitter<'a>
         if matches!(Token.Kind, Token_Kind::Template_Lit(_))
         {
             if self.Output.ends_with(':') || self.Output.ends_with('?') || self.Output.ends_with('=')
-            {
-                self.EmitSpace();
-            }
+            { self.EmitSpace(); }
             return ;
         }
         if Token.Text == ";" || Token.Text == "," || Token.Text == "." || Token.Text == "?." { return ; }
@@ -1386,17 +1341,11 @@ impl <'a> JS_Emitter<'a>
         if self.Output.ends_with("${") { return ; }
         if Token.Text == ">" || Token.Text == "/>" { return ; }
         if Token.Text == ":"
-        {
-            if self.Output.ends_with('`')
-            {
-                self.EmitSpace();
-            }
-            return ;
-        }
+        { if self.Output.ends_with('`') { self.EmitSpace(); } return ; }
         self.EmitSpace();
     }
 
-    fn EmitContainerNodeWithLayout( & mut self, Container: & JS_Container, Level: usize, Layout: Layout_State, NextTokenText: Option<&str>)
+    fn EmitContainerNodeWithLayout( & mut self, Container: & JS_Container, Level: usize, Layout: Layout_State, NextTokenText: Option< & str>)
     {
         if Container.Open_Token.Text == "${"
         { self.EmitStringInterpolation(Container, Level); return ; }
@@ -1515,7 +1464,7 @@ impl <'a> JS_Emitter<'a>
         self.WriteNewline();
     }
 
-    fn EmitExpanded( & mut self, Container: & JS_Container, Level: usize, NextTokenText: Option<&str>)
+    fn EmitExpanded( & mut self, Container: & JS_Container, Level: usize, NextTokenText: Option< & str>)
     {
         if Container.Open_Token.Text == "${"
         { self.EmitStringInterpolation(Container, Level); return ; }
@@ -1557,23 +1506,19 @@ impl <'a> JS_Emitter<'a>
         for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
         if Container.Kind == Container_Kind::Angle
         {
-            if NextTokenText == Some("=") || Container.Tail_Glue.iter().any(|g| g.Text == ",")
+            if NextTokenText == Some("=") || Container.Tail_Glue.iter().any( | g | g.Text == ",")
             {
                 // do not write newline, keep `> =` or `>,` on same line
             }
             else
-            {
-                self.WriteNewline();
-            }
+            { self.WriteNewline(); }
         }
         else if NextTokenText == Some("=>")
         {
             // do not write newline before `=>`
         }
         else
-        {
-            self.WriteNewline();
-        }
+        { self.WriteNewline(); }
     }
 
     fn EmitStringInterpolation( & mut self, Container: & JS_Container, _Level: usize)
