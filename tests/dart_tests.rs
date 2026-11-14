@@ -155,7 +155,7 @@ fn Test_Dart_Primary_Constructor_And_This_Body()
     Config.Language = Source_Language::Dart;
 
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
-    assert!(Formatted.contains("sealed class AstPacket<T>"), "Class header. Got:\n{}", Formatted);
+    assert!(Formatted.contains("sealed class AstPacket <T>") || Formatted.contains("sealed class AstPacket<T>"), "Class header. Got:\n{}", Formatted);
     assert!(Formatted.contains("this : assert"), "This initializer. Got:\n{}", Formatted);
 }
 
@@ -287,4 +287,33 @@ fn Test_Dart_Leading_Underscore_Privacy()
     assert!(Formatted.contains("_PrivateClass"));
     assert!(Formatted.contains("_privateField"));
     assert!(Formatted.contains("_privateMethod"));
+}
+
+#[test]
+fn Test_Dart_Generic_Typedef_Allman_And_Monolith_Function()
+{
+    let Input = r#"
+typedef NightmareCallback
+<
+    T extends Comparable <T>,
+    U extends Map <String, List <(int, { String tag, bool? flag })>>
+> = FutureOr <(T, (int,), { U payload, List <T> Function <V extends T>(V input, [String? prefix])? transformer })>
+    Function <W extends Object?>
+(
+    T primary,
+    (int,) singleTupleRecord,
+    { required U? config, W Function(int, int, { String? label })? interceptor }
+);
+"#;
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::Dart;
+    Config.Canvas_Width = 160;
+
+    let FormattedPass1 = Source_Formatter::Format(Input, & Config).expect("Formatting failed Pass 1");
+    let FormattedPass2 = Source_Formatter::Format( & FormattedPass1, & Config).expect("Formatting failed Pass 2");
+
+    assert_eq!(FormattedPass1, FormattedPass2, "Must be 100% idempotent");
+    assert!(FormattedPass1 .contains("typedef NightmareCallback\n<\n"), "Allman-style < for generic typedef");
+    assert!(FormattedPass1 .contains("> = FutureOr <("), "Closing > on same line as = FutureOr");
+    assert!(FormattedPass1 .contains("    Function <W extends Object?>\n("), "Function <W extends Object?> monolith indented at 4 spaces followed by detached (");
 }

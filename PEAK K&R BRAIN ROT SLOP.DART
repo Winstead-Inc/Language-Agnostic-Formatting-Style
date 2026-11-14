@@ -12,10 +12,10 @@ import 'dart:convert' show jsonEncode, utf8;
 // 1. TORTURE: Horrific Generic Function Typedefs & Nested Record Types
 typedef NightmareCallback
 <
-T extends Comparable<T>, U extends Map<String, List<(int, { String tag, bool? flag })>>
-> = FutureOr<(T, (int,), { U payload, List<T> Function < V extends T > (V input, [String? prefix])? transformer })> Function <
-W extends Object?
->
+    T extends Comparable <T>,
+    U extends Map <String, List <(int, { String tag, bool? flag })>>
+> = FutureOr <(T, (int,), { U payload, List <T> Function <V extends T>(V input, [String? prefix])? transformer })>
+    Function <W extends Object?>
 (
     T primary,
     (int,) singleTupleRecord,
@@ -23,7 +23,7 @@ W extends Object?
 );
 
 // 2. TORTURE: Dart 3.13 Enum with Primary Constructor, Implicit Const, & Switch Expressions
-enum TelemetrySpectrum(final int channelCode, final String hexAccent, { final bool isCritical = false }) implements Comparable<TelemetrySpectrum>
+enum TelemetrySpectrum(final int channelCode, final String hexAccent, { final bool isCritical = false }) implements Comparable <TelemetrySpectrum>
 {
     violetCore(0x00_71_00_FF, '#7100FF', isCritical: false),
     deepOrangeAlert(0x00_FC_6A_03, '#FC6A03', isCritical: true),
@@ -49,21 +49,21 @@ enum TelemetrySpectrum(final int channelCode, final String hexAccent, { final bo
 }
 
 // 3. TORTURE: Dart 3.3 Extension Type wrapping a deeply nested Record & Map
-extension type const ZeroCostMatrix<T extends num>._
+extension type const ZeroCostMatrix <T extends num>._
 (
     ({
-        List<List<T>> grid,
+        List <List <T>> grid,
         (T,) scaleFactor,
-        Map<String, (T, { String hex })> metadata
+        Map <String, (T, { String hex })> metadata
     })
     _backingStore
 )
 implements Object
 {
     // Concise Dart 3.13 constructors inside Extension Type
-    new (List<List<T>> grid, T scale) : this._((grid: grid, scaleFactor: (scale,), metadata: const {}));
+    new (List <List <T>> grid, T scale) : this._((grid: grid, scaleFactor: (scale,), metadata: const {}));
 
-    factory fromFlat(List<T> flat, { required T defaultScale })
+    factory fromFlat(List <T> flat, { required T defaultScale })
     {
         if (flat.isEmpty)
         {
@@ -83,7 +83,7 @@ implements Object
     }
 
     T operator [](int index) => _backingStore.grid[index].first;
-    ZeroCostMatrix<T> operator + (ZeroCostMatrix<T> other) => ZeroCostMatrix._
+    ZeroCostMatrix <T> operator + (ZeroCostMatrix <T> other) => ZeroCostMatrix._
     ((
         grid: [..._backingStore.grid, ...other._backingStore.grid],
         scaleFactor: _backingStore.scaleFactor,
@@ -92,7 +92,7 @@ implements Object
 }
 
 // 4. TORTURE: Sealed Hierarchy + Base Mixin + Dart 3.13 Primary Constructors + `this` Body
-sealed class AstPacket<T>(final String packetId, final TelemetrySpectrum spectrum)
+sealed class AstPacket <T>(final String packetId, final TelemetrySpectrum spectrum)
 {
     this : assert (packetId.isNotEmpty, 'Packet ID cannot be empty') { if (packetId == 'INVALID') { StateError('Bad packet'); } }
 
@@ -100,29 +100,29 @@ sealed class AstPacket<T>(final String packetId, final TelemetrySpectrum spectru
     void audit(String auditorId, int timestamp) {}
 }
 
-base mixin PacketDiagnostics<T> on AstPacket<T>
+base mixin PacketDiagnostics <T> on AstPacket <T>
 {
-    Map<String, Object?> collectMetrics([String? namespace]) { return { 'id': packetId, 'color': spectrum.hexAccent, 'ns': ?namespace }; }
+    Map <String, Object?> collectMetrics([String? namespace]) { return { 'id': packetId, 'color': spectrum.hexAccent, 'ns': ?namespace }; }
 }
 
 // Dart 3.13 Named Primary Constructor with initializer and body
-final class MatrixPayloadPacket<T extends num>.seeded
+final class MatrixPayloadPacket <T extends num>.seeded
 (
     final String id,
     var int retryCount,
-    final ZeroCostMatrix<T> matrix,
+    final ZeroCostMatrix <T> matrix,
     {
         final TelemetrySpectrum tone = .violetCore,
         // Dart 3.10 Dot Shorthand!
-        final List<(int, String)>? auditTrail
+        final List <(int, String)>? auditTrail
     }
 )
-extends AstPacket<T>(id, tone) with PacketDiagnostics<T>
+extends AstPacket <T>(id, tone) with PacketDiagnostics <T>
 {
     this { if (retryCount < 0) { retryCount = 0; } }
 
     // Dart 3.13 concise named constructor & factory without class prefix
-    new fallback(String id, ZeroCostMatrix<T> m) : this.seeded(id, 0, m, tone: .deepOrangeAlert);
+    new fallback(String id, ZeroCostMatrix <T> m) : this.seeded(id, 0, m, tone: .deepOrangeAlert);
 
     factory empty(T zeroVal)
     {
@@ -171,10 +171,10 @@ class SlopOrchestrator
     }
 
     // Deeply nested Sole-Child Chains mixed with Interrupted Runs and K&R Clumping:
-    Future<Map<String, dynamic>> executeHyperNestedCesspool < T extends num >
+    Future <Map <String, dynamic>> executeHyperNestedCesspool <T extends num>
     (
-        List<AstPacket<T>>? incomingPackets,
-        { required (int, String, { bool strictMode, TelemetrySpectrum? overrideTone }) options, String? nullableHeader, List<String>? nullableTags }
+        List <AstPacket <T>>? incomingPackets,
+        { required (int, String, { bool strictMode, TelemetrySpectrum? overrideTone }) options, String? nullableHeader, List <String>? nullableTags }
     )
     async
     {
@@ -226,21 +226,21 @@ class SlopOrchestrator
         final (int optCode, String optLabel, :strictMode, overrideTone: TelemetrySpectrum? activeTone) = options;
 
         // Extreme Control-Flow Collection + Null-Aware Elements (Dart 3.8 `?`) + Switch Expressions + Cascades
-        final List<Map<String, Object?>> mutatedStreamOutput =
+        final List <Map <String, Object?>> mutatedStreamOutput =
         [
             ?(nullableHeader != null ? { 'header': nullableHeader, 'theme': '#7100FF22' } : null),
             for
             (
-                final (int idx, AstPacket<T> pkt) in (incomingPackets ??<AstPacket<T>>[]).indexed
+                final (int idx, AstPacket <T> pkt) in (incomingPackets ?? <AstPacket <T>>[]).indexed
             )
             if
             (
-                pkt case MatrixPayloadPacket<T>
+                pkt case MatrixPayloadPacket <T>
                 (
                     packetId: final String pId && != '',
                     retryCount: var int retries && (>= 0 && <= 100),
                     spectrum: final TelemetrySpectrum spec,
-                    matrix: final ZeroCostMatrix<T> mat
+                    matrix: final ZeroCostMatrix <T> mat
                 )
                 when strictMode || retries != - 1
             )
@@ -314,7 +314,7 @@ class SlopOrchestrator
                     ]
                 ]
             }]
-            else if (pkt case AstPacket<T>(:final packetId, :final spectrum))
+            else if (pkt case AstPacket <T>(:final packetId, :final spectrum))
             {
                 'fallbackId': packetId,
                 'fallbackTone': spectrum.badgeLabel,
@@ -334,7 +334,7 @@ class SlopOrchestrator
         (
             ()
             {
-                final innerMap = <String, List<(int, { String hex })>>
+                final innerMap = <String, List <(int, { String hex })>>
                 {
                     'rowA': [(1, hex: '#7100FF'), (2, hex: '#FC6A03')],
                     'rowB':
@@ -364,7 +364,7 @@ class SlopOrchestrator
     """;
 
         // 7. TORTURE: Deep Cascade Chain with Mixed Null-Aware Cascades (?..) and Index Assignments
-        final Map<String, dynamic>? cascadeVictim = <String, dynamic> { 'init': _instanceTag, 'str': interpolatedNightmare }
+        final Map <String, dynamic>? cascadeVictim = <String, dynamic> { 'init': _instanceTag, 'str': interpolatedNightmare }
             ?..['step1'] =
             ([({
                 'cascadeInner':
@@ -396,9 +396,9 @@ class SlopOrchestrator
     }
 
     // 8. TORTURE: Sync* and Async* Recursive Generators with Yield and Yield*
-    Stream<String> _generateTortureStream(int seed) async*
+    Stream <String> _generateTortureStream(int seed) async*
     {
-        Iterable<int> syncRange(int start, int count) sync*
+        Iterable <int> syncRange(int start, int count) sync*
         {
             if (count <= 0) { return; }
             yield start;

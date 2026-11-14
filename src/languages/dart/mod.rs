@@ -666,10 +666,10 @@ impl <'a> Dart_Lexer<'a>
             {
                 let Prev = & Tokens[I - 1];
                 let Text = Prev.Text.as_str();
-                matches!(Text, "=" | "=>" | ":" | "," | "(" | "[" | "{" | "??" | "const" | "new")
+                matches!(Text, "=" | "=>" | ":" | "," | "(" | "[" | "{" | "??" | "const" | "new" | "Function")
                 || matches!(Text, "class" | "enum" | "mixin" | "extension" | "typedef")
                 || matches!(Text, "int" | "double" | "num" | "bool" | "dynamic" | "void" | "never" | "symbol" | "Object" | "Comparable" | "Future" | "FutureOr" | "Stream")
-                || (matches ! (Prev.Kind, Token_Kind::Identifier(_)) && (Text.starts_with( | c: char | c.is_uppercase()) || Text.starts_with('_')))
+                || matches!(Prev.Kind, Token_Kind::Identifier(_))
             };
 
             if ! PrecedingValid { I += 1; continue ; }
@@ -724,7 +724,7 @@ impl <'a> Dart_Lexer<'a>
                     (
                         Next.Text.as_str(),
                         "(" | ")" | "]" | "}" | ":" | ";" | "," | "." | "?" | "[" | "{"
-                        | ">" | "extends" | "implements" | "with" | "on" | "when" | "as" | "is" | "async"
+                        | ">" | "extends" | "implements" | "with" | "on" | "when" | "as" | "is" | "async" | "="
                     )
                     || matches!(Next.Kind, Token_Kind::Identifier(_) | Token_Kind::Keyword(_))
                     || Next.Preceding_Newlines > 0
@@ -1028,6 +1028,7 @@ pub struct Dart_Emitter<'a>
     Line_Has_Content: bool,
     In_Cascade: bool,
     In_Directive: bool,
+    In_Typedef: bool,
     In_Ternary: usize,
 }
 
@@ -1036,7 +1037,16 @@ impl <'a> Dart_Emitter<'a>
     pub fn New(Config: & 'a Config_Settings) -> Self
     {
         Dart_Emitter
-        { Config, Output: String::new (), Current_Line_Len: 0, Line_Has_Content: false, In_Cascade: false, In_Directive: false, In_Ternary: 0, }
+        {
+            Config,
+            Output: String:: new (),
+            Current_Line_Len: 0,
+            Line_Has_Content: false,
+            In_Cascade: false,
+            In_Directive: false,
+            In_Typedef: false,
+            In_Ternary: 0,
+        }
     }
 
     pub fn Emit(mut self, Nodes: & [Dart_Syntax_Node]) -> String
@@ -1115,8 +1125,12 @@ impl <'a> Dart_Emitter<'a>
                     { self.In_Cascade = true; }
                     else if T.Text == "for" || T.Text == "if"
                     { InForOrIfElement = false; }
+                    else if T.Text == "typedef"
+                    { self.In_Typedef = true; }
 
-                    let EffectiveLevel = if self.In_Cascade { Level + 1 } else { Level };
+                    let EffectiveLevel = if self.In_Cascade || (self.In_Typedef && (T.Text == "Function" || T.Text == "async" || T.Text == "sync*"))
+                    { Level + 1 }
+                    else { Level };
                     let NodeLevel = if InForOrIfElement { EffectiveLevel + 1 } else { EffectiveLevel };
 
                     if InForOrIfElement
@@ -1125,7 +1139,10 @@ impl <'a> Dart_Emitter<'a>
                     self.EmitSingleToken(T, NodeLevel, Nodes, I);
 
                     if T.Text == ";" || T.Text == ","
-                    { if T.Text == ";" { self.In_Cascade = false; } InForOrIfElement = false; }
+                    {
+                        if T.Text == ";" { self.In_Cascade = false; self.In_Typedef = false; }
+                        InForOrIfElement = false;
+                    }
                 }
                 Dart_Syntax_Node::Container(C) =>
                 {
@@ -1137,7 +1154,7 @@ impl <'a> Dart_Emitter<'a>
                     self.EmitContainerNode(C, NodeLevel);
 
                     if C.Tail_Glue.iter().any( | g | g.Text == ";")
-                    { self.In_Cascade = false; }
+                    { self.In_Cascade = false; self.In_Typedef = false; }
 
                     if InForOrIfElement
                     { InForOrIfElement = false; }
@@ -1486,8 +1503,13 @@ impl <'a> Dart_Emitter<'a>
         // 1. Empty container -> State 1 Monolith
         if Container.Children.is_empty() { return Layout_State::Monolith; }
 
-        // Angle containers MUST ALWAYS be Monoliths
-        if Container.Kind == Container_Kind::Angle { return Layout_State::Monolith; }
+        // Angle containers: expanded when starting on a newline, otherwise monolith
+        if Container.Kind == Container_Kind::Angle
+        {
+            if Container.Open_Token.Preceding_Newlines > 0
+            { return Layout_State::Expanded; }
+            return Layout_State::Monolith;
+        }
 
         // 2. Monolith Check:
         // Must fit Canvas AND not exceed complexity budget AND have no forced breaks
@@ -1544,7 +1566,7 @@ impl <'a> Dart_Emitter<'a>
         && ! self.Output.ends_with("?..") && ! self.Output.ends_with("...") && ! self.Output.ends_with("...?")
         && ! self.Output.ends_with('?');
 
-        if NeedSpace && Container.Kind == Container_Kind::Brace { self.EmitSpace(); }
+        if NeedSpace && (Container.Kind == Container_Kind::Brace || Container.Kind == Container_Kind::Angle) { self.EmitSpace(); }
 
         self.EmitRaw(Container.Kind.OpenGlyph());
 
@@ -1731,7 +1753,7 @@ impl <'a> Dart_Emitter<'a>
                     { self.EmitSpace(); PrevNeedsSpace = false; }
                     else if Dart_Lexer::IsKeyword( & T.Text)
                     {
-                        if T.Text == "Function" { PrevNeedsSpace = false; }
+                        if T.Text == "Function" { PrevNeedsSpace = true; }
                         else if T.Text == "this" || T.Text == "super" { PrevNeedsSpace = false; self.EmitSpace(); }
                         else { self.EmitSpace(); PrevNeedsSpace = false; }
                     }
@@ -1771,7 +1793,10 @@ impl <'a> Dart_Emitter<'a>
                     else if Sub.Kind == Container_Kind::Angle
                     {
                         if self.Output.ends_with("??") { self.EmitSpace(); }
-                        else { while self.Output.ends_with(' ') { self.Output.pop(); } }
+                        else if ! self.Output.ends_with(' ') && ! self.Output.ends_with('(') && ! self.Output.ends_with('[') && ! self.Output.ends_with('{') && ! self.Output.ends_with('<') && ! self.Output.ends_with('@') && ! self.Output.ends_with('.')
+                        {
+                            self.EmitSpace();
+                        }
                     }
 
                     self.EmitMonolith(Sub, Level);
@@ -1869,7 +1894,8 @@ impl <'a> Dart_Emitter<'a>
             // 5. Tail glue
             for Glue in & Container.Tail_Glue
             { self.EmitRaw( & Glue.Text); }
-            self.WriteNewline();
+            if Container.Kind != Container_Kind::Angle
+            { self.WriteNewline(); }
         }
     }
 
