@@ -1366,6 +1366,7 @@ Whenever creating, updating, or packaging a VS Code or Antigravity extension (or
    * Extract or target all internal JSON files (`extension/package.json`, `extension/themes/*.json`, etc.).
    * Format them using `LAFS.exe` (or directly inject the already-formatted workspace JSON contents).
    * Re-write the `.vsix` archive entries using standard ZIP Deflate compression (method 8) so that the distributed `.vsix` archive contains purely LAFS-compliant JSON with zero K&R hugging.
+   * **Mandatory Zip File Permissions (`create_system` & `external_attr`):** When writing entries back into the `.vsix` zip archive (especially using Python on Windows), ensure that every entry sets `create_system = 3` (Unix) and `external_attr = 0x81a40000` (Unix `0644` / `rw-r--r--`). If entries default to Windows FAT (`create_system = 0`), Node.js/VS Code will extract `package.json` as read-only, which causes VS Code's `updateManifestMetadata` routine to crash during installation with `EntryWriteLocked: EPERM: operation not permitted`.
 
 3. **Step 3: In-Memory & Decompressed Viewer Buffer Synchronization**
    When files from the extension are open in the IDE (especially via temporary decompressed viewer directories such as `AppData\Local\Temp\officeViewer-decompress-*`):
