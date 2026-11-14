@@ -350,12 +350,10 @@ final List<Map<String, Object?>> mutatedStreamOutput =
     let FormattedPass2 = Source_Formatter::Format( & FormattedPass1, & Config).expect("Formatting failed Pass 2");
 
     assert_eq!(FormattedPass1, FormattedPass2, "Must be 100% idempotent");
-    assert!(
+    assert!
+    (
         FormattedPass1 .contains("for (final (int idx, AstPacket <T> pkt) in (incomingPackets ?? <AstPacket <T>>[]).indexed)"),
         "Control flow header with no expansion inside must remain a monolith on one line"
     );
-    assert!(
-        FormattedPass1 .contains("if\n    ("),
-        "Control flow header containing multiline expansions must remain expanded in Allman symmetry"
-    );
+    assert!(FormattedPass1 .contains("if\n    ("), "Control flow header containing multiline expansions must remain expanded in Allman symmetry");
 }

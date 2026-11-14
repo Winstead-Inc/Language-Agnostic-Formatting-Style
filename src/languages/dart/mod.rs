@@ -826,10 +826,7 @@ impl Dart_Container_Node
         for Child in & self.Children
         {
             if let Dart_Syntax_Node::Container(ref C) = Child
-            {
-                let D = C.CalculateBlockDepth();
-                if D > MaxChildDepth { MaxChildDepth = D; }
-            }
+            { let D = C.CalculateBlockDepth(); if D > MaxChildDepth { MaxChildDepth = D; } }
         }
         if self.Kind == Container_Kind::Brace { 1 + MaxChildDepth } else { MaxChildDepth }
     }
@@ -853,8 +850,10 @@ impl Dart_Container_Node
     pub fn CalculateSingleLineSpan( & self) -> usize
     {
         if self.Has_Forced_Break { return usize::MAX; }
-        if self.Kind != Container_Kind::Angle && ! (self.Is_Control_Header && self.HasNoExpansionInside()) && (self.Statement_Count > 4 || self.Max_Child_Depth > 2)
-        { return usize::MAX; }
+        if self.Kind != Container_Kind::Angle && !(self.Is_Control_Header && self.HasNoExpansionInside()) && (self.Statement_Count > 4 || self.Max_Child_Depth > 2)
+        {
+            return usize::MAX;
+        }
 
         let mut Total = self.Kind.OpenGlyph().len() + self.Kind.CloseGlyph().len();
         if self.Kind == Container_Kind::Brace && ! self.Children.is_empty()
@@ -929,10 +928,8 @@ impl Dart_Container_Builder
                         {
                             let PrevText = & self.Tokens[PrevIdx].Text;
                             if matches!(PrevText.as_str(), "for" | "if" | "while" | "catch" | "switch" | "when")
-                            {
-                                Container.Is_Control_Header = true;
-                            }
-                            break ;
+                            { Container.Is_Control_Header = true; }
+                            break;
                         }
                     }
                 }
