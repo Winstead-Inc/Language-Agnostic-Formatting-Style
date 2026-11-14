@@ -146,11 +146,11 @@ const TPayload extends { readonly packetId: string; readonly spectrum: Telemetry
                 {
                     const computedMask = this.# internalSecretMask ^ 0x00_3D_5A_FE;
                     return [
-                        computedMask,
-                        [{
-                            reGroupedDeepInner: ( () =>[ ( { coreValue: computedMask * 2, accentHex: '#C77DFF', status: 'ACTIVE_#00E676' })])()
-                        }]
-                    ];
+                               computedMask,
+                               [{
+                                   reGroupedDeepInner: ( () =>[ ( { coreValue: computedMask * 2, accentHex: '#C77DFF', status: 'ACTIVE_#00E676' })])()
+                               }]
+                           ];
                 }
             )
             ()
