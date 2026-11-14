@@ -5,14 +5,14 @@
 // 1. TORTURE: Deeply Nested Conditional, Mapped, & Template Literal Types with K&R Hugging
 export type Nightmare_Type_Matrix <
 const T extends readonly Record <
-string, { readonly id: number; readonly tone:`#${string}`; readonly nested ?: readonly[number, ...Array < { tag: string; active: boolean; } >]; }
+string, { readonly id: number; readonly tone:`#${string}`; readonly nested ?: readonly[number, ...Array < { tag: string; active: boolean; }>]; }
 >[],
 U extends keyof T[number] = keyof T[number]
-> = T extends readonly[infer Head extends Record < string, unknown >, ...infer Tail extends readonly Record < string, unknown >[]] ?
+> = T extends readonly[infer Head extends Record <string, unknown>, ...infer Tail extends readonly Record <string, unknown>[]] ?
 {
     readonly[K in keyof Head as K extends string ?`get_${Capitalize <K>}`: never]: Head[K] extends { readonly tone: infer ToneHex extends string; }
     ? (input: ToneHex, options ?: { readonly strict: boolean; readonly fallback: '#7100FF' | '#FC6A03' | '#FF1744'; }) => Promise <
-    ReadonlyArray < { readonly resolved: ToneHex; readonly tailMatrix: Nightmare_Type_Matrix < Tail >; }
+    ReadonlyArray < { readonly resolved: ToneHex; readonly tailMatrix: Nightmare_Type_Matrix <Tail>; }
     >
     >: never;
 }
@@ -69,13 +69,13 @@ export class Slop_Engine_Controller <
 const TPayload extends { readonly packetId: string; readonly spectrum: Telemetry_Spectrum_Code; }
 >
 {
-    # internalSecretMask: number = 0xFF_71_00_FF;
+    #internalSecretMask: number = 0xFF_71_00_FF;
     accessor retryCounter: number = 0;
 
-    static # registryCache = new Map <string, string> ();
+    static #registryCache = new Map <string, string> ();
     static
     {
-        try { this.# registryCache.set('DEFAULT_CORE', Telemetry_Spectrum_Code.VioletCore); }
+        try { this.#registryCache.set('DEFAULT_CORE', Telemetry_Spectrum_Code.VioletCore); }
         catch
         {
             // Empty catch K&R hug
@@ -91,15 +91,15 @@ const TPayload extends { readonly packetId: string; readonly spectrum: Telemetry
         let c = 3;
         let d = 4;
         let e = 5;
-        if (limit > 0)
+        if (limit> 0)
         {
-            for (let i = 0; i < limit; i ++) { if (i % 2 === 0) { a += i; b -= i; c *= 2; d >>= 1; e ^= a; } }
+            for (let i = 0; i <limit; i ++) { if (i % 2 === 0) { a += i; b -= i; c *= 2; d >>= 1; e ^= a; } }
         }
         return a + b + c + d + e;
     }
     // Prematurely exploded trivial getter & empty method:
     public get
-    secretMask(): number { return this.# internalSecretMask; }
+    secretMask(): number { return this.#internalSecretMask; }
 
     public noopAudit(auditor: string, timestamp: number): void {}
     // 4. TORTURE: Async Generator with ASI `yield` Hazards, `await using`,
@@ -144,7 +144,7 @@ const TPayload extends { readonly packetId: string; readonly spectrum: Telemetry
             (
                 () =>
                 {
-                    const computedMask = this.# internalSecretMask ^ 0x00_3D_5A_FE;
+                    const computedMask = this.#internalSecretMask ^ 0x00_3D_5A_FE;
                     return [
                                computedMask,
                                [{
@@ -238,18 +238,18 @@ const TPayload extends { readonly packetId: string; readonly spectrum: Telemetry
         // ASI Return Hazard + JSX Misaligned Attributes + Closing Clump
         return (
                    <section className = "DiagnosticsContainer"
-                   data - engine - id = { this.instanceId }
-                   data - theme - primary = "#7100FF"
-                   data - theme - warning = "#FC6A03"
-                   data - online - status = { props.isOnline ? "ONLINE_#00E676": "OFFLINE_#FF1744" }
+                   data-engine-id = { this.instanceId }
+                   data-theme-primary = "#7100FF"
+                   data-theme-warning = "#FC6A03"
+                   data-online-status = { props.isOnline ? "ONLINE_#00E676": "OFFLINE_#FF1744" }
                    >
                    <header className = "HeaderBar" title = "System Telemetry Header"
-                   data - count = { props.items.length }
-                   data - mask = { this.# internalSecretMask }
+                   data-count = { props.items.length }
+                   data-mask = { this.#internalSecretMask }
                    >
                    <h1> { props.title }
-                   </ h1>
-                   </ header>
+                   </h1>
+                   </header>
                    <div className = "ContentGrid">
                    {
                        props.items.map
@@ -257,18 +257,18 @@ const TPayload extends { readonly packetId: string; readonly spectrum: Telemetry
                            (item, idx) =>
                            (
                                <article key = { item.id }
-                               data - item - index = { idx }
-                               data - item - hex = { item.hex }
-                               data - item - label = { item.label }
+                               data-item-index = { idx }
+                               data-item-hex = { item.hex }
+                               data-item-label = { item.label }
                                >
                                <span> { item.label }
-                               </ span>
-                               </ article>
+                               </span>
+                               </article>
                            )
                        )
                    }
-                   </ div>
-                   </ section>
+                   </div>
+                   </section>
                );
     }
 }

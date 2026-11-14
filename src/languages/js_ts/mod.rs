@@ -259,15 +259,23 @@ impl <'a> JS_Lexer<'a>
                 continue;
             }
             // 8.5. ECMAScript Private Identifier (#ident)
-            if Ch == '#' && self.PeekAhead(1).map_or(false, | C | C.is_alphabetic() || C == '_')
+            if Ch == '#' && !(self.Line == 1 && self.Column == 0 && self.PeekAhead(1) == Some('!'))
             {
-                self.Advance();
-                let IdentText = self.ScanIdentifier();
-                let FullIdent = format!("#{}", IdentText);
-                RawTokens.push(Token_Info::New(Token_Kind::Identifier(FullIdent.clone()), FullIdent, StartLine, StartCol, PrecedingNewlines,));
-                PrecedingNewlines = 0;
-                self.Expects_Expression = false;
-                continue;
+                let mut Offset = 1;
+                while let Some(Ws) = self.PeekAhead(Offset)
+                { if Ws == ' ' || Ws == '\t' { Offset += 1; } else { break ; } }
+                if self.PeekAhead(Offset).map_or(false, | C | C.is_alphabetic() || C == '_')
+                {
+                    self.Advance();
+                    while let Some(Ws) = self.Peek()
+                    { if Ws == ' ' || Ws == '\t' { self.Advance(); } else { break ; } }
+                    let IdentText = self.ScanIdentifier();
+                    let FullIdent = format!("#{}", IdentText);
+                    RawTokens.push(Token_Info::New(Token_Kind::Identifier(FullIdent.clone()), FullIdent, StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                    self.Expects_Expression = false;
+                    continue;
+                }
             }
             // 9. Identifiers and Keywords
             if Ch.is_alphabetic() || Ch == '_' || Ch == '$'
@@ -332,8 +340,27 @@ impl <'a> JS_Lexer<'a>
             if Ch == '<'
             {
                 self.Advance();
-                if self.Expects_Expression && self.Peek().map_or(false, | C | C.is_ascii_alphabetic() || C == '>')
-                { self.In_JSX_Tag_Header += 1; }
+                if self.Peek() == Some('/')
+                {
+                    self.Advance();
+                    while let Some(Ws) = self.Peek()
+                    { if Ws == ' ' || Ws == '\t' { self.Advance(); } else { break ; } }
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("</".to_string()), "</".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                    self.Expects_Expression = true;
+                    continue;
+                }
+                if self.Expects_Expression
+                {
+                    let mut Offset = 0;
+                    while let Some(Ws) = self.PeekAhead(Offset)
+                    { if Ws == ' ' || Ws == '\t' { Offset += 1; } else { break ; } }
+                    if self.PeekAhead(Offset).map_or(false, | C | C.is_ascii_alphabetic() || C == '>')
+                    {
+                        for _ in 0..Offset { self.Advance(); }
+                        self.In_JSX_Tag_Header += 1;
+                    }
+                }
                 RawTokens.push(Token_Info::New(Token_Kind::Operator("<".to_string()), "<".to_string(), StartLine, StartCol, PrecedingNewlines,));
                 PrecedingNewlines = 0;
                 self.Expects_Expression = true;
@@ -534,9 +561,19 @@ impl <'a> JS_Lexer<'a>
         {
             if Ch.is_alphanumeric() || Ch == '_' || Ch == '$'
             { Result.push(self.Advance().unwrap()); }
-            else if Ch == '-' && self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0 && self.PeekAhead(1).map_or(false, | C | C.is_alphabetic() || C == '_')
+            else if Ch == '-' && self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0
             {
-                Result.push(self.Advance().unwrap());
+                let mut Offset = 1;
+                while let Some(Ws) = self.PeekAhead(Offset)
+                { if Ws == ' ' || Ws == '\t' { Offset += 1; } else { break ; } }
+                if self.PeekAhead(Offset).map_or(false, | C | C.is_alphabetic() || C == '_')
+                {
+                    self.Advance();
+                    while let Some(Ws) = self.Peek()
+                    { if Ws == ' ' || Ws == '\t' { self.Advance(); } else { break ; } }
+                    Result.push('-');
+                }
+                else { break ; }
             }
             else { break ; }
         }
@@ -1097,7 +1134,7 @@ impl <'a> JS_Emitter<'a>
         if Token.Text == ";" || Token.Text == "," || Token.Text == "." || Token.Text == "?." { return ; }
         if self.Output.ends_with('.') || self.Output.ends_with("?.") { return ; }
         if self.Output.ends_with('(') || self.Output.ends_with('[') { return ; }
-        if self.Output.ends_with('<') || self.Output.ends_with("</") { return ; }
+        if self.Output.ends_with('<') || self.Output.ends_with("</") || self.Output.ends_with('#') { return ; }
         if self.Output.ends_with("${") { return ; }
         if Token.Text == ">" || Token.Text == "/>" { return ; }
         if Token.Text == ":"
@@ -1153,13 +1190,18 @@ impl <'a> JS_Emitter<'a>
                 {
                     if T.IsTrivia() { continue ; }
                     let IsTemplateLit = matches!(T.Kind, Token_Kind::Template_Lit(_));
-                    let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || T.Text == ":" || T.Text == "?.";
-                    if PrevNeedsSpace && ! IsPunct && ! IsTemplateLit && ! self.Output.ends_with('.') && ! self.Output.ends_with("?.") && ! self.Output.ends_with('(') && ! self.Output.ends_with('[')
-                    {
-                        self.EmitSpace();
-                    }
+                    let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || T.Text == ":" || T.Text == "?." || T.Text == ">" || T.Text == "/>";
+                    if PrevNeedsSpace && ! IsPunct && ! IsTemplateLit
+                    && ! self.Output.ends_with('.')
+                    && ! self.Output.ends_with("?.")
+                    && ! self.Output.ends_with('(')
+                    && ! self.Output.ends_with('[')
+                    && ! self.Output.ends_with('<')
+                    && ! self.Output.ends_with("</")
+                    && ! self.Output.ends_with('#')
+                    { self.EmitSpace(); }
                     self.EmitRaw( & T.Text);
-                    PrevNeedsSpace = ! IsTemplateLit && ! matches!(T.Text.as_str(), "." | "?." | "(" | "[" | "!" | "~");
+                    PrevNeedsSpace = ! IsTemplateLit && ! matches!(T.Text.as_str(), "." | "?." | "(" | "[" | "!" | "~" | "<" | "</" | "#");
                 }
                 JS_Syntax_Node::Container(Sub) =>
                 {

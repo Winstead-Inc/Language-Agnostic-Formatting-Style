@@ -297,3 +297,56 @@ fn Test_JS_Torture_Test_Slop_And_Idempotence()
     assert!(FormattedPass1 .contains("embeddedGlslShader"), "GLSL shader present");
     assert!(FormattedPass1 .contains("renderDiagnosticsPanel"), "JSX panel present");
 }
+
+#[test]
+fn Test_JS_JSX_Diagnostics_Panel()
+{
+    let Input = r##"
+function renderDiagnosticsPanel(props)
+{
+    return (
+        <section className = "DiagnosticsContainer"
+            data-engine-id = { this.instanceId }
+            data-theme-primary = "#7100FF">
+            <header className = "HeaderBar" title = "System Telemetry Header"
+                data-count = { props.items.length }
+                data-mask = { this.#internalSecretMask }>
+                <h1>{ props.title }</h1>
+            </header>
+            <div className = "ContentGrid">
+            {
+                props.items.map
+                (
+                    (item, idx) =>
+                    (
+                        <article key = { item.id }
+                            data-item-index = { idx }
+                            data-item-hex = { item.hex }
+                            data-item-label = { item.label }>
+                            <span>{ item.label }</span>
+                        </article>
+                    )
+                )
+            }
+            </div>
+        </section>
+    );
+}
+"##;
+
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::JavaScript;
+
+    let FormattedPass1 = Source_Formatter::Format(Input, & Config).expect("Pass 1 JSX formatting failed");
+    let FormattedPass2 = Source_Formatter::Format( & FormattedPass1, & Config).expect("Pass 2 JSX formatting failed");
+
+    assert_eq!(FormattedPass1, FormattedPass2, "JSX formatting must be 100% idempotent");
+    assert!( ! FormattedPass1 .contains("data - engine - id"), "Should not space data-engine-id");
+    assert!( ! FormattedPass1 .contains("</ header>"), "Should not space </ header>");
+    assert!( ! FormattedPass1 .contains("</ section>"), "Should not space </ section>");
+    assert!( ! FormattedPass1 .contains("</ div>"), "Should not space </ div>");
+    assert!( ! FormattedPass1 .contains("this.# internalSecretMask"), "Should not space private field #internalSecretMask");
+    assert!(FormattedPass1 .contains("data-engine-id"), "data-engine-id preserved intact");
+    assert!(FormattedPass1 .contains("</header>"), "</header> preserved intact");
+    assert!(FormattedPass1 .contains("this.#internalSecretMask"), "this.#internalSecretMask preserved intact");
+}

@@ -1147,28 +1147,30 @@ class Slop_Orchestrator
     MULTILINE_SINGLE_QUOTE_BLOCK
     ColorToken: #7100FF
     NestedInterpolation: ${
-        (()
-        {
-            final InnerMap = <String, List<(int, { String Hex })>>
+        (
+            ()
             {
-                'rowA': [(1, Hex: '#7100FF'), (2, Hex: '#FC6A03')],
-                'rowB':
-                [
-                    for (var Num = 0; Num < 3; Num++)
-                    (
-                        Num * 10,
-                        Hex:
-                            switch (Num)
-                            {
-                                0 => '#00E676',
-                                1 => '#00BFFF',
-                                _ => '#FF1744'
-                            }
-                    )
-                ]
-            };
-            return jsonEncode(InnerMap.keys.toList());
-        })()
+                final InnerMap = <String, List<(int, { String Hex })>>
+                {
+                    'rowA': [(1, Hex: '#7100FF'), (2, Hex: '#FC6A03')],
+                    'rowB':
+                    [
+                        for (var Num = 0; Num < 3; Num++)
+                        (
+                            Num * 10,
+                            Hex:
+                                switch (Num)
+                                {
+                                    0 => '#00E676',
+                                    1 => '#00BFFF',
+                                    _ => '#FF1744'
+                                }
+                        )
+                    ]
+                };
+                return jsonEncode(InnerMap.keys.toList());
+            }
+        )()
     }
     EndOfMultilineBlock
     '''
