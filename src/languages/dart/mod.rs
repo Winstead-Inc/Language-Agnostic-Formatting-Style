@@ -766,6 +766,7 @@ pub struct Dart_Container_Node
     pub Is_IIFE: bool,
     pub IIFE_Modifier: Option<String>,
     pub IIFE_Has_Invocation: bool,
+    pub Is_Control_Header: bool,
 }
 
 impl Dart_Container_Node
@@ -786,6 +787,7 @@ impl Dart_Container_Node
             Is_IIFE: false,
             IIFE_Modifier: None,
             IIFE_Has_Invocation: false,
+            Is_Control_Header: false,
         }
     }
 
@@ -818,10 +820,40 @@ impl Dart_Container_Node
         Chain
     }
 
+    pub fn CalculateBlockDepth( & self) -> usize
+    {
+        let mut MaxChildDepth = 0;
+        for Child in & self.Children
+        {
+            if let Dart_Syntax_Node::Container(ref C) = Child
+            {
+                let D = C.CalculateBlockDepth();
+                if D > MaxChildDepth { MaxChildDepth = D; }
+            }
+        }
+        if self.Kind == Container_Kind::Brace { 1 + MaxChildDepth } else { MaxChildDepth }
+    }
+
+    pub fn HasNoExpansionInside( & self) -> bool
+    {
+        if self.Has_Forced_Break { return false; }
+        if self.Statement_Count > 1 { return false; }
+        for Child in & self.Children
+        {
+            if let Dart_Syntax_Node::Container(ref C) = Child
+            {
+                if C.Has_Forced_Break { return false; }
+                if C.Open_Token.Preceding_Newlines > 0 && C.Kind == Container_Kind::Angle { return false; }
+                if ! C.HasNoExpansionInside() { return false; }
+            }
+        }
+        true
+    }
+
     pub fn CalculateSingleLineSpan( & self) -> usize
     {
         if self.Has_Forced_Break { return usize::MAX; }
-        if self.Kind != Container_Kind::Angle && (self.Statement_Count > 4 || self.Max_Child_Depth > 2)
+        if self.Kind != Container_Kind::Angle && ! (self.Is_Control_Header && self.HasNoExpansionInside()) && (self.Statement_Count > 4 || self.Max_Child_Depth > 2)
         { return usize::MAX; }
 
         let mut Total = self.Kind.OpenGlyph().len() + self.Kind.CloseGlyph().len();
@@ -846,6 +878,9 @@ impl Dart_Container_Node
                 }
             }
         }
+
+        if self.IIFE_Has_Invocation
+        { Total += 2; }
 
         for Glue in & self.Tail_Glue
         { Total += Glue.Text.len(); }
@@ -885,6 +920,22 @@ impl Dart_Container_Builder
             {
                 self.Index += 1;
                 let mut Container = Dart_Container_Node::New(Kind, Current);
+
+                if Kind == Container_Kind::Paren && self.Index >= 2
+                {
+                    for PrevIdx in (0..=self.Index - 2).rev()
+                    {
+                        if ! self.Tokens[PrevIdx].IsTrivia()
+                        {
+                            let PrevText = & self.Tokens[PrevIdx].Text;
+                            if matches!(PrevText.as_str(), "for" | "if" | "while" | "catch" | "switch" | "when")
+                            {
+                                Container.Is_Control_Header = true;
+                            }
+                            break ;
+                        }
+                    }
+                }
 
                 while self.Index < self.Tokens.len()
                 {
@@ -1514,7 +1565,7 @@ impl <'a> Dart_Emitter<'a>
         // 2. Monolith Check:
         // Must fit Canvas AND not exceed complexity budget AND have no forced breaks
         let WithinComplexity = Container.Statement_Count <= self.Config.Max_Statements_In_Monolith
-        && Container.Max_Child_Depth <= self.Config.Max_Block_Depth;
+        && (Container.Max_Child_Depth <= self.Config.Max_Block_Depth || (Container.Is_Control_Header && Container.HasNoExpansionInside()));
 
         let Span = Container.CalculateSingleLineSpan();
         if WithinComplexity && ! Container.Has_Forced_Break && (self.Current_Line_Len + Span <= self.Config.Canvas_Width)
@@ -1816,6 +1867,9 @@ impl <'a> Dart_Emitter<'a>
 
             self.EmitRaw(Container.Kind.CloseGlyph());
 
+            if Container.IIFE_Has_Invocation
+            { self.EmitRaw("()"); }
+
             for Glue in & Container.Tail_Glue
             { self.EmitRaw( & Glue.Text); }
         }
@@ -1855,6 +1909,9 @@ impl <'a> Dart_Emitter<'a>
             // 4. Compound closing run at Level indent
             self.EmitIndent(Level);
             self.EmitRaw( & CloseRun);
+
+            if Container.IIFE_Has_Invocation
+            { self.EmitRaw("()"); }
 
             // 5. Tail glue from outermost container
             for Glue in & Container.Tail_Glue

@@ -317,3 +317,45 @@ typedef NightmareCallback
     assert!(FormattedPass1 .contains("> = FutureOr <("), "Closing > on same line as = FutureOr");
     assert!(FormattedPass1 .contains("    Function <W extends Object?>\n("), "Function <W extends Object?> monolith indented at 4 spaces followed by detached (");
 }
+
+#[test]
+fn Test_Dart_For_Loop_Header_Monolith_When_No_Expansion_Inside()
+{
+    let Input = r#"
+final List<Map<String, Object?>> mutatedStreamOutput =
+[
+    for
+    (
+        final (int idx, AstPacket<T> pkt) in (incomingPackets ?? <AstPacket<T>>[]).indexed
+    )
+    if
+    (
+        pkt case MatrixPayloadPacket<T>
+        (
+            packetId: final String pId && != '',
+            retryCount: var int retries && (>= 0 && <= 100),
+            spectrum: final TelemetrySpectrum spec,
+            matrix: final ZeroCostMatrix<T> mat
+        ) when strictMode || retries != - 1
+    )
+        ...
+        [{ 'index': idx }]
+];
+"#;
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::Dart;
+    Config.Canvas_Width = 160;
+
+    let FormattedPass1 = Source_Formatter::Format(Input, & Config).expect("Formatting failed Pass 1");
+    let FormattedPass2 = Source_Formatter::Format( & FormattedPass1, & Config).expect("Formatting failed Pass 2");
+
+    assert_eq!(FormattedPass1, FormattedPass2, "Must be 100% idempotent");
+    assert!(
+        FormattedPass1 .contains("for (final (int idx, AstPacket <T> pkt) in (incomingPackets ?? <AstPacket <T>>[]).indexed)"),
+        "Control flow header with no expansion inside must remain a monolith on one line"
+    );
+    assert!(
+        FormattedPass1 .contains("if\n    ("),
+        "Control flow header containing multiline expansions must remain expanded in Allman symmetry"
+    );
+}

@@ -229,10 +229,7 @@ class SlopOrchestrator
         final List <Map <String, Object?>> mutatedStreamOutput =
         [
             ?(nullableHeader != null ? { 'header': nullableHeader, 'theme': '#7100FF22' } : null),
-            for
-            (
-                final (int idx, AstPacket <T> pkt) in (incomingPackets ?? <AstPacket <T>>[]).indexed
-            )
+            for (final (int idx, AstPacket <T> pkt) in (incomingPackets ?? <AstPacket <T>>[]).indexed)
             if
             (
                 pkt case MatrixPayloadPacket <T>
