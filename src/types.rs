@@ -53,7 +53,7 @@ impl Source_Language
     {
         matches!
         (
-            self, Source_Language::Cpp | Source_Language::CSharp | Source_Language::TypeScript | Source_Language::Rust | Source_Language::Kotlin | Source_Language::KotlinOfficial | Source_Language::Dart
+            self, Source_Language::JavaScript | Source_Language::TypeScript | Source_Language::Cpp | Source_Language::CSharp | Source_Language::Rust | Source_Language::Kotlin | Source_Language::KotlinOfficial | Source_Language::Dart
         )
     }
 

@@ -350,3 +350,68 @@ function renderDiagnosticsPanel(props)
     assert!(FormattedPass1 .contains("</header>"), "</header> preserved intact");
     assert!(FormattedPass1 .contains("this.#internalSecretMask"), "this.#internalSecretMask preserved intact");
 }
+
+#[test]
+fn Test_JS_Nightmare_Type_Matrix()
+{
+    let Input = r#"export type Nightmare_Type_Matrix <
+const T extends readonly Record <
+string, { readonly id: number; readonly tone:`#${string}`; readonly nested ?: readonly[number, ...Array < { tag: string; active: boolean; }>]; }
+>[],
+U extends keyof T[number] = keyof T[number]
+> = T extends readonly[infer Head extends Record <string, unknown>, ...infer Tail extends readonly Record <string, unknown>[]] ?
+{
+    readonly[K in keyof Head as K extends string ?`get_${Capitalize <K>}`: never]: Head[K] extends { readonly tone: infer ToneHex extends string; }
+    ? (input: ToneHex, options ?: { readonly strict: boolean; readonly fallback: '#7100FF' | '#FC6A03' | '#FF1744'; }) => Promise <
+    ReadonlyArray < { readonly resolved: ToneHex; readonly tailMatrix: Nightmare_Type_Matrix <Tail>; }
+    >
+    >: never;
+}
+: { readonly emptyMarker: '#00BFFF'; };
+"#;
+
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::JavaScript;
+    Config.Canvas_Width = 160;
+
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    let Expected = r#"export type Nightmare_Type_Matrix
+<
+    const T extends readonly Record
+    <
+        string,
+        {
+            readonly id: number;
+            readonly tone: `#${string}`;
+            readonly nested?: readonly [number, ...Array<{ tag: string; active: boolean; }>];
+        }
+    >[],
+    U extends keyof T[number] = keyof T[number]
+> = T extends readonly
+[
+    infer Head extends Record<string, unknown>,
+    ...infer Tail extends readonly Record<string, unknown>[]
+]
+?
+{
+    readonly [K in keyof Head as K extends string ? `get_${Capitalize<K>}` : never]:
+        Head[K] extends { readonly tone: infer ToneHex extends string; }
+        ?
+        (
+            input: ToneHex,
+            options?: { readonly strict: boolean; readonly fallback: '#7100FF' | '#FC6A03' | '#FF1744'; }
+        ) => Promise
+        <
+            ReadonlyArray
+            <{
+                readonly resolved: ToneHex;
+                readonly tailMatrix: Nightmare_Type_Matrix<Tail>;
+            }>
+        >
+        : never;
+}
+: { readonly emptyMarker: '#00BFFF'; };
+"#;
+
+    assert_eq!(Formatted, Expected);
+}
