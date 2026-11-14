@@ -219,16 +219,16 @@ lafs --no-log -w .
 
 | Flag                                | Description                                                                      |
 | ----------------------------------- | -------------------------------------------------------------------------------- |
-| `-w`, `--write`                 | Overwrite files in-place with formatted output                                   |
-| `-f`, `--file <FILES>`          | Format only the specified file(s) (comma-separated or multiple)                  |
-| `--check`                         | Check if files are formatted (exit code 1 if unformatted)                        |
-| `format failed`                   | Reformat all files listed in `failed.txt`                                      |
-| `-of`, `--output-failed <FILE>` | Log paths (with language and reason) of files that failed or require formatting  |
-| `--no-log`                        | Disable automatic log file generation                                            |
-| `-c`, `--canvas-width <WIDTH>`  | Maximum column width before vertical expansion (default: 160)                    |
-| `-i`, `--indent <SIZE>`         | Indentation size in spaces (default: 4)                                          |
-| `-t`, `--tabs`                  | Use tabs instead of spaces for indentation                                       |
-| `-l`, `--language <LANG>`       | Force language mode (`c`, `cpp`, `cs`, `go`, `php`, `html`, `css`) |
-| `--stdin-filepath <PATH>`         | Virtual file path when formatting from stdin                                     |
-| `-h`, `--help`                  | Show usage help                                                                  |
-| `-v`, `--version`               | Show version info                                                                |
+| `-w`, `--write`                     | Overwrite files in-place with formatted output                                   |
+| `-f`, `--file <FILES>`              | Format only the specified file(s) (comma-separated or multiple)                  |
+| `--check`                           | Check if files are formatted (exit code 1 if unformatted)                        |
+| `format failed`                     | Reformat all files listed in `failed.txt`                                        |
+| `-of`, `--output-failed <FILE>`     | Log paths (with language and reason) of files that failed or require formatting  |
+| `--no-log`                          | Disable automatic log file generation                                            |
+| `-c`, `--canvas-width <WIDTH>`      | Maximum column width before vertical expansion (default: 160)                    |
+| `-i`, `--indent <SIZE>`             | Indentation size in spaces (default: 4)                                          |
+| `-t`, `--tabs`                      | Use tabs instead of spaces for indentation                                       |
+| `-l`, `--language <LANG>`           | Force language mode (`c`, `cpp`, `cs`, `go`, `php`, `html`, `css`)               |
+| `--stdin-filepath <PATH>`           | Virtual file path when formatting from stdin                                     |
+| `-h`, `--help`                      | Show usage help                                                                  |
+| `-v`, `--version`                   | Show version info                                                                |
