@@ -1332,3 +1332,52 @@ To maintain absolute visual clarity and reduce eye strain when parsing dense str
 | **Success / Positive Indicators**                    | Emerald Green                    | `#00E676`                                               |
 | **Secondary Accents / Tokens**                       | Lavender / Violet                | `#C77DFF`                                               |
 | **Deep Structural Accents**                          | Indigo                           | `#3D5AFE`                                               |
+
+---
+
+#### 9. Extension Creation & VSIX Packaging Enforcement Protocol
+
+##### 9.1 The Extension Packaging Slop Problem
+
+When building, packaging, or modifying IDE extensions (such as Visual Studio Code or Google Antigravity extensions distributed as `.vsix` packages), standard packaging tools—most notably `@vscode/vsce`, npm packaging scripts, or IDE-integrated bundling extensions—exhibit a severe architectural flaw:
+1. **Packaging-Time K&R Re-Serialization:** Even when all workspace files are formatted according to LAFS, packaging tools like `@vscode/vsce` internally deserialize `package.json` into an object and re-serialize it into the `.vsix` archive using conventional K&R formatting (e.g., standard 4-space or 2-space indentation with trailing opening braces like `"engines": {` or `"contributes": {`). This silently reintroduces K&R structural hugging into the distributed `.vsix` artifact.
+2. **In-Memory Editor Tab Desynchronization:** When inspecting extension packages using archive viewers (such as Office Viewer or zip inspection extensions), files are decompressed to temporary directories (e.g., `AppData\Local\Temp\officeViewer-decompress-*`) and loaded into editor tabs. If an external CLI reformats files on disk while an editor tab holds an unsaved or focused in-memory buffer, auto-save mechanisms will overwrite the disk file with the cached unformatted slop.
+
+##### 9.2 The Universal Extension Enforcement Mandate
+
+Whenever creating, updating, or packaging a VS Code or Antigravity extension (or generating a `.vsix` package), the AI assistant and developer **MUST** strictly enforce LAFS across both the workspace source files and the resulting `.vsix` archive artifacts using the authoritative LAFS binary.
+
+* **Authoritative Formatter Binary:**
+  ```text
+  "B:\Language-Agnostic Formatting Style\LAFS.exe"
+  ```
+
+##### 9.3 The 4-Step Packaging & Artifact Enforcement Pipeline
+
+1. **Step 1: Workspace Pre-Formatting**
+   Before packaging or archiving, format all JSON files in the workspace (including `package.json`, `themes/*.json`, snippets, and language configs) using `LAFS.exe`:
+   ```powershell
+   & "B:\Language-Agnostic Formatting Style\LAFS.exe" -f package.json themes/*.json
+   ```
+
+2. **Step 2: VSIX Archive Post-Processing & Injection**
+   Because packaging tools (`vsce package`) re-serialize `package.json` into K&R style during `.vsix` archive creation, the `.vsix` package archive (an Open Packaging Conventions ZIP archive) **MUST** be post-processed immediately after packaging:
+   * Inspect the generated `.vsix` package.
+   * Extract or target all internal JSON files (`extension/package.json`, `extension/themes/*.json`, etc.).
+   * Format them using `LAFS.exe` (or directly inject the already-formatted workspace JSON contents).
+   * Re-write the `.vsix` archive entries using standard ZIP Deflate compression (method 8) so that the distributed `.vsix` archive contains purely LAFS-compliant JSON with zero K&R hugging.
+
+3. **Step 3: In-Memory & Decompressed Viewer Buffer Synchronization**
+   When files from the extension are open in the IDE (especially via temporary decompressed viewer directories such as `AppData\Local\Temp\officeViewer-decompress-*`):
+   * Do not rely solely on external filesystem writes if an editor tab is active, as the IDE's in-memory document model may overwrite disk changes on auto-save.
+   * Directly update the file using IDE-integrated file editing tools (`write_file` or `edit_file`) to ensure the editor buffer refreshes immediately, or instruct the user to reload the tab (`File: Revert File`).
+
+4. **Step 4: Strict Verification Gate**
+   Always verify the integrity of the packaged `.vsix` and workspace files:
+   * Extract all `.json` files from the `.vsix` to a temporary directory.
+   * Run the LAFS verification check:
+     ```powershell
+     & "B:\Language-Agnostic Formatting Style\LAFS.exe" --check --no-log -f <extracted-json-files...>
+     ```
+   * Confirm the exit code is strictly `0` (clean) with 0 errors and that the parsed JSON data is 100% identical to the source (zero data loss).
+
