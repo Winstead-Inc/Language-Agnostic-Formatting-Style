@@ -55,8 +55,10 @@ extension type const ZeroCostMatrix<T extends num>._
         List<List<T>> grid,
         (T,) scaleFactor,
         Map<String, (T, { String hex })> metadata
-    }) _backingStore
-) implements Object
+    })
+    _backingStore
+)
+implements Object
 {
     // Concise Dart 3.13 constructors inside Extension Type
     new (List<List<T>> grid, T scale) : this._((grid: grid, scaleFactor: (scale,), metadata: const {}));
@@ -114,7 +116,8 @@ final class MatrixPayloadPacket<T extends num>.seeded
         // Dart 3.10 Dot Shorthand!
         final List<(int, String)>? auditTrail
     }
-) extends AstPacket<T>(id, tone) with PacketDiagnostics<T>
+)
+extends AstPacket<T>(id, tone) with PacketDiagnostics<T>
 {
     this { if (retryCount < 0) { retryCount = 0; } }
 
@@ -172,7 +175,8 @@ class SlopOrchestrator
     (
         List<AstPacket<T>>? incomingPackets,
         { required (int, String, { bool strictMode, TelemetrySpectrum? overrideTone }) options, String? nullableHeader, List<String>? nullableTags }
-    ) async
+    )
+    async
     {
         await lazy_collections.loadLibrary();
 
@@ -199,19 +203,23 @@ class SlopOrchestrator
         [({
             // Comment counts as Significant Content (S) interrupting the boundary run!
             'interruptedStage':
-            (()
-            {
-                final localPrep = extractedSingleTuple + _MAX_HEX_MASK;
-                return
-                (
-                    localPrep,
-                    [{
-                        'reGroupedDeepInner':
-                        (() =>
-                        [({ 'core': localPrep * 2, 'accent': '#C77DFF', 'deep': _PI_APPROX })])()
-                    }]
-                );
-            })()
+            (
+                ()
+                {
+                    final localPrep = extractedSingleTuple + _MAX_HEX_MASK;
+                    return
+                    (
+                        localPrep,
+                        [{
+                            'reGroupedDeepInner':
+                            (
+                                () =>
+                                [({ 'core': localPrep * 2, 'accent': '#C77DFF', 'deep': _PI_APPROX })]
+                            )()
+                        }]
+                    );
+                }
+            )()
         })];
 
         // Dart 3.0 Pattern Destructuring + Null-Check + Guard + Rest Elements + Map/Record Patterns
@@ -233,76 +241,80 @@ class SlopOrchestrator
                     retryCount: var int retries && (>= 0 && <= 100),
                     spectrum: final TelemetrySpectrum spec,
                     matrix: final ZeroCostMatrix<T> mat
-                ) when strictMode || retries != - 1
+                )
+                when strictMode || retries != - 1
             )
-                ...
-                [{
-                    'index': idx,
-                    'packetId': pId,
-                    // Dart 3.8 Null-aware map key/value elements:
-                    ?nullableHeader: ?activeTone?.hexAccent,
-                    'tags':
+            ...
+            [{
+                'index': idx,
+                'packetId': pId,
+                // Dart 3.8 Null-aware map key/value elements:
+                ?nullableHeader: ?activeTone?.hexAccent,
+                'tags':
+                [
+                    ?nullableHeader,
+                    ...?nullableTags,
+                    for (int r = 0; r < (retries == 0 ? 1 : retries); r++)
+                    if (r.isEven) switch ((spec, r))
+                    {
+                        (.violetCore, 0) => 'PRIMARY_ZERO_#7100FF',
+                        (.deepOrangeAlert || .crimsonFault, > 2 && <= 10) => 'HIGH_RETRY_#FF1744',
+                        (final TelemetrySpectrum s, final int count) when s.isCritical =>
+                            'CRIT_${s.name}_$count',
+                        _ => 'STD_${mat[0]}'
+                    }
+                    else ...
                     [
-                        ?nullableHeader,
-                        ...?nullableTags,
-                        for (int r = 0; r < (retries == 0 ? 1 : retries); r++)
-                        if (r.isEven)
-                            switch
-                            ((spec, r))
-                        {
-                            (.violetCore, 0) => 'PRIMARY_ZERO_#7100FF',
-                            (.deepOrangeAlert || .crimsonFault, > 2 && <= 10) => 'HIGH_RETRY_#FF1744',
-                            (final TelemetrySpectrum s, final int count) when s.isCritical =>
-                                'CRIT_${s.name}_$count',
-                            _ => 'STD_${mat[0]}'
-                        }
-                        else ...
-                        [
-                            'ODD_BRANCH_$r',
-                            if (r == 3)
-                                (()
+                        'ODD_BRANCH_$r',
+                        if (r == 3)
+                        (
+                            ()
+                            {
+                                // 10 Levels of Nested Closures, Try/Catch, Cascades, & Generators
+                                try
                                 {
-                                    // 10 Levels of Nested Closures, Try/Catch, Cascades, & Generators
-                                    try
-                                    {
-                                        final buffer = StringBuffer()
-                                            ..write('START[')
-                                            ..writeAll
-                                            (
-                                                [
-                                                    for (var k in [1, 2, 3])
-                                                        (()
+                                    final buffer = StringBuffer()
+                                        ..write('START[')
+                                        ..writeAll
+                                        (
+                                            [
+                                                for (var k in [1, 2, 3])
+                                                (
+                                                    ()
+                                                    {
+                                                        switch (k)
                                                         {
-                                                            switch (k)
-                                                            {
-                                                                case 1:
-                                                                return 'ONE:#3D5AFE';
-                                                                case 2:
-                                                                return 'TWO:#00E676';
-                                                                default:
-                                                                return 'OTHER:#00BFFF';
-                                                            }
-                                                        })()
-                                                ],
-                                                '|'
-                                            )
-                                            ..write(']');
-                                        return buffer.toString();
-                                    }
-                                    on FormatException catch (e, st) { return 'FMT_ERR:$e/$st'; }
-                                    catch (_, _)
-                                    {
-                                        // Dart 3.7 dual wildcard catch!
-                                        return 'UNKNOWN_ERR:#FF1744';
-                                    }
-                                    finally
-                                    {
-                                        // Empty finally block K&R hug
-                                    }
-                                })()
-                        ]
+                                                            case 1:
+                                                            return 'ONE:#3D5AFE';
+                                                            case 2:
+                                                            return 'TWO:#00E676';
+                                                            default:
+                                                            return 'OTHER:#00BFFF';
+                                                        }
+                                                    }
+                                                )()
+                                            ],
+                                            '|'
+                                        )
+                                        ..write(']');
+                                    return buffer.toString();
+                                }
+                                on FormatException catch (e, st) { return 'FMT_ERR:$e/$st'; }
+                                catch (_, _)
+                                {
+                                    // Dart 3.7 dual wildcard catch!
+                                    return 'UNKNOWN_ERR:#FF1744';
+                                }
+                                finally
+                                {
+                                    // Empty finally block K&R hug
+                                }
+                            }
+                        )()
                     ]
-                }] else if (pkt case AstPacket<T>(:final packetId, :final spectrum))
+                ]
+            }]
+            else if (pkt case AstPacket<T>(:final packetId, :final spectrum))
             {
                 'fallbackId': packetId,
                 'fallbackTone': spectrum.badgeLabel,
@@ -319,14 +331,15 @@ class SlopOrchestrator
     MULTILINE_SINGLE_QUOTE_BLOCK
     ColorToken: #7100FF
     NestedInterpolation: ${
-        (()
-        {
-            final innerMap = <String, List<(int, { String hex })>>
+        (
+            ()
             {
-                'rowA': [(1, hex: '#7100FF'), (2, hex: '#FC6A03')],
-                'rowB':
-                [
-                    for (var n = 0; n < 3; n++)
+                final innerMap = <String, List<(int, { String hex })>>
+                {
+                    'rowA': [(1, hex: '#7100FF'), (2, hex: '#FC6A03')],
+                    'rowB':
+                    [
+                        for (var n = 0; n < 3; n++)
                         (
                             n * 10,
                             hex: switch (n)
@@ -336,10 +349,11 @@ class SlopOrchestrator
                                 _ => '#FF1744'
                             }
                         )
-                ]
-            };
-            return jsonEncode(innerMap.keys.toList());
-        })()
+                    ]
+                };
+                return jsonEncode(innerMap.keys.toList());
+            }
+        )()
     }
     EndOfMultilineBlock
     '''
@@ -367,12 +381,14 @@ class SlopOrchestrator
                 (
                     'streamDump',
                     await
-                    (() async
-                    {
-                        final collected = <String>[];
-                        await for (final chunk in _generateTortureStream(optCode)) { collected.add(chunk); }
-                        return collected;
-                    })()
+                    (
+                        () async
+                        {
+                            final collected = <String>[];
+                            await for (final chunk in _generateTortureStream(optCode)) { collected.add(chunk); }
+                            return collected;
+                        }
+                    )()
                 )
             ]);
 
@@ -400,4 +416,4 @@ class SlopOrchestrator
             };
         }
     }
-} 
+}

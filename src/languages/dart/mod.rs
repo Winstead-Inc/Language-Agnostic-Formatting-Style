@@ -1151,10 +1151,9 @@ impl <'a> Dart_Emitter<'a>
                                 {
                                     match & Nodes[I + 1]
                                     {
-                                        Dart_Syntax_Node::Container(ref NextC) =>
-                                        { if NextC.Kind != Container_Kind::Brace { InForOrIfElement = true; } }
-                                        Dart_Syntax_Node::Token(_) =>
-                                        { InForOrIfElement = true; }
+                                        Dart_Syntax_Node::Container(_) => {}
+                                        Dart_Syntax_Node::Token(ref NextT) =>
+                                        { if ! matches ! (NextT.Text.as_str(), "switch" | "..." | "...?" | "for" | "if") { InForOrIfElement = true; } }
                                     }
                                 }
                             }
@@ -1835,10 +1834,7 @@ impl <'a> Dart_Emitter<'a>
             // 5. Tail glue from outermost container
             for Glue in & Container.Tail_Glue
             { self.EmitRaw( & Glue.Text); }
-            if Container.Tail_Glue.is_empty()
-            { self.EmitSpace(); }
-            else
-            { self.WriteNewline(); }
+            self.WriteNewline();
         }
     }
 
@@ -1873,10 +1869,7 @@ impl <'a> Dart_Emitter<'a>
             // 5. Tail glue
             for Glue in & Container.Tail_Glue
             { self.EmitRaw( & Glue.Text); }
-            if Container.Tail_Glue.is_empty()
-            { self.EmitSpace(); }
-            else
-            { self.WriteNewline(); }
+            self.WriteNewline();
         }
     }
 
@@ -1885,14 +1878,20 @@ impl <'a> Dart_Emitter<'a>
         // 1. Break line before opening delimiter
         self.EnsureNewline();
 
-        // 2. Opening delimiter on its own line: `(()` or `(() async` or `(() =>`
+        // 2. Opening delimiter on its own line: `(` at Level
         self.EmitIndent(Level);
-        self.EmitRaw("(()");
+        self.EmitRaw("(");
+        self.WriteNewline();
+
+        // 3. Closure parameter list + modifier at Level + 1:
+        // E.g. `() async` or `()`
+        self.EmitIndent(Level + 1);
+        self.EmitRaw("()");
         if let Some(ref Mod) = Container.IIFE_Modifier
         { self.EmitSpace(); self.EmitRaw(Mod); }
         self.WriteNewline();
 
-        // 3. Find the body container
+        // 4. Find the body container
         let mut BodyIdx = 1;
         while BodyIdx < Container.Children.len()
         {
@@ -1912,71 +1911,37 @@ impl <'a> Dart_Emitter<'a>
                 {
                     if BodyC.Kind == Container_Kind::Brace
                     {
-                        self.EmitIndent(Level);
+                        self.EmitIndent(Level + 1);
                         self.EmitRaw("{");
                         self.WriteNewline();
-                        self.EmitNodeList( & BodyC.Children, Level + 1);
+                        self.EmitNodeList( & BodyC.Children, Level + 2);
                         self.EnsureNewline();
                         if self.Output.ends_with("\n\n") { self.Output.pop(); }
-                        self.EmitIndent(Level);
-                        self.EmitRaw("})");
+                        self.EmitIndent(Level + 1);
+                        self.EmitRaw("}");
+                        self.WriteNewline();
                     }
                     else
-                    {
-                        let BodyLayout = self.DetermineLayoutState(BodyC);
-                        if BodyLayout == Layout_State::Grouped
-                        {
-                            let Chain = BodyC.CollectChain();
-                            let OpenRun: String = Chain.iter().map( | c | c.Kind.OpenGlyph()).collect();
-                            let mut CloseRun = String:: new ();
-                            for c in Chain.iter().rev()
-                            {
-                                if c.Close_Token.is_some()
-                                {
-                                    if c.Is_1Tuple_Record { CloseRun.push(','); }
-                                    CloseRun.push_str(c.Kind.CloseGlyph());
-                                }
-                            }
-                            let Innermost = Chain.last().unwrap();
-                            self.EmitIndent(Level);
-                            self.EmitRaw( & OpenRun);
-                            self.WriteNewline();
-                            self.EmitNodeList( & Innermost.Children, Level + 1);
-                            self.EnsureNewline();
-                            if self.Output.ends_with("\n\n") { self.Output.pop(); }
-                            self.EmitIndent(Level);
-                            self.EmitRaw( & CloseRun);
-                            self.EmitRaw(")");
-                        }
-                        else
-                        { self.EmitContainerNode(BodyC, Level); self.EmitRaw(")"); }
-                    }
+                    { self.EmitContainerNode(BodyC, Level + 1); self.WriteNewline(); }
                 }
                 Dart_Syntax_Node::Token(_) =>
-                {
-                    self.EmitNodeList( & Container.Children[BodyIdx..], Level + 1);
-                    self.EnsureNewline();
-                    self.EmitIndent(Level);
-                    self.EmitRaw(")");
-                }
+                { self.EmitNodeList( & Container.Children[BodyIdx..], Level + 2); self.EnsureNewline(); }
             }
         }
-        else
-        { self.EnsureNewline(); self.EmitIndent(Level); self.EmitRaw(")"); }
 
         self.In_Cascade = SavedCascade;
 
-        // 4. Trailing invocation `()`
+        // 5. Closing delimiter on its own line at Level:
+        // `)` + optional invocation `()` + tail glue
+        self.EnsureNewline();
+        self.EmitIndent(Level);
+        self.EmitRaw(")");
         if Container.IIFE_Has_Invocation
         { self.EmitRaw("()"); }
 
-        // 5. Tail glue
         for Glue in & Container.Tail_Glue
         { self.EmitRaw( & Glue.Text); }
-        if Container.Tail_Glue.is_empty()
-        { self.EmitSpace(); }
-        else
-        { self.WriteNewline(); }
+        self.WriteNewline();
     }
 
     fn EmitStringInterpolation( & mut self, Container: & Dart_Container_Node, _Level: usize)
