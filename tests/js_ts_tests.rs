@@ -68,6 +68,25 @@ fn Test_JS_ASI_Column_Anchored_Hybrid_On_Return()
 }
 
 #[test]
+fn Test_JS_CAH_Option_Disabled_Uses_Pure_Allman()
+{
+    let Input = r#"function GetData() {
+    return {
+        Status: 200,
+        Payload: " OK"
+    };
+}"#;
+    let mut Config = Config_Settings:: default();
+    Config.Language = Source_Language::JavaScript;
+    Config.Canvas_Width = 40;
+    Config.Column_Anchored_Hybrid = false;
+
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!(Formatted.contains("return\n"), "When CAH is disabled, return must have a newline after it");
+    assert!(Formatted.contains("    {\n"), "When CAH is disabled, opening brace must be detached Allman style");
+}
+
+#[test]
 fn Test_JS_Template_Literal_Preservation()
 {
     let Input = r#"const Message = `Hello, ${User.Name}!

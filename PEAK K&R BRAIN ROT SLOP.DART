@@ -10,7 +10,8 @@ import 'dart:collection' deferred as lazy_collections show LinkedHashMap, Unmodi
 import 'dart:convert' show jsonEncode, utf8;
 
 // 1. TORTURE: Horrific Generic Function Typedefs & Nested Record Types
-typedef NightmareCallback <
+typedef NightmareCallback
+<
 T extends Comparable<T>, U extends Map<String, List<(int, { String tag, bool? flag })>>
 > = FutureOr<(T, (int,), { U payload, List<T> Function < V extends T > (V input, [String? prefix])? transformer })> Function <
 W extends Object?
@@ -233,73 +234,75 @@ class SlopOrchestrator
                     spectrum: final TelemetrySpectrum spec,
                     matrix: final ZeroCostMatrix<T> mat
                 ) when strictMode || retries != - 1
-            ) ...
-            [{
-                'index': idx,
-                'packetId': pId,
-                // Dart 3.8 Null-aware map key/value elements:
-                ?nullableHeader: ?activeTone?.hexAccent,
-                'tags':
-                [
-                    ?nullableHeader,
-                    ...?nullableTags,
-                    for (int r = 0; r < (retries == 0 ? 1 : retries); r++)
-                    if (r.isEven)
-                    switch ((spec, r))
-                    {
-                        (.violetCore, 0) => 'PRIMARY_ZERO_#7100FF',
-                        (.deepOrangeAlert || .crimsonFault, > 2 && <= 10) => 'HIGH_RETRY_#FF1744',
-                        (final TelemetrySpectrum s, final int count) when s.isCritical =>
-                            'CRIT_${s.name}_$count',
-                        _ => 'STD_${mat[0]}'
-                    }
-                    else ...
+            )
+                ...
+                [{
+                    'index': idx,
+                    'packetId': pId,
+                    // Dart 3.8 Null-aware map key/value elements:
+                    ?nullableHeader: ?activeTone?.hexAccent,
+                    'tags':
                     [
-                        'ODD_BRANCH_$r',
-                        if (r == 3)
-                        (()
+                        ?nullableHeader,
+                        ...?nullableTags,
+                        for (int r = 0; r < (retries == 0 ? 1 : retries); r++)
+                        if (r.isEven)
+                            switch
+                            ((spec, r))
                         {
-                            // 10 Levels of Nested Closures, Try/Catch, Cascades, & Generators
-                            try
-                            {
-                                final buffer = StringBuffer()
-                                    ..write('START[')
-                                    ..writeAll
-                                    (
-                                            [
+                            (.violetCore, 0) => 'PRIMARY_ZERO_#7100FF',
+                            (.deepOrangeAlert || .crimsonFault, > 2 && <= 10) => 'HIGH_RETRY_#FF1744',
+                            (final TelemetrySpectrum s, final int count) when s.isCritical =>
+                                'CRIT_${s.name}_$count',
+                            _ => 'STD_${mat[0]}'
+                        }
+                        else ...
+                        [
+                            'ODD_BRANCH_$r',
+                            if (r == 3)
+                                (()
+                                {
+                                    // 10 Levels of Nested Closures, Try/Catch, Cascades, & Generators
+                                    try
+                                    {
+                                        final buffer = StringBuffer()
+                                            ..write('START[')
+                                            ..writeAll
+                                            (
+                                                [
                                                     for (var k in [1, 2, 3])
-                                                    (()
-                                                    {
+                                                        (()
+                                                        {
                                                             switch (k)
                                                             {
-                                                                    case 1:
-                                                                    return 'ONE:#3D5AFE';
+                                                                case 1:
+                                                                return 'ONE:#3D5AFE';
                                                                 case 2:
                                                                 return 'TWO:#00E676';
                                                                 default:
                                                                 return 'OTHER:#00BFFF';
                                                             }
-                                                    })()
-                                            ],
-                                            '|'
-                                    )
-                                    ..write(']');
-                                return buffer.toString();
-                            }
-                            on FormatException catch (e, st) { return 'FMT_ERR:$e/$st'; }
-                            catch (_, _)
-                            {
-                                // Dart 3.7 dual wildcard catch!
-                                return 'UNKNOWN_ERR:#FF1744';
-                            }
-                            finally
-                            {
-                                // Empty finally block K&R hug
-                            }
-                        })()
+                                                        })()
+                                                ],
+                                                '|'
+                                            )
+                                            ..write(']');
+                                        return buffer.toString();
+                                    }
+                                    on FormatException catch (e, st) { return 'FMT_ERR:$e/$st'; }
+                                    catch (_, _)
+                                    {
+                                        // Dart 3.7 dual wildcard catch!
+                                        return 'UNKNOWN_ERR:#FF1744';
+                                    }
+                                    finally
+                                    {
+                                        // Empty finally block K&R hug
+                                    }
+                                })()
+                        ]
                     ]
-                ]
-            }] else if (pkt case AstPacket<T>(:final packetId, :final spectrum))
+                }] else if (pkt case AstPacket<T>(:final packetId, :final spectrum))
             {
                 'fallbackId': packetId,
                 'fallbackTone': spectrum.badgeLabel,
@@ -324,15 +327,15 @@ class SlopOrchestrator
                 'rowB':
                 [
                     for (var n = 0; n < 3; n++)
-                    (
-                        n * 10,
-                        hex: switch (n)
-                        {
-                            0 => '#00E676',
-                            1 => '#00BFFF',
-                            _ => '#FF1744'
-                        }
-                    )
+                        (
+                            n * 10,
+                            hex: switch (n)
+                            {
+                                0 => '#00E676',
+                                1 => '#00BFFF',
+                                _ => '#FF1744'
+                            }
+                        )
                 ]
             };
             return jsonEncode(innerMap.keys.toList());
@@ -350,27 +353,27 @@ class SlopOrchestrator
         final Map<String, dynamic>? cascadeVictim = <String, dynamic> { 'init': _instanceTag, 'str': interpolatedNightmare }
             ?..['step1'] =
             ([({
-                    'cascadeInner':
-                    (
-                            optLabel,
-                            (singleRecordElement: 777,),
-                            [for (var x in [10, 20, 30]) if (x > 15) x * 2]
-                    )
+                'cascadeInner':
+                (
+                    optLabel,
+                    (singleRecordElement: 777,),
+                    [for (var x in [10, 20, 30]) if (x > 15) x * 2]
+                )
             })])
             ..update('init', (existing) => '${existing}_MUTATED', ifAbsent: () => 'DEFAULT_#7100FF')
             ..addEntries
             ([
-                    MapEntry
-                    (
-                            'streamDump',
-                            await
-                            (() async
-                            {
-                                    final collected = <String>[];
-                                await for (final chunk in _generateTortureStream(optCode)) { collected.add(chunk); }
-                                return collected;
-                            })()
-                    )
+                MapEntry
+                (
+                    'streamDump',
+                    await
+                    (() async
+                    {
+                        final collected = <String>[];
+                        await for (final chunk in _generateTortureStream(optCode)) { collected.add(chunk); }
+                        return collected;
+                    })()
+                )
             ]);
 
         return cascadeVictim ?? { 'status': 'NULL_FALLBACK', 'accent': '#FF1744' };

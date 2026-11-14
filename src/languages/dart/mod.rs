@@ -1107,9 +1107,6 @@ impl <'a> Dart_Emitter<'a>
 
         for (I, Node) in Nodes.iter().enumerate()
         {
-            let EffectiveLevel = if self.In_Cascade { Level + 1 } else { Level };
-            let NodeLevel = if InForOrIfElement { EffectiveLevel + 1 } else { EffectiveLevel };
-
             match Node
             {
                 Dart_Syntax_Node::Token(T) =>
@@ -1119,16 +1116,25 @@ impl <'a> Dart_Emitter<'a>
                     else if T.Text == "for" || T.Text == "if"
                     { InForOrIfElement = false; }
 
-                    self.EmitSingleToken(T, if self.In_Cascade { Level + 1 } else { NodeLevel }, Nodes, I);
+                    let EffectiveLevel = if self.In_Cascade { Level + 1 } else { Level };
+                    let NodeLevel = if InForOrIfElement { EffectiveLevel + 1 } else { EffectiveLevel };
 
-                    if T.Text == ";"
-                    { self.In_Cascade = false; InForOrIfElement = false; }
+                    if InForOrIfElement
+                    { self.EnsureNewline(); }
+
+                    self.EmitSingleToken(T, NodeLevel, Nodes, I);
+
+                    if T.Text == ";" || T.Text == ","
+                    { if T.Text == ";" { self.In_Cascade = false; } InForOrIfElement = false; }
                 }
                 Dart_Syntax_Node::Container(C) =>
                 {
+                    let EffectiveLevel = if self.In_Cascade { Level + 1 } else { Level };
+                    let NodeLevel = if InForOrIfElement { EffectiveLevel + 1 } else { EffectiveLevel };
+
                     if InForOrIfElement
                     { self.EnsureNewline(); }
-                    self.EmitContainerNode(C, if self.In_Cascade { Level + 1 } else { EffectiveLevel });
+                    self.EmitContainerNode(C, NodeLevel);
 
                     if C.Tail_Glue.iter().any( | g | g.Text == ";")
                     { self.In_Cascade = false; }
@@ -1143,8 +1149,13 @@ impl <'a> Dart_Emitter<'a>
                             {
                                 if I + 1 < Nodes.len()
                                 {
-                                    if let Dart_Syntax_Node::Container(ref NextC) = Nodes[I + 1]
-                                    { if NextC.Kind != Container_Kind::Brace { InForOrIfElement = true; } }
+                                    match & Nodes[I + 1]
+                                    {
+                                        Dart_Syntax_Node::Container(ref NextC) =>
+                                        { if NextC.Kind != Container_Kind::Brace { InForOrIfElement = true; } }
+                                        Dart_Syntax_Node::Token(_) =>
+                                        { InForOrIfElement = true; }
+                                    }
                                 }
                             }
                         }
@@ -1807,7 +1818,10 @@ impl <'a> Dart_Emitter<'a>
         self.WriteNewline();
 
         // 3. Innermost children indented at Level + 1
+        let SavedCascade = self.In_Cascade;
+        self.In_Cascade = false;
         self.EmitNodeList( & Innermost.Children, Level + 1);
+        self.In_Cascade = SavedCascade;
 
         if ! CloseRun.is_empty()
         {
@@ -1842,7 +1856,10 @@ impl <'a> Dart_Emitter<'a>
         self.WriteNewline();
 
         // 3. Inner children indented at Level + 1
+        let SavedCascade = self.In_Cascade;
+        self.In_Cascade = false;
         self.EmitNodeList( & Container.Children, Level + 1);
+        self.In_Cascade = SavedCascade;
 
         if Container.Close_Token.is_some()
         {
@@ -1883,6 +1900,9 @@ impl <'a> Dart_Emitter<'a>
             { if matches ! (T.Text.as_str(), "async" | "sync*" | "async*" | "=>") { BodyIdx += 1; continue ; } }
             break;
         }
+
+        let SavedCascade = self.In_Cascade;
+        self.In_Cascade = false;
 
         if BodyIdx < Container.Children.len()
         {
@@ -1943,6 +1963,8 @@ impl <'a> Dart_Emitter<'a>
         }
         else
         { self.EnsureNewline(); self.EmitIndent(Level); self.EmitRaw(")"); }
+
+        self.In_Cascade = SavedCascade;
 
         // 4. Trailing invocation `()`
         if Container.IIFE_Has_Invocation

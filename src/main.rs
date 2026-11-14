@@ -151,6 +151,7 @@ fn PrintUsage(Logger: & Terminal_Logger)
     Logger.Println("      --kotlin-style <STYLE>  Kotlin style: 'allman' (Version 1) or 'official' (Version 2)");
     Logger.Println("      --allman-kotlin         Enforce Version 1 (Pure Allman style for all containers)");
     Logger.Println("      --official-kotlin       Enforce Version 2 (Official Kotlin compiler compatible / Brain K&R)");
+    Logger.Println("      --cah <0|1>             Enable (1, default) or disable (0) Column-Anchored Hybrid (Section 6.1)");
     Logger.Println("      --max-statements <NUM>  Max statements in a monolith block (default: 4)");
     Logger.Println("      --stdin-filepath <PATH> Virtual filepath when formatting stdin");
     Logger.Println("  -h, --help                  Show this help message");
@@ -685,6 +686,8 @@ fn Main()
             }
             "--allman-kotlin" => { Config.Kotlin_Style = Kotlin_Style::Allman; }
             "--official-kotlin" => { Config.Kotlin_Style = Kotlin_Style::Official; }
+            "--cah" =>
+            { I += 1; if I < Args.len() { Config.Column_Anchored_Hybrid = Args[I] != "0"; } }
             "--stdin-filepath" => { I += 1; if I < Args.len() { StdinVirtualPath = Some(Args[I].clone()); } }
             "-" => { ReadFromStdin = true; }
             "-h" | "--help" => { Logger.Set_Disable_Logs(true); PrintUsage( & Logger); return ; }
@@ -749,6 +752,8 @@ fn Main()
                         else { Config.Kotlin_Style = Kotlin_Style::Allman; }
                     }
                 }
+                else if Arg.starts_with("--cah=")
+                { if let Some((_, Value)) = Arg.split_once('=') { Config.Column_Anchored_Hybrid = Value != "0"; } }
                 else if ! Arg.starts_with('-') { RawTargets.push(Arg.clone()); }
             }
         }
