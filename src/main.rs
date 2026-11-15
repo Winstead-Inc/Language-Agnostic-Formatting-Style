@@ -154,6 +154,8 @@ fn PrintUsage(Logger: & Terminal_Logger)
     Logger.Println("      --allman-kotlin         Enforce Version 1 (Pure Allman style for all containers)");
     Logger.Println("      --official-kotlin       Enforce Version 2 (Official Kotlin compiler compatible / Brain K&R)");
     Logger.Println("      --cah <0|1>             Enable (1, default) or disable (0) Column-Anchored Hybrid (Section 6.1)");
+    Logger.Println("      --preserve-empty-lines <0|1> Preserve empty lines by default (1, default) or strip (0)");
+    Logger.Println("      --max-blank-lines <NUM>  Max consecutive blank lines to preserve (default: 1)");
     Logger.Println("      --max-statements <NUM>  Max statements in a monolith block (default: 4)");
     Logger.Println("      --stdin-filepath <PATH> Virtual filepath when formatting stdin");
     Logger.Println("  -h, --help                  Show this help message");
@@ -690,6 +692,30 @@ fn Main()
             "--official-kotlin" => { Config.Kotlin_Style = Kotlin_Style::Official; }
             "--cah" =>
             { I += 1; if I < Args.len() { Config.Column_Anchored_Hybrid = Args[I] != "0"; } }
+            "--preserve-empty-lines" =>
+            {
+                I += 1;
+                if I < Args.len() && ! Args[I].starts_with('-')
+                {
+                    Config.Preserve_Empty_Lines = Args[I] != "0" && ! Args[I].eq_ignore_ascii_case("false");
+                }
+                else
+                {
+                    Config.Preserve_Empty_Lines = true;
+                    I -= 1;
+                }
+            }
+            "--no-preserve-empty-lines" =>
+            { Config.Preserve_Empty_Lines = false; }
+            "--max-blank-lines" | "-mbl" =>
+            {
+                I += 1;
+                if I < Args.len()
+                {
+                    if let Ok(Val) = Args[I].parse::<usize>()
+                    { Config.Max_Blank_Lines = Val; }
+                }
+            }
             "--stdin-filepath" => { I += 1; if I < Args.len() { StdinVirtualPath = Some(Args[I].clone()); } }
             "-" => { ReadFromStdin = true; }
             "-h" | "--help" => { Logger.Set_Disable_Logs(true); PrintUsage( & Logger); return ; }
@@ -756,6 +782,19 @@ fn Main()
                 }
                 else if Arg.starts_with("--cah=")
                 { if let Some((_, Value)) = Arg.split_once('=') { Config.Column_Anchored_Hybrid = Value != "0"; } }
+                else if Arg.starts_with("--preserve-empty-lines=")
+                {
+                    if let Some((_, Value)) = Arg.split_once('=')
+                    { Config.Preserve_Empty_Lines = Value != "0" && ! Value.eq_ignore_ascii_case("false"); }
+                }
+                else if Arg.starts_with("--max-blank-lines=") || Arg.starts_with("-mbl=")
+                {
+                    if let Some((_, Value)) = Arg.split_once('=')
+                    {
+                        if let Ok(Val) = Value.parse::<usize>()
+                        { Config.Max_Blank_Lines = Val; }
+                    }
+                }
                 else if ! Arg.starts_with('-') { RawTargets.push(Arg.clone()); }
             }
         }

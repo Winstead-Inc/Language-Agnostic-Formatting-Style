@@ -431,3 +431,34 @@ U extends keyof T[number] = keyof T[number]
 
     assert_eq!(Formatted, Expected);
 }
+
+#[test]
+fn Test_JS_Preserve_Empty_Lines()
+{
+    let Input = r#"function DoWork()
+{
+
+    const x = 1;
+
+    const obj =
+    {
+        a: 1,
+        b: 2,
+    };
+
+}
+"#;
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::JavaScript;
+    Config.Canvas_Width = 40;
+    Config.Preserve_Empty_Lines = true;
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    assert!(Formatted.contains("{\n\n    const x = 1;"), "Empty line after opener preserved: {}", Formatted);
+    assert!(Formatted.contains("};\n\n}"), "Empty line before closer preserved: {}", Formatted);
+
+    Config.Preserve_Empty_Lines = false;
+    let Formatted_Stripped = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    assert!(!Formatted_Stripped.contains("{\n\n"), "Empty line after opener stripped: {}", Formatted_Stripped);
+    assert!(!Formatted_Stripped.contains("};\n\n}"), "Empty line before closer stripped: {}", Formatted_Stripped);
+}

@@ -1112,10 +1112,16 @@ impl <'a> Dart_Emitter<'a>
         if self.Config.Max_Blank_Lines == 0 || self.Output.is_empty() { return ; }
         self.EnsureNewline();
         if ! self.Output.ends_with("\n\n")
-        && ! self.Output.ends_with("{\n")
-        && ! self.Output.ends_with("[\n")
-        && ! self.Output.ends_with("(\n")
-        { self.Output.push('\n'); self.Current_Line_Len = 0; self.Line_Has_Content = false; }
+        {
+            if ! self.Config.Preserve_Empty_Lines
+            && (self.Output.ends_with("{\n") || self.Output.ends_with("[\n") || self.Output.ends_with("(\n"))
+            {
+                return ;
+            }
+            self.Output.push('\n');
+            self.Current_Line_Len = 0;
+            self.Line_Has_Content = false;
+        }
     }
 
     fn EmitIndent( & mut self, Level: usize)
@@ -1191,6 +1197,8 @@ impl <'a> Dart_Emitter<'a>
 
                     if InForOrIfElement
                     { self.EnsureNewline(); }
+                    else if C.Open_Token.Preceding_Newlines >= 2
+                    { self.EnsureBlankLine(); }
                     self.EmitContainerNode(C, NodeLevel);
 
                     if C.Tail_Glue.iter().any( | g | g.Text == ";")
@@ -1893,7 +1901,15 @@ impl <'a> Dart_Emitter<'a>
         if ! CloseRun.is_empty()
         {
             self.EnsureNewline();
-            if self.Output.ends_with("\n\n") { self.Output.pop(); }
+            let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
+            if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
+            {
+                self.EnsureBlankLine();
+            }
+            else if self.Output.ends_with("\n\n")
+            {
+                self.Output.pop();
+            }
 
             // 4. Compound closing run at Level indent
             self.EmitIndent(Level);
@@ -1931,7 +1947,15 @@ impl <'a> Dart_Emitter<'a>
         if Container.Close_Token.is_some()
         {
             self.EnsureNewline();
-            if self.Output.ends_with("\n\n") { self.Output.pop(); }
+            let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
+            if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
+            {
+                self.EnsureBlankLine();
+            }
+            else if self.Output.ends_with("\n\n")
+            {
+                self.Output.pop();
+            }
 
             // 4. Closing delimiter on its own line at Level indent
             self.EmitIndent(Level);
@@ -1988,7 +2012,15 @@ impl <'a> Dart_Emitter<'a>
                         self.WriteNewline();
                         self.EmitNodeList( & BodyC.Children, Level + 2);
                         self.EnsureNewline();
-                        if self.Output.ends_with("\n\n") { self.Output.pop(); }
+                        let HasPrecedingBlank = BodyC.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
+                        if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
+                        {
+                            self.EnsureBlankLine();
+                        }
+                        else if self.Output.ends_with("\n\n")
+                        {
+                            self.Output.pop();
+                        }
                         self.EmitIndent(Level + 1);
                         self.EmitRaw("}");
                         self.WriteNewline();
@@ -2040,7 +2072,15 @@ impl <'a> Dart_Emitter<'a>
             self.WriteNewline();
             self.EmitNodeList( & Container.Children, BaseLevel + 1);
             self.EnsureNewline();
-            if self.Output.ends_with("\n\n") { self.Output.pop(); }
+            let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
+            if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
+            {
+                self.EnsureBlankLine();
+            }
+            else if ! HasPrecedingBlank && self.Output.ends_with("\n\n")
+            {
+                self.Output.pop();
+            }
             self.EmitIndent(BaseLevel);
             self.EmitRaw("}");
         }

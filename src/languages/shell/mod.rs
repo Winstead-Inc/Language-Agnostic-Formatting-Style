@@ -791,6 +791,21 @@ impl <'a> Shell_Emitter<'a>
 
     fn EnsureNewline( & mut self) { if self.Line_Has_Content { self.WriteNewline(); } }
 
+    fn EnsureBlankLine( & mut self)
+    {
+        if self.Config.Max_Blank_Lines == 0 || self.Output.is_empty() { return ; }
+        self.EnsureNewline();
+        if ! self.Output.ends_with("\n\n")
+        {
+            if ! self.Config.Preserve_Empty_Lines
+            && (self.Output.ends_with("{\n") || self.Output.ends_with("[\n") || self.Output.ends_with("(\n"))
+            {
+                return ;
+            }
+            self.WriteNewline();
+        }
+    }
+
     fn EmitIndent( & mut self, Level: usize)
     {
         if ! self.Line_Has_Content
@@ -827,6 +842,10 @@ impl <'a> Shell_Emitter<'a>
                 Shell_Syntax_Node::Token(T) => { self.EmitSingleToken(T, Level); }
                 Shell_Syntax_Node::Container(C) =>
                 {
+                    if C.Open_Token.Preceding_Newlines >= 2
+                    {
+                        self.EnsureBlankLine();
+                    }
                     let Layout = self.Planner.DecideLayout(C, Level, self.Current_Line_Len);
                     self.EmitContainerNodeWithLayout(C, Level, Layout);
                     // If brace block ended, next statement on new line
@@ -844,9 +863,11 @@ impl <'a> Shell_Emitter<'a>
         // 1. Preceding newlines MUST be handled before comments or tokens
         if Token.Preceding_Newlines > 0
         {
-            let BlankLines = (Token.Preceding_Newlines - 1).min(self.Config.Max_Blank_Lines);
             self.EnsureNewline();
-            for _ in 0..BlankLines { self.WriteNewline(); }
+            if Token.Preceding_Newlines >= 2
+            {
+                self.EnsureBlankLine();
+            }
         }
         // 2. Line comment
         if let Token_Kind::Comment_Line(CommentText) = & Token.Kind
@@ -979,6 +1000,15 @@ impl <'a> Shell_Emitter<'a>
             if ! CloseOnSameLine
             {
                 self.EnsureNewline();
+                let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
+                if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
+                {
+                    if ! self.Output.ends_with("\n\n") { self.WriteNewline(); }
+                }
+                else if self.Output.ends_with("\n\n")
+                {
+                    self.Output.pop();
+                }
                 if ! Container.Decl_Indent.is_empty() { self.EmitRaw( & Container.Decl_Indent); } else { self.EmitIndent(Level); }
             }
             self.EmitRaw(Container.Close_Token.as_ref().map_or(Container.Kind.CloseGlyph(), | T | T.Text.as_str()));

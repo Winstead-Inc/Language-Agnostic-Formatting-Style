@@ -1141,6 +1141,21 @@ impl <'a> JS_Emitter<'a>
 
     fn EnsureNewline( & mut self) { if self.Line_Has_Content { self.WriteNewline(); } }
 
+    fn EnsureBlankLine( & mut self)
+    {
+        if self.Config.Max_Blank_Lines == 0 || self.Output.is_empty() { return ; }
+        self.EnsureNewline();
+        if ! self.Output.ends_with("\n\n")
+        {
+            if ! self.Config.Preserve_Empty_Lines
+            && (self.Output.ends_with("{\n") || self.Output.ends_with("[\n") || self.Output.ends_with("(\n"))
+            {
+                return ;
+            }
+            self.WriteNewline();
+        }
+    }
+
     fn EmitIndent( & mut self, Level: usize)
     {
         if ! self.Line_Has_Content
@@ -1204,6 +1219,11 @@ impl <'a> JS_Emitter<'a>
                 {
                     if C.Open_Token.Text == "${"
                     { self.EmitStringInterpolation(C, EffectiveLevel); Index += 1; continue ; }
+
+                    if C.Open_Token.Preceding_Newlines >= 2
+                    {
+                        self.EnsureBlankLine();
+                    }
 
                     let NextTokenText: Option< & str> = if Index + 1 < Total
                     {
@@ -1282,9 +1302,11 @@ impl <'a> JS_Emitter<'a>
 
         if Token.Preceding_Newlines > 0
         {
-            let BlankLines = (Token.Preceding_Newlines - 1).min(self.Config.Max_Blank_Lines);
             self.EnsureNewline();
-            for _ in 0..BlankLines { self.WriteNewline(); }
+            if Token.Preceding_Newlines >= 2
+            {
+                self.EnsureBlankLine();
+            }
         }
 
         if ! self.Line_Has_Content
@@ -1492,6 +1514,15 @@ impl <'a> JS_Emitter<'a>
         self.EmitNodeList( & Container.Children, Level + 1);
 
         self.EnsureNewline();
+        let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
+        if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
+        {
+            if ! self.Output.ends_with("\n\n") { self.WriteNewline(); }
+        }
+        else if self.Output.ends_with("\n\n")
+        {
+            self.Output.pop();
+        }
         self.EmitIndent(Level);
         self.EmitRaw(Container.Kind.CloseGlyph());
         for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
@@ -1537,7 +1568,15 @@ impl <'a> JS_Emitter<'a>
             self.WriteNewline();
             self.EmitNodeList( & Container.Children, BaseLevel + 1);
             self.EnsureNewline();
-            if self.Output.ends_with("\n\n") { self.Output.pop(); }
+            let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
+            if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
+            {
+                if ! self.Output.ends_with("\n\n") { self.WriteNewline(); }
+            }
+            else if self.Output.ends_with("\n\n")
+            {
+                self.Output.pop();
+            }
             self.EmitIndent(BaseLevel);
             self.EmitRaw("}");
         }
