@@ -101,13 +101,13 @@ impl Container_Tree_Builder
     {
         let Matcher = crate::matcher::Container_Matcher::New();
         let Profile = crate::profile::Language_Profile::For(crate::types::Source_Language::Generic);
-        Matcher.BuildTree(&self.Tokens, Profile).unwrap_or_else(|_| self.FallbackParse())
+        Matcher.BuildTree( & self.Tokens, Profile).unwrap_or_else( | _ | self.FallbackParse())
     }
 
-    pub fn BuildTreeWithProfile(&mut self, Profile: &'static crate::profile::Language_Profile) -> Result<Vec<Syntax_Node>, crate::matcher::Match_Error>
+    pub fn BuildTreeWithProfile( & mut self, Profile: & 'static crate::profile::Language_Profile) -> Result<Vec<Syntax_Node>, crate::matcher::Match_Error>
     {
         let Matcher = crate::matcher::Container_Matcher::New();
-        Matcher.BuildTree(&self.Tokens, Profile)
+        Matcher.BuildTree( & self.Tokens, Profile)
     }
 
     fn FallbackParse( & mut self) -> Vec<Syntax_Node>

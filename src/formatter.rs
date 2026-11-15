@@ -49,13 +49,7 @@ impl Source_Formatter
 
         let mut Builder = Container_Tree_Builder::New(Tokens);
         let SyntaxNodes = match Builder.BuildTreeWithProfile(Config.Language.Profile())
-        {
-            Ok(Nodes) => Nodes,
-            Err(MatchErr) =>
-            {
-                return Err(format!("{}. Output aborted to prevent code corruption.", MatchErr));
-            }
-        };
+        { Ok(Nodes) => Nodes, Err(MatchErr) => { return Err(format ! ("{}. Output aborted to prevent code corruption.", MatchErr)); } };
 
         let Emitter = Code_Emitter::New(Config);
         let Formatted = Emitter.Emit( & SyntaxNodes);

@@ -918,12 +918,7 @@ impl JS_Container_Builder
             let Token = & self.Tokens[Idx];
 
             if let Some(Top) = Stack.last_mut()
-            {
-                if Token.Text.contains('\n')
-                {
-                    Top.Has_Forced_Break = true;
-                }
-            }
+            { if Token.Text.contains('\n') { Top.Has_Forced_Break = true; } }
 
             match & Token.Kind
             {
@@ -942,15 +937,11 @@ impl JS_Container_Builder
                     {
                         let Node = JS_Syntax_Node::Token(Token.clone());
                         if let Some(Top) = Stack.last_mut()
-                        {
-                            Top.Children.push(Node);
-                        }
+                        { Top.Children.push(Node); }
                         else
-                        {
-                            RootNodes.push(Node);
-                        }
+                        { RootNodes.push(Node); }
                         Idx += 1;
-                        continue ;
+                        continue;
                     }
 
                     let mut Container = Stack.pop().unwrap();
@@ -983,27 +974,18 @@ impl JS_Container_Builder
 
                     let Node = JS_Syntax_Node::Container(Container);
                     if let Some(Top) = Stack.last_mut()
-                    {
-                        Top.Children.push(Node);
-                    }
+                    { Top.Children.push(Node); }
                     else
-                    {
-                        RootNodes.push(Node);
-                    }
+                    { RootNodes.push(Node); }
                 }
 
                 Token_Kind::Comment_Line(_) =>
                 {
                     let Node = JS_Syntax_Node::Token(Token.clone());
                     if let Some(Top) = Stack.last_mut()
-                    {
-                        Top.Has_Forced_Break = true;
-                        Top.Children.push(Node);
-                    }
+                    { Top.Has_Forced_Break = true; Top.Children.push(Node); }
                     else
-                    {
-                        RootNodes.push(Node);
-                    }
+                    { RootNodes.push(Node); }
                     LastSignificantWasReturn = false;
                     Idx += 1;
                 }
@@ -1011,12 +993,7 @@ impl JS_Container_Builder
                 _ =>
                 {
                     if Token.Text == ";"
-                    {
-                        if let Some(Top) = Stack.last_mut()
-                        {
-                            Top.Statement_Count += 1;
-                        }
-                    }
+                    { if let Some(Top) = Stack.last_mut() { Top.Statement_Count += 1; } }
 
                     if ! Token.IsTrivia() && ! Token.IsComment()
                     {
@@ -1026,13 +1003,9 @@ impl JS_Container_Builder
 
                     let Node = JS_Syntax_Node::Token(Token.clone());
                     if let Some(Top) = Stack.last_mut()
-                    {
-                        Top.Children.push(Node);
-                    }
+                    { Top.Children.push(Node); }
                     else
-                    {
-                        RootNodes.push(Node);
-                    }
+                    { RootNodes.push(Node); }
                     Idx += 1;
                 }
             }
@@ -1042,13 +1015,9 @@ impl JS_Container_Builder
         {
             let Node = JS_Syntax_Node::Container(Unclosed);
             if let Some(Top) = Stack.last_mut()
-            {
-                Top.Children.push(Node);
-            }
+            { Top.Children.push(Node); }
             else
-            {
-                RootNodes.push(Node);
-            }
+            { RootNodes.push(Node); }
         }
 
         RootNodes
