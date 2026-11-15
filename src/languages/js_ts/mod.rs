@@ -726,24 +726,15 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
             if TText == "("
             { ParenDepth += 1; }
             else if TText == ")"
-            {
-                if ParenDepth > 0 { ParenDepth -= 1; }
-                else { ContainsInvalidTypeToken = true; break; }
-            }
+            { if ParenDepth > 0 { ParenDepth -= 1; } else { ContainsInvalidTypeToken = true; break ; } }
             else if TText == "["
             { BracketDepth += 1; }
             else if TText == "]"
-            {
-                if BracketDepth > 0 { BracketDepth -= 1; }
-                else { ContainsInvalidTypeToken = true; break; }
-            }
+            { if BracketDepth > 0 { BracketDepth -= 1; } else { ContainsInvalidTypeToken = true; break ; } }
             else if TText == "{" || TText == "${"
             { BraceDepth += 1; }
             else if TText == "}"
-            {
-                if BraceDepth > 0 { BraceDepth -= 1; }
-                else { ContainsInvalidTypeToken = true; break; }
-            }
+            { if BraceDepth > 0 { BraceDepth -= 1; } else { ContainsInvalidTypeToken = true; break ; } }
             else if TText == "<"
             { Depth += 1; }
             else if TText == ">"
@@ -765,16 +756,11 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
                 if Depth == 0 && ParenDepth == 0 && BracketDepth == 0 && BraceDepth == 0 { MatchIndex = Some(J); break ; }
             }
             else if (ParenDepth > 0 || BracketDepth > 0) && TText == "="
-            {
-                ContainsInvalidTypeToken = true;
-                break;
-            }
+            { ContainsInvalidTypeToken = true; break ; }
             else if BraceDepth == 0 && TText == ";"
-            {
-                ContainsInvalidTypeToken = true;
-                break;
-            }
-            else if matches!(
+            { ContainsInvalidTypeToken = true; break ; }
+            else if matches!
+            (
                 TText,
                 "&&" | "||" | "==" | "!=" | "===" | "!==" | "<=" | ">="
                 | "+=" | "-=" | "*=" | "/=" | "%=" | "**=" | "&=" | "|=" | "^=" | "??=" | "&&=" | "||="
@@ -783,10 +769,7 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
                 | "return" | "throw" | "yield" | "break" | "continue"
                 | "try" | "catch" | "finally" | "var" | "let" | "function" | "debugger" | "with"
             )
-            {
-                ContainsInvalidTypeToken = true;
-                break;
-            }
+            { ContainsInvalidTypeToken = true; break ; }
             J += 1;
         }
 

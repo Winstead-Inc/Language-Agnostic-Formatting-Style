@@ -13,12 +13,11 @@ if (p < ku && (I = Bu(D, O, P, j, R, F, B, L)))
 }
 k > wu ? 1 : 2;
 "#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Should format comparison operators without treating them as generics");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Should format comparison operators without treating them as generics");
     assert!(Formatted.contains("p <ku"));
 }
-
 
 #[test]
 fn Test_JS_Monolith_Function()
