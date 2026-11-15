@@ -124,7 +124,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly RegionId: stri
                 if ( (Step & 1) === 0)
                 {
                     HashA = (HashA + Step) ^ HashB;
-                    HashB = (HashB <<3) | (HashB>>> 29);
+                    HashB = (HashB <<3) | (HashB >>> 29);
                     HashC ^= HashA;
                     HashD = (HashD + HashC) | 0;
                 }

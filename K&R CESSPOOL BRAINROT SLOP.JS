@@ -121,7 +121,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly regionId: stri
                 if ( (step & 1) === 0)
                 {
                     h1 = (h1 + step) ^ h2;
-                    h2 = (h2 <<3) | (h2>>> 29);
+                    h2 = (h2 <<3) | (h2 >>> 29);
                     h3 ^= h1;
                     h4 = (h4 + h3) | 0;
                 }
