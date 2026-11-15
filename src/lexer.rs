@@ -387,7 +387,7 @@ impl <'a> Lexer_Scanner<'a>
             PrecedingNewlines = 0;
         }
         // Post-process to resolve generic/template angle brackets < > in C++ and C#
-        if self.Language.SupportsAngleGenerics() { ResolveAngleBrackets( & mut RawTokens); }
+        if self.Language.SupportsAngleGenerics() { ResolveAngleBrackets( & mut RawTokens, self.Language); }
 
         RawTokens
     }
@@ -787,8 +787,9 @@ fn IsKeyword(Text: & str) -> bool
     )
 }
 
-fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>)
+fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>, Language: Source_Language)
 {
+    let Profile = Language.Profile();
     let mut I = 0;
     while I < Tokens.len()
     {
@@ -797,11 +798,8 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>)
             // Check left context
             let HasValidLeft = if I > 0
             {
-                match & Tokens[I - 1].Kind
-                {
-                    Token_Kind::Identifier(_) => true, Token_Kind::Keyword(K) => matches!(K.as_str(), "template" | "typename" | "class" | "struct" | "interface" | "new" | "where" | "using" | "impl" | "fn" | "trait" | "enum" | "type"),
-                    Token_Kind::Operator(Op) if Op == "::" => true, _ => false,
-                }
+                let Prev = & Tokens[I - 1];
+                Profile.IsTentativeAngleAdmitted(&Prev.Text, &Prev.Kind)
             }
             else { false };
 
@@ -830,7 +828,7 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>)
                         Depth -= 1;
                         if Depth == 0 { MatchIndex = Some(J); break ; }
                     }
-                    else if matches!(Tokens[J].Text.as_str(), ";" | "{" | "}" | "||" | "&&" | "=")
+                    else if Profile.Tentative.Angle_Invalid_Inside.contains(&Tokens[J].Text.as_str()) || matches!(Tokens[J].Text.as_str(), ";" | "{" | "}" | "=")
                     {
                         break;
                         // statement / expression boundary aborts
@@ -849,8 +847,7 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>)
                     let FollowValid = if M + 1 < Tokens.len()
                     {
                         let Next = & Tokens[M + 1];
-                        matches!(Next.Text.as_str(), "(" | ")" | "]" | "}" | ":" | ";" | "," | "." | "?" | "==" | "!=" | "[" | "{" | "::" | "&" | "*" | "->" | ">")
-                        || matches!(Next.Kind, Token_Kind::Identifier(_) | Token_Kind::Keyword(_)) || Next.Preceding_Newlines > 0
+                        Profile.IsTentativeAngleFollowValid(&Next.Text, &Next.Kind, Next.Preceding_Newlines)
                     }
                     else { true };
 

@@ -5,6 +5,7 @@ mod formatter;
 mod languages;
 mod lexer;
 mod planner;
+mod profile;
 mod types;
 mod verifier;
 

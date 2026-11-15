@@ -655,6 +655,7 @@ impl <'a> Dart_Lexer<'a>
 
     fn ClassifyAngleGenerics(Tokens: & mut Vec<Token_Info>)
     {
+        let Profile = Source_Language::Dart.Profile();
         let mut I = 0;
         while I < Tokens.len()
         {
@@ -665,11 +666,7 @@ impl <'a> Dart_Lexer<'a>
             else
             {
                 let Prev = & Tokens[I - 1];
-                let Text = Prev.Text.as_str();
-                matches!(Text, "=" | "=>" | ":" | "," | "(" | "[" | "{" | "??" | "const" | "new" | "Function")
-                || matches!(Text, "class" | "enum" | "mixin" | "extension" | "typedef")
-                || matches!(Text, "int" | "double" | "num" | "bool" | "dynamic" | "void" | "never" | "symbol" | "Object" | "Comparable" | "Future" | "FutureOr" | "Stream")
-                || matches!(Prev.Kind, Token_Kind::Identifier(_))
+                Profile.IsTentativeAngleAdmitted(&Prev.Text, &Prev.Kind)
             };
 
             if ! PrecedingValid { I += 1; continue ; }
@@ -707,7 +704,7 @@ impl <'a> Dart_Lexer<'a>
                 }
                 else if Tokens[J].Text == ";" ||
                 (
-                    ParenDepth == 0 && matches!(Tokens[J].Text.as_str(), "{" | "}" | "||" | "&&" | "+" | "-" | "*" | "/" | "%" | "==" | "!=" | "<=" | ">=" | "if" | "while" | "return" | "yield")
+                    ParenDepth == 0 && (Tokens[J].Text == "{" || Tokens[J].Text == "}" || Profile.Tentative.Angle_Invalid_Inside.contains(&Tokens[J].Text.as_str()))
                 )
                 { ContainsInvalidTypeToken = true; break ; }
                 J += 1;
@@ -720,14 +717,7 @@ impl <'a> Dart_Lexer<'a>
                 let FollowValid = if M + 1 < Tokens.len()
                 {
                     let Next = & Tokens[M + 1];
-                    matches!
-                    (
-                        Next.Text.as_str(),
-                        "(" | ")" | "]" | "}" | ":" | ";" | "," | "." | "?" | "[" | "{"
-                        | ">" | "extends" | "implements" | "with" | "on" | "when" | "as" | "is" | "async" | "="
-                    )
-                    || matches!(Next.Kind, Token_Kind::Identifier(_) | Token_Kind::Keyword(_))
-                    || Next.Preceding_Newlines > 0
+                    Profile.IsTentativeAngleFollowValid(&Next.Text, &Next.Kind, Next.Preceding_Newlines)
                 }
                 else
                 { true };

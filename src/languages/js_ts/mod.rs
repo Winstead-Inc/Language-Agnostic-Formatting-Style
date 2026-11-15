@@ -373,7 +373,7 @@ impl <'a> JS_Lexer<'a>
             self.Expects_Expression = true;
         }
         // Post-process generic angle brackets in TypeScript
-        if self.Language.SupportsAngleGenerics() { ResolveJSAngleBrackets( & mut RawTokens); }
+        if self.Language.SupportsAngleGenerics() { ResolveJSAngleBrackets( & mut RawTokens, self.Language); }
 
         RawTokens
     }
@@ -691,8 +691,9 @@ fn IsHtmlTagName(name: & str) -> bool
     )
 }
 
-fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
+fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>, Language: Source_Language)
 {
+    let Profile = Language.Profile();
     let mut I = 0;
     while I < Tokens.len()
     {
@@ -705,9 +706,7 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
         else
         {
             let Prev = & Tokens[I - 1];
-            let Text = Prev.Text.as_str();
-            matches!(Text, "class" | "interface" | "type" | "enum")
-            || matches!(Prev.Kind, Token_Kind::Identifier(_))
+            Profile.IsTentativeAngleAdmitted(&Prev.Text, &Prev.Kind)
         };
 
         if ! PrecedingValid { I += 1; continue ; }
@@ -755,20 +754,7 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
                 Depth -= 1;
                 if Depth == 0 && ParenDepth == 0 && BracketDepth == 0 && BraceDepth == 0 { MatchIndex = Some(J); break ; }
             }
-            else if (ParenDepth > 0 || BracketDepth > 0) && TText == "="
-            { ContainsInvalidTypeToken = true; break ; }
-            else if BraceDepth == 0 && TText == ";"
-            { ContainsInvalidTypeToken = true; break ; }
-            else if matches!
-            (
-                TText,
-                "&&" | "||" | "==" | "!=" | "===" | "!==" | "<=" | ">="
-                | "+=" | "-=" | "*=" | "/=" | "%=" | "**=" | "&=" | "|=" | "^=" | "??=" | "&&=" | "||="
-                | "++" | "--"
-                | "if" | "else" | "while" | "for" | "do" | "switch" | "case" | "default"
-                | "return" | "throw" | "yield" | "break" | "continue"
-                | "try" | "catch" | "finally" | "var" | "let" | "function" | "debugger" | "with"
-            )
+            else if Profile.IsTentativeAngleTokenRejected(TText, ParenDepth, BraceDepth, BracketDepth)
             { ContainsInvalidTypeToken = true; break ; }
             J += 1;
         }
@@ -780,14 +766,7 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
             let FollowValid = if M + 1 < Tokens.len()
             {
                 let Next = & Tokens[M + 1];
-                matches!
-                (
-                    Next.Text.as_str(),
-                    "=" | ":" | ";" | "," | "." | "?" | "(" | ")" | "[" | "]" | "{" | "}"
-                    | ">" | "extends" | "implements" | "as" | "is" | "=>" | "|" | "&" | "never"
-                )
-                || matches!(Next.Kind, Token_Kind::Identifier(_) | Token_Kind::Keyword(_))
-                || Next.Preceding_Newlines > 0
+                Profile.IsTentativeAngleFollowValid(&Next.Text, &Next.Kind, Next.Preceding_Newlines)
             }
             else
             { true };

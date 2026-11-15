@@ -6,6 +6,7 @@ pub mod formatter;
 pub mod languages;
 pub mod lexer;
 pub mod planner;
+pub mod profile;
 pub mod types;
 pub mod verifier;
 

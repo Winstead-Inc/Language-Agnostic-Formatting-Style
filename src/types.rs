@@ -49,16 +49,20 @@ impl Source_Language
         Source_Language::Generic
     }
 
+    pub fn Profile(&self) -> &'static crate::profile::Language_Profile
+    {
+        crate::profile::Language_Profile::For(*self)
+    }
+
     pub fn SupportsAngleGenerics( & self) -> bool
     {
-        matches!
-        (
-            self, Source_Language::JavaScript | Source_Language::TypeScript | Source_Language::Cpp | Source_Language::CSharp | Source_Language::Rust | Source_Language::Kotlin | Source_Language::KotlinOfficial | Source_Language::Dart
-        )
+        self.Profile().Tentative.Angle_Generics
     }
 
     pub fn SupportsPreprocessor( & self) -> bool
-    { matches ! (self, Source_Language::C | Source_Language::Cpp | Source_Language::CSharp) }
+    {
+        self.Profile().Directives.Enabled
+    }
 
     pub fn IsJavaScriptOrTypeScript( & self) -> bool { matches ! (self, Source_Language::JavaScript | Source_Language::TypeScript) }
 
