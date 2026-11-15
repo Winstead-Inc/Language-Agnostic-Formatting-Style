@@ -4,6 +4,7 @@ mod emitter;
 mod formatter;
 mod languages;
 mod lexer;
+mod matcher;
 mod planner;
 mod profile;
 mod types;

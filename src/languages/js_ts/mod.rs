@@ -909,117 +909,149 @@ impl JS_Container_Builder
     pub fn BuildTree( & mut self) -> Vec<JS_Syntax_Node>
     {
         let mut RootNodes = Vec:: new ();
+        let mut Stack: Vec<JS_Container> = Vec:: new ();
         let mut LastSignificantWasReturn = false;
-        while self.Index < self.Tokens.len()
+        let mut Idx = 0;
+
+        while Idx < self.Tokens.len()
         {
-            if let Some(Node) = self.ParseNextNode(self.Enable_CAH && LastSignificantWasReturn)
+            let Token = & self.Tokens[Idx];
+
+            if let Some(Top) = Stack.last_mut()
             {
-                match & Node
+                if Token.Text.contains('\n')
                 {
-                    JS_Syntax_Node::Token(T) =>
-                    {
-                        if ! T.IsTrivia() && ! T.IsComment()
-                        {
-                            LastSignificantWasReturn = matches!(T.Text.as_str(), "return" | "throw" | "yield" | "default")
-                            || (T.Text == "*" && LastSignificantWasReturn);
-                        }
-                    }
-                    JS_Syntax_Node::Container(_) =>
-                    { LastSignificantWasReturn = false; }
+                    Top.Has_Forced_Break = true;
                 }
-                RootNodes.push(Node);
             }
-        }
-        RootNodes
-    }
 
-    fn ParseNextNode( & mut self, PrecededByReturn: bool) -> Option<JS_Syntax_Node>
-    {
-        if self.Index >= self.Tokens.len() { return None; }
-        let Token = self.Tokens[self.Index].clone();
-        self.Index += 1;
-
-        match & Token.Kind
-        {
-            Token_Kind::Open_Delim(Kind) =>
+            match & Token.Kind
             {
-                let mut Container = JS_Container::New( * Kind, Token, PrecededByReturn);
-                self.PopulateContainerChildren( & mut Container);
-                Some(JS_Syntax_Node::Container(Container))
-            }
-            _ => Some(JS_Syntax_Node::Token(Token)),
-        }
-    }
-
-    fn PopulateContainerChildren( & mut self, Container: & mut JS_Container)
-    {
-        let mut StatementCount = 0;
-        let mut LastSignificantWasReturn = false;
-
-        while self.Index < self.Tokens.len()
-        {
-            let CurrentToken = self.Tokens[self.Index].clone();
-
-            if CurrentToken.Text.contains('\n') { Container.Has_Forced_Break = true; }
-
-            match & CurrentToken.Kind
-            {
-                Token_Kind::Close_Delim(CloseKind) if * CloseKind == Container.Kind =>
+                Token_Kind::Open_Delim(Kind) =>
                 {
-                    self.Index += 1;
-                    Container.Close_Token = Some(CurrentToken);
-                    // Consume trailing glue (; or , or : or [] or [],)
-                    while self.Index < self.Tokens.len()
+                    let Is_ASI = self.Enable_CAH && LastSignificantWasReturn;
+                    let Container = JS_Container::New( * Kind, Token.clone(), Is_ASI);
+                    Stack.push(Container);
+                    LastSignificantWasReturn = false;
+                    Idx += 1;
+                }
+
+                Token_Kind::Close_Delim(CloseKind) =>
+                {
+                    if Stack.is_empty() || Stack.last().unwrap().Kind != * CloseKind
                     {
-                        let NextToken = & self.Tokens[self.Index];
+                        let Node = JS_Syntax_Node::Token(Token.clone());
+                        if let Some(Top) = Stack.last_mut()
+                        {
+                            Top.Children.push(Node);
+                        }
+                        else
+                        {
+                            RootNodes.push(Node);
+                        }
+                        Idx += 1;
+                        continue ;
+                    }
+
+                    let mut Container = Stack.pop().unwrap();
+                    Container.Close_Token = Some(Token.clone());
+
+                    // Tail glue (; or , or : or [] or [],)
+                    Idx += 1;
+                    while Idx < self.Tokens.len()
+                    {
+                        let NextToken = & self.Tokens[Idx];
                         if NextToken.Preceding_Newlines == 0
                         {
                             if NextToken.Text == ";" || NextToken.Text == "," || (NextToken.Text == ":" && Container.Kind == Container_Kind::Bracket)
                             {
                                 Container.Tail_Glue.push(NextToken.clone());
-                                self.Index += 1;
+                                Idx += 1;
                             }
-                            else if Container.Kind == Container_Kind::Angle && NextToken.Text == "[" && self.Index + 1 < self.Tokens.len() && self.Tokens[self.Index + 1].Text == "]" && self.Tokens[self.Index + 1].Preceding_Newlines == 0
+                            else if Container.Kind == Container_Kind::Angle && NextToken.Text == "[" && Idx + 1 < self.Tokens.len() && self.Tokens[Idx + 1].Text == "]" && self.Tokens[Idx + 1].Preceding_Newlines == 0
                             {
                                 Container.Tail_Glue.push(NextToken.clone());
-                                Container.Tail_Glue.push(self.Tokens[self.Index + 1].clone());
-                                self.Index += 2;
+                                Container.Tail_Glue.push(self.Tokens[Idx + 1].clone());
+                                Idx += 2;
                             }
                             else { break ; }
                         }
                         else { break ; }
                     }
-                    break;
-                }
-                Token_Kind::Open_Delim(_) =>
-                {
-                    if let Some(ChildNode) = self.ParseNextNode(self.Enable_CAH && LastSignificantWasReturn) { Container.Children.push(ChildNode); }
+
                     LastSignificantWasReturn = false;
+
+                    let Node = JS_Syntax_Node::Container(Container);
+                    if let Some(Top) = Stack.last_mut()
+                    {
+                        Top.Children.push(Node);
+                    }
+                    else
+                    {
+                        RootNodes.push(Node);
+                    }
                 }
+
                 Token_Kind::Comment_Line(_) =>
                 {
-                    Container.Has_Forced_Break = true;
-                    Container.Children.push(JS_Syntax_Node::Token(CurrentToken));
-                    self.Index += 1;
+                    let Node = JS_Syntax_Node::Token(Token.clone());
+                    if let Some(Top) = Stack.last_mut()
+                    {
+                        Top.Has_Forced_Break = true;
+                        Top.Children.push(Node);
+                    }
+                    else
+                    {
+                        RootNodes.push(Node);
+                    }
                     LastSignificantWasReturn = false;
+                    Idx += 1;
                 }
+
                 _ =>
                 {
-                    if CurrentToken.Text == ";" { StatementCount += 1; }
-
-                    if ! CurrentToken.IsTrivia() && ! CurrentToken.IsComment()
+                    if Token.Text == ";"
                     {
-                        LastSignificantWasReturn = matches!(CurrentToken.Text.as_str(), "return" | "throw" | "yield" | "default")
-                        || (CurrentToken.Text == "*" && LastSignificantWasReturn);
+                        if let Some(Top) = Stack.last_mut()
+                        {
+                            Top.Statement_Count += 1;
+                        }
                     }
 
-                    Container.Children.push(JS_Syntax_Node::Token(CurrentToken));
-                    self.Index += 1;
+                    if ! Token.IsTrivia() && ! Token.IsComment()
+                    {
+                        LastSignificantWasReturn = matches!(Token.Text.as_str(), "return" | "throw" | "yield" | "default")
+                        || (Token.Text == "*" && LastSignificantWasReturn);
+                    }
+
+                    let Node = JS_Syntax_Node::Token(Token.clone());
+                    if let Some(Top) = Stack.last_mut()
+                    {
+                        Top.Children.push(Node);
+                    }
+                    else
+                    {
+                        RootNodes.push(Node);
+                    }
+                    Idx += 1;
                 }
             }
         }
 
-        Container.Statement_Count = StatementCount;
+        while let Some(Unclosed) = Stack.pop()
+        {
+            let Node = JS_Syntax_Node::Container(Unclosed);
+            if let Some(Top) = Stack.last_mut()
+            {
+                Top.Children.push(Node);
+            }
+            else
+            {
+                RootNodes.push(Node);
+            }
+        }
+
+        RootNodes
     }
 }
 

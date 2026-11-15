@@ -99,6 +99,19 @@ impl Container_Tree_Builder
 
     pub fn BuildTree( & mut self) -> Vec<Syntax_Node>
     {
+        let Matcher = crate::matcher::Container_Matcher::New();
+        let Profile = crate::profile::Language_Profile::For(crate::types::Source_Language::Generic);
+        Matcher.BuildTree(&self.Tokens, Profile).unwrap_or_else(|_| self.FallbackParse())
+    }
+
+    pub fn BuildTreeWithProfile(&mut self, Profile: &'static crate::profile::Language_Profile) -> Result<Vec<Syntax_Node>, crate::matcher::Match_Error>
+    {
+        let Matcher = crate::matcher::Container_Matcher::New();
+        Matcher.BuildTree(&self.Tokens, Profile)
+    }
+
+    fn FallbackParse( & mut self) -> Vec<Syntax_Node>
+    {
         let mut RootNodes = Vec:: new ();
         while self.Index < self.Tokens.len() { if let Some(Node) = self.ParseNode() { RootNodes.push(Node); } }
         RootNodes
