@@ -1145,7 +1145,8 @@ When an HTML, XML, SVG, or template tag (e.g., PHP, JSX, Blade) expands across m
 ```
 
 ```html
-<button Type = "button" Id = "RepositoryButtons" Class = "EditButton" Title = "Edit repository details"
+<button
+    Type = "button" Id = "RepositoryButtons" Class = "EditButton" Title = "Edit repository details"
     DataOwnerID        = "<?php echo $Repo['Owner']; ?>" DataRepositoryID = "<?php echo $Repo['RID']; ?>"
     DataImage          = "<?php echo htmlspecialchars($Repo['Image'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
     DataName           = "<?php echo htmlspecialchars($Repo['Name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
@@ -1153,7 +1154,9 @@ When an HTML, XML, SVG, or template tag (e.g., PHP, JSX, Blade) expands across m
     DataPath           = "<?php echo htmlspecialchars($Repo['Path'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
     DataStorage        = "<?php echo htmlspecialchars($Repo['Storage'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
     DataVisibility     = "<?php echo htmlspecialchars($Repo['Visibility'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-    DataSharedWithUIDs = "<?php echo htmlspecialchars($Repo['SharedWithUIDs'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" ></button>
+    DataSharedWithUIDs = "<?php echo htmlspecialchars($Repo['SharedWithUIDs'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+>
+</button>
 ```
 
 ---
