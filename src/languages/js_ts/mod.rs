@@ -726,15 +726,24 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
             if TText == "("
             { ParenDepth += 1; }
             else if TText == ")"
-            { if ParenDepth > 0 { ParenDepth -= 1; } }
+            {
+                if ParenDepth > 0 { ParenDepth -= 1; }
+                else { ContainsInvalidTypeToken = true; break; }
+            }
             else if TText == "["
             { BracketDepth += 1; }
             else if TText == "]"
-            { if BracketDepth > 0 { BracketDepth -= 1; } }
+            {
+                if BracketDepth > 0 { BracketDepth -= 1; }
+                else { ContainsInvalidTypeToken = true; break; }
+            }
             else if TText == "{" || TText == "${"
             { BraceDepth += 1; }
             else if TText == "}"
-            { if BraceDepth > 0 { BraceDepth -= 1; } }
+            {
+                if BraceDepth > 0 { BraceDepth -= 1; }
+                else { ContainsInvalidTypeToken = true; break; }
+            }
             else if TText == "<"
             { Depth += 1; }
             else if TText == ">"
@@ -755,8 +764,25 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>)
                 Depth -= 1;
                 if Depth == 0 && ParenDepth == 0 && BracketDepth == 0 && BraceDepth == 0 { MatchIndex = Some(J); break ; }
             }
-            else if ParenDepth == 0 && BracketDepth == 0 && BraceDepth == 0
-            && (TText == ";" || matches ! (TText, "==" | "!=" | "<=" | ">=" | "if" | "while" | "return" | "throw" | "yield"))
+            else if (ParenDepth > 0 || BracketDepth > 0) && TText == "="
+            {
+                ContainsInvalidTypeToken = true;
+                break;
+            }
+            else if BraceDepth == 0 && TText == ";"
+            {
+                ContainsInvalidTypeToken = true;
+                break;
+            }
+            else if matches!(
+                TText,
+                "&&" | "||" | "==" | "!=" | "===" | "!==" | "<=" | ">="
+                | "+=" | "-=" | "*=" | "/=" | "%=" | "**=" | "&=" | "|=" | "^=" | "??=" | "&&=" | "||="
+                | "++" | "--"
+                | "if" | "else" | "while" | "for" | "do" | "switch" | "case" | "default"
+                | "return" | "throw" | "yield" | "break" | "continue"
+                | "try" | "catch" | "finally" | "var" | "let" | "function" | "debugger" | "with"
+            )
             {
                 ContainsInvalidTypeToken = true;
                 break;

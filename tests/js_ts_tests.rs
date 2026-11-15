@@ -4,6 +4,23 @@ use Language_Agnostic_Formatting_Style as lafs;
 use lafs:: { Config_Settings, Source_Formatter, Source_Language };
 
 #[test]
+fn Test_JS_Comparison_Angle_Not_Generic()
+{
+    let Input = r#"
+if (p < ku && (I = Bu(D, O, P, j, R, F, B, L)))
+{
+    var Y = D - I[0];
+}
+k > wu ? 1 : 2;
+"#;
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::JavaScript;
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Should format comparison operators without treating them as generics");
+    assert!(Formatted.contains("p <ku"));
+}
+
+
+#[test]
 fn Test_JS_Monolith_Function()
 {
     let Input = "function Add(A, B) { return A + B; }";
