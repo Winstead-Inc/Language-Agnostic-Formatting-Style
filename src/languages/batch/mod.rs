@@ -18,6 +18,10 @@ impl Batch_Formatter
         {
             return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr));
         }
+        if let Err(VerifyErr) = crate::verifier::Safety_Verifier::VerifyPairingStability(Source, & Formatted, Config.Language)
+        {
+            return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr));
+        }
 
         Ok(Formatted)
     }
@@ -388,11 +392,11 @@ pub fn VerifyBatchTokenEquivalence(OriginalSource: & str, FormattedSource: & str
 
     if OrigTokens.len() != FormTokens.len()
     {
-        return Err(format ! ("Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigTokens.len(), FormTokens.len()));
+        return Err(format ! ("E_VERIFY(V1): Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigTokens.len(), FormTokens.len()));
     }
 
     for (Index, (Orig, Form)) in OrigTokens.iter().zip(FormTokens.iter()).enumerate()
-    { if Orig != Form { return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); } }
+    { if Orig != Form { return Err(format ! ("E_VERIFY(V1): Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); } }
 
     Ok(())
 }

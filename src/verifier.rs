@@ -1,5 +1,5 @@
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)] use crate::lexer::Lexer_Scanner;
-use crate::types:: { Source_Language, Token_Kind };
+use crate::types:: { Source_Language, Token_Info, Token_Kind };
 
 pub struct Safety_Verifier;
 
@@ -41,7 +41,7 @@ impl Safety_Verifier
                 eprintln!("Tail Original: {:?}", & OrigSignificant[OrigSignificant.len().saturating_sub(10)..]);
                 eprintln!("Tail Formatted: {:?}", & FormSignificant[FormSignificant.len().saturating_sub(10)..]);
             }
-            return Err(format ! ("Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
+            return Err(format ! ("E_VERIFY(V1): Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
         }
 
         for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate()
@@ -53,7 +53,7 @@ impl Safety_Verifier
                 let EndForm = (Index + 5).min(FormSignificant.len());
                 eprintln!("Context Original: {:?}", & OrigSignificant[Start..EndOrig]);
                 eprintln!("Context Formatted: {:?}", & FormSignificant[Start..EndForm]);
-                return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form));
+                return Err(format ! ("E_VERIFY(V1): Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form));
             }
         }
 
@@ -197,10 +197,107 @@ impl Safety_Verifier
         Tokens
     }
 
+    pub fn TokenizeForLanguage(Source: & str, Language: Source_Language) -> Vec<Token_Info>
+    {
+        if Language.IsJavaScriptOrTypeScript()
+        {
+            let mut Scanner = crate::languages::js_ts::JS_Lexer::New(Source, Language);
+            Scanner.TokenizeAll()
+        }
+        else if Language.IsDart()
+        {
+            let mut Scanner = crate::languages::dart::Dart_Lexer::New(Source);
+            Scanner.TokenizeAll()
+        }
+        else if Language.IsKotlin()
+        {
+            let mut Scanner = crate::languages::kotlin::Kotlin_Lexer::New(Source);
+            Scanner.TokenizeAll()
+        }
+        else if Language.IsShell()
+        {
+            let mut Scanner = crate::languages::shell::Shell_Lexer::New(Source);
+            Scanner.TokenizeAll()
+        }
+        else
+        {
+            let mut Scanner = Lexer_Scanner::New(Source, Language);
+            Scanner.TokenizeAll()
+        }
+    }
+
+    pub fn VerifyPairingStability(
+        OriginalSource: & str,
+        FormattedSource: & str,
+        Language: Source_Language,
+    ) -> Result < (), String >
+    {
+        let OriginalTokens = Self::TokenizeForLanguage(OriginalSource, Language);
+        let FormattedTokens = Self::TokenizeForLanguage(FormattedSource, Language);
+
+        let Matcher = crate::matcher::Container_Matcher::New();
+        let Profile = Language.Profile();
+
+        let OrigPairs = match Matcher.Match( & OriginalTokens, Profile)
+        {
+            Ok((_, Pairs)) => Pairs,
+            Err(E) =>
+            {
+                return Err(format ! ("E_VERIFY(V2): Safety Gate Failed: Original source container match error: {}", E));
+            }
+        };
+
+        let FormPairs = match Matcher.Match( & FormattedTokens, Profile)
+        {
+            Ok((_, Pairs)) => Pairs,
+            Err(E) =>
+            {
+                return Err(format ! ("E_VERIFY(V2): Safety Gate Failed: Pairing stability error on formatted output: {}", E));
+            }
+        };
+
+        if OrigPairs.len() != FormPairs.len()
+        {
+            return Err(format ! (
+                "E_VERIFY(V2): Safety Gate Failed: Pairing stability mismatch! (Original pairs: {}, Formatted pairs: {})",
+                OrigPairs.len(),
+                FormPairs.len()
+            ));
+        }
+
+        for (I, (OrigP, FormP)) in OrigPairs.iter().zip(FormPairs.iter()).enumerate()
+        {
+            if OrigP.Kind != FormP.Kind
+            {
+                return Err(format ! (
+                    "E_VERIFY(V2): Safety Gate Failed: Pair #{} kind mismatch! (Expected {:?}, Got {:?})",
+                    I, OrigP.Kind, FormP.Kind
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn VerifyAll(
+        OriginalSource: & str,
+        FormattedSource: & str,
+        Language: Source_Language,
+    ) -> Result < (), String >
+    {
+        // V1: Token preservation
+        Self::VerifyTokenEquivalence(OriginalSource, FormattedSource, Language)?;
+
+        // V2: Pairing stability
+        Self::VerifyPairingStability(OriginalSource, FormattedSource, Language)?;
+
+        Ok(())
+    }
+
     pub fn VerifyIdempotence<F>(FormattedSource: & str, FormatFn: F) -> Result < (), String > where F: Fn( & str) -> String,
     {
         let SecondPass = FormatFn(FormattedSource);
-        if SecondPass != FormattedSource { return Err("Safety Gate Warning: Formatting is not idempotent on second pass!".to_string(),); }
+        if SecondPass != FormattedSource { return Err("E_VERIFY(V3): Safety Gate Warning: Formatting is not idempotent on second pass!".to_string(),); }
         Ok(())
     }
 }

@@ -22,8 +22,14 @@ pub enum Match_Error
     { Opener: Token_Info, },
     Unterminated
     { Payload_Start: Token_Info, },
+    Branch
+    { Directive: Token_Info, },
     Depth
     { Opener: Token_Info, Max_Depth: usize, },
+    Ambiguous
+    { Token: Token_Info, },
+    Encoding
+    { Byte_Offset: usize, },
 }
 
 impl Match_Error
@@ -40,8 +46,14 @@ impl Match_Error
             => Match_Error_Code::E_UNCLOSED,
             Match_Error::Unterminated {.. }
             => Match_Error_Code::E_UNTERMINATED,
+            Match_Error::Branch {.. }
+            => Match_Error_Code::E_BRANCH,
             Match_Error::Depth {.. }
             => Match_Error_Code::E_DEPTH,
+            Match_Error::Ambiguous {.. }
+            => Match_Error_Code::E_AMBIGUOUS,
+            Match_Error::Encoding {.. }
+            => Match_Error_Code::E_ENCODING,
         }
     }
 }
@@ -71,9 +83,18 @@ impl fmt::Display for Match_Error
             Match_Error::Unterminated { Payload_Start }
             =>
             { write ! (F, "E_UNTERMINATED: Unterminated literal starting at line {}, column {}", Payload_Start.Line, Payload_Start.Column) }
+            Match_Error::Branch { Directive }
+            =>
+            { write ! (F, "E_BRANCH: Conditional branches leave different container stacks at directive '{}' at line {}, column {}", Directive.Text, Directive.Line, Directive.Column) }
             Match_Error::Depth { Opener, Max_Depth }
             =>
             { write ! (F, "E_DEPTH: Maximum container nesting depth ({}) exceeded at line {}, column {}", Max_Depth, Opener.Line, Opener.Column) }
+            Match_Error::Ambiguous { Token }
+            =>
+            { write ! (F, "E_AMBIGUOUS: Lexical ambiguity could not be resolved at '{}' at line {}, column {}", Token.Text, Token.Line, Token.Column) }
+            Match_Error::Encoding { Byte_Offset }
+            =>
+            { write ! (F, "E_ENCODING: Invalid UTF-8 sequence at byte offset {}", Byte_Offset) }
         }
     }
 }

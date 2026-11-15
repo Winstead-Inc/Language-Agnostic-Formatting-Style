@@ -15,8 +15,13 @@ impl Shell_Formatter
 
         let Emitter = Shell_Emitter::New(Config);
         let Formatted = Emitter.Emit( & Nodes);
-        // Safety gate verification
+        // Safety gate verification (V1 Token preservation)
         if let Err(VerifyErr) = VerifyShellTokenEquivalence(Source, & Formatted)
+        {
+            return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr));
+        }
+        // Safety gate verification (V2 Pairing stability)
+        if let Err(VerifyErr) = crate::verifier::Safety_Verifier::VerifyPairingStability(Source, & Formatted, Config.Language)
         {
             return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr));
         }
@@ -999,11 +1004,11 @@ pub fn VerifyShellTokenEquivalence(OriginalSource: & str, FormattedSource: & str
 
     if OrigSignificant.len() != FormSignificant.len()
     {
-        return Err(format ! ("Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
+        return Err(format ! ("E_VERIFY(V1): Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
     }
 
     for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate()
-    { if Orig != Form { return Err(format ! ("Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); } }
+    { if Orig != Form { return Err(format ! ("E_VERIFY(V1): Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); } }
 
     Ok(())
 }

@@ -514,3 +514,82 @@ function initApp() {
     let Formatted = Source_Formatter::Format(Input, & Config).expect("HTML polyglot failed");
     println!("Formatted HTML:\n{}", Formatted);
 }
+
+#[test]
+fn Test_Diagnostics_Error_Codes_Mismatch()
+{
+    let Input = "int Calculate(int x] { return x; }";
+    let Config = Config_Settings:: default();
+
+    let Result = Source_Formatter::Format(Input, & Config);
+    assert!(Result.is_err(), "Mismatched delimiters must fail");
+    let ErrorMsg = Result.unwrap_err();
+    assert!(ErrorMsg.contains("E_MISMATCH"), "Must report E_MISMATCH code: {}", ErrorMsg);
+    assert!(ErrorMsg.contains("opener '('"), "Must report opener in mismatch: {}", ErrorMsg);
+    assert!(ErrorMsg.contains("incompatible ']'"), "Must report closer in mismatch: {}", ErrorMsg);
+    assert!(ErrorMsg.contains("Output aborted to prevent code corruption."), "Must report fail-closed safety message: {}", ErrorMsg);
+}
+
+#[test]
+fn Test_Diagnostics_Error_Codes_Orphan()
+{
+    let Input = "int x = 1; }";
+    let Config = Config_Settings:: default();
+
+    let Result = Source_Formatter::Format(Input, & Config);
+    assert!(Result.is_err(), "Orphan closer must fail");
+    let ErrorMsg = Result.unwrap_err();
+    assert!(ErrorMsg.contains("E_ORPHAN"), "Must report E_ORPHAN code: {}", ErrorMsg);
+    assert!(ErrorMsg.contains("Stray closing delimiter '}'"), "Must report closer: {}", ErrorMsg);
+    assert!(ErrorMsg.contains("Output aborted to prevent code corruption."), "Must report fail-closed safety message: {}", ErrorMsg);
+}
+
+#[test]
+fn Test_Diagnostics_Error_Codes_Unclosed()
+{
+    let Input = "void Compute() { int x = 1;";
+    let Config = Config_Settings:: default();
+
+    let Result = Source_Formatter::Format(Input, & Config);
+    assert!(Result.is_err(), "Unclosed opener must fail");
+    let ErrorMsg = Result.unwrap_err();
+    assert!(ErrorMsg.contains("E_UNCLOSED"), "Must report E_UNCLOSED code: {}", ErrorMsg);
+    assert!(ErrorMsg.contains("Unclosed delimiter '{'"), "Must report opener: {}", ErrorMsg);
+    assert!(ErrorMsg.contains("Output aborted to prevent code corruption."), "Must report fail-closed safety message: {}", ErrorMsg);
+}
+
+#[test]
+fn Test_Diagnostics_Error_Codes_Verify_V1()
+{
+    let Orig = "int Foo(int X) { return X + 1; }";
+    let Tampered = "int Foo(int X) { return X + 2; }";
+
+    let Result = lafs::Safety_Verifier::VerifyTokenEquivalence(Orig, Tampered, Source_Language::Rust);
+    assert!(Result.is_err());
+    let ErrorMsg = Result.unwrap_err();
+    assert!(ErrorMsg.starts_with("E_VERIFY(V1):"), "V1 error must have standardized prefix: {}", ErrorMsg);
+}
+
+#[test]
+fn Test_Diagnostics_Error_Codes_Verify_V2()
+{
+    let Orig = "void Foo() { Bar(); }";
+    let Tampered = "void Foo() { Bar();";
+
+    let Result = lafs::Safety_Verifier::VerifyPairingStability(Orig, Tampered, Source_Language::Rust);
+    assert!(Result.is_err());
+    let ErrorMsg = Result.unwrap_err();
+    assert!(ErrorMsg.starts_with("E_VERIFY(V2):"), "V2 error must have standardized prefix: {}", ErrorMsg);
+}
+
+#[test]
+fn Test_Diagnostics_Error_Codes_Verify_V3()
+{
+    let Formatted = "int X = 1;";
+    let NonIdempotentFormatFn = | S: & str | format ! ("{} ", S);
+
+    let Result = lafs::Safety_Verifier::VerifyIdempotence(Formatted, NonIdempotentFormatFn);
+    assert!(Result.is_err());
+    let ErrorMsg = Result.unwrap_err();
+    assert!(ErrorMsg.starts_with("E_VERIFY(V3):"), "V3 error must have standardized prefix: {}", ErrorMsg);
+}

@@ -29,4 +29,6 @@ pub use languages::polyglot::Polyglot_Formatter;
 pub use languages::shell::Shell_Formatter;
 
 pub use formatter::Source_Formatter;
+pub use matcher:: { Container_Matcher, Match_Error, Match_Error_Code };
 pub use types:: { Config_Settings, Container_Kind, Kotlin_Style, Layout_State, Source_Language };
+pub use verifier::Safety_Verifier;

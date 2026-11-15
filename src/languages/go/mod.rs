@@ -19,8 +19,8 @@ impl Go_Formatter
 
         let Emitter = Code_Emitter::New(Config);
         let Formatted = Emitter.Emit( & SyntaxNodes);
-        // Safety gate verification
-        if let Err(VerifyErr) = Safety_Verifier::VerifyTokenEquivalence(Source, & Formatted, Config.Language)
+        // Safety gate verification (V1 Token preservation & V2 Pairing stability)
+        if let Err(VerifyErr) = Safety_Verifier::VerifyAll(Source, & Formatted, Config.Language)
         {
             // Fail open: return original to prevent corrupting source code
             return Err(format ! ("{}. Output aborted to prevent code corruption.", VerifyErr));
