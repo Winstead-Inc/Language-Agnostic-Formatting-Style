@@ -19,7 +19,7 @@ impl Polyglot_Formatter
 
     fn Tokenize(Source: & str) -> Vec<HTML_Token>
     {
-        let Chars: Vec < char > = Source.chars().collect();
+        let Chars: Vec<char> = Source.chars().collect();
         let Len = Chars.len();
         let mut I = 0;
         let mut Tokens = Vec:: new ();
@@ -87,7 +87,7 @@ impl Polyglot_Formatter
                 let TagNameLower = TagName.to_lowercase();
 
                 // Consume until '>'
-                let mut InQuote: Option < char > = None;
+                let mut InQuote: Option<char> = None;
                 while I < Len
                 {
                     let C = Chars[I];

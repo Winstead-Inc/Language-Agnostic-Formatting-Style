@@ -161,8 +161,8 @@ fn PrintUsage(Logger: & Terminal_Logger)
 
 fn WildcardMatch(Pattern: & str, Text: & str) -> bool
 {
-    let PChars: Vec < char > = Pattern.chars().collect();
-    let TChars: Vec < char > = Text.chars().collect();
+    let PChars: Vec<char> = Pattern.chars().collect();
+    let TChars: Vec<char> = Text.chars().collect();
     let mut PI = 0;
     let mut TI = 0;
     let mut StarP = None;
@@ -518,7 +518,7 @@ fn PromptConfirmation(Logger: & Terminal_Logger, Count: usize, TargetDesc: & str
 fn Main()
 {
     let Logger = Terminal_Logger::New(false);
-    let Args: Vec < String > = env::args().collect();
+    let Args: Vec<String> = env::args().collect();
     let mut OutputToStdout = false;
     let mut CheckOnly = false;
     let mut FormatAll = false;
@@ -526,15 +526,15 @@ fn Main()
     let mut AutoYes = false;
     let mut Verbose = false;
     let mut ReformatFailed = false;
-    let mut CustomThreads: Option < usize > = None;
-    let mut AllowedExtensions: Vec < String > = Vec:: new ();
-    let mut ExcludedPatterns: Vec < String > = Vec:: new ();
-    let mut SpecifiedFiles: Vec < String > = Vec:: new ();
+    let mut CustomThreads: Option<usize> = None;
+    let mut AllowedExtensions: Vec<String> = Vec:: new ();
+    let mut ExcludedPatterns: Vec<String> = Vec:: new ();
+    let mut SpecifiedFiles: Vec<String> = Vec:: new ();
     let mut Config = Config_Settings:: default();
-    let mut RawTargets: Vec < String > = Vec:: new ();
+    let mut RawTargets: Vec<String> = Vec:: new ();
     let mut ReadFromStdin = false;
-    let mut StdinVirtualPath: Option < String > = None;
-    let mut OutputFailedPath: Option < String > = None;
+    let mut StdinVirtualPath: Option<String> = None;
+    let mut OutputFailedPath: Option<String> = None;
 
     if Args.len() <= 1
     {
@@ -857,11 +857,11 @@ fn Main()
     let FailedPaths = Arc:: new (Mutex::new (Vec::new ()));
 
     // Expand targets to file list
-    let mut TargetFiles: Vec < String > = Vec:: new ();
+    let mut TargetFiles: Vec<String> = Vec:: new ();
 
     if ! SpecifiedFiles.is_empty()
     {
-        let mut Candidates: Vec < String > = Vec:: new ();
+        let mut Candidates: Vec<String> = Vec:: new ();
         if RawTargets.is_empty() && ! FormatAll
         {
             for Spec in & SpecifiedFiles
@@ -888,7 +888,7 @@ fn Main()
                 }
                 else
                 {
-                    let mut SearchPool: Vec < String > = Vec:: new ();
+                    let mut SearchPool: Vec<String> = Vec:: new ();
                     CollectFilesRecursively(Path::new ("."), AllTypes, & AllowedExtensions, & ExcludedPatterns, & mut SearchPool);
                     let mut Found = false;
                     for PoolPath in SearchPool { if MatchesSpecifiedTarget(Path::new ( & PoolPath), Spec) { Candidates.push(PoolPath); Found = true; } }
@@ -903,7 +903,7 @@ fn Main()
         }
         else
         {
-            let mut ScannedFiles: Vec < String > = Vec:: new ();
+            let mut ScannedFiles: Vec<String> = Vec:: new ();
             for Target in & RawTargets
             {
                 if Target.contains('*') || Target.contains('?')
@@ -1250,8 +1250,8 @@ mod Tests
 
    #[test] fn Test_Document_Extension_Filter()
     {
-        let EmptyExts: Vec < String > = Vec:: new ();
-        let Excludes: Vec < String > = Vec:: new ();
+        let EmptyExts: Vec<String> = Vec:: new ();
+        let Excludes: Vec<String> = Vec:: new ();
         assert!( ! IsFileEligible(Path::new ("doc.adoc"), true, & EmptyExts, & Excludes));
         assert!( ! IsFileEligible(Path::new ("doc.asciidoc"), true, & EmptyExts, & Excludes));
         assert!( ! IsFileEligible(Path::new ("paper.pdf"), true, & EmptyExts, & Excludes));
@@ -1271,8 +1271,8 @@ mod Tests
 
    #[test] fn Test_Binary_Extension_Filter()
     {
-        let EmptyExts: Vec < String > = Vec:: new ();
-        let Excludes: Vec < String > = Vec:: new ();
+        let EmptyExts: Vec<String> = Vec:: new ();
+        let Excludes: Vec<String> = Vec:: new ();
         assert!( ! IsFileEligible(Path::new ("app.exe"), true, & EmptyExts, & Excludes));
         assert!( ! IsFileEligible(Path::new ("lib.dll"), true, & EmptyExts, & Excludes));
         assert!( ! IsFileEligible(Path::new ("archive.zip"), true, & EmptyExts, & Excludes));
@@ -1282,8 +1282,8 @@ mod Tests
 
    #[test] fn Test_Python_Extension_Filter()
     {
-        let EmptyExts: Vec < String > = Vec:: new ();
-        let Excludes: Vec < String > = Vec:: new ();
+        let EmptyExts: Vec<String> = Vec:: new ();
+        let Excludes: Vec<String> = Vec:: new ();
         assert!( ! IsFileEligible(Path::new ("script.py"), true, & EmptyExts, & Excludes));
         assert!( ! IsFileEligible(Path::new ("module.pyw"), true, & EmptyExts, & Excludes));
         assert!( ! IsFileEligible(Path::new ("types.pyi"), false, & EmptyExts, & Excludes));
@@ -1313,7 +1313,7 @@ mod Tests
 
    #[test] fn Test_File_Exclusion_Patterns()
     {
-        let EmptyExts: Vec < String > = Vec:: new ();
+        let EmptyExts: Vec<String> = Vec:: new ();
         let CustomExcludes = vec!["*.min.js".to_string(), "generated_*".to_string(), "secret.key".to_string(),];
 
         assert!( ! IsFileEligible(Path::new ("bundle.min.js"), true, & EmptyExts, & CustomExcludes));
@@ -1326,7 +1326,7 @@ mod Tests
 
    #[test] fn Test_Allowed_Extension_Filter()
     {
-        let EmptyExcludes: Vec < String > = Vec:: new ();
+        let EmptyExcludes: Vec<String> = Vec:: new ();
         let AllowedC = vec!["c".to_string(), "h".to_string()];
         let AllowedSh = vec!["sh".to_string()];
 
@@ -1355,8 +1355,8 @@ mod Tests
 
    #[test] fn Test_Specified_File_Eligibility()
     {
-        let EmptyExts: Vec < String > = Vec:: new ();
-        let Excludes: Vec < String > = Vec:: new ();
+        let EmptyExts: Vec<String> = Vec:: new ();
+        let Excludes: Vec<String> = Vec:: new ();
         assert!(IsSpecifiedFileEligible(Path::new ("sample.c"), false, & EmptyExts, & Excludes, Source_Language::Generic));
         assert!(IsSpecifiedFileEligible(Path::new ("sample.cpp"), false, & EmptyExts, & Excludes, Source_Language::Generic));
         assert!(IsSpecifiedFileEligible(Path::new ("sample.cs"), false, & EmptyExts, & Excludes, Source_Language::Generic));
@@ -1403,8 +1403,8 @@ mod Tests
         fs::write( & RootFile, "const A = 1;\n").unwrap();
         fs::write( & NestedFile, "const B = 2;\n").unwrap();
 
-        let EmptyExts: Vec < String > = Vec:: new ();
-        let Excludes: Vec < String > = Vec:: new ();
+        let EmptyExts: Vec<String> = Vec:: new ();
+        let Excludes: Vec<String> = Vec:: new ();
 
         let mut ShallowList = Vec:: new ();
         CollectFilesShallow( & TempBase, false, & EmptyExts, & Excludes, & mut ShallowList);

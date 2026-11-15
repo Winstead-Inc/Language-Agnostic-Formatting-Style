@@ -297,8 +297,8 @@ fn Test_JS_Torture_Test_Slop_And_Idempotence()
 
     if FormattedPass1 != FormattedPass2
     {
-        let Lines1: Vec < & str > = FormattedPass1 .lines().collect();
-        let Lines2: Vec < & str > = FormattedPass2 .lines().collect();
+        let Lines1: Vec< & str> = FormattedPass1 .lines().collect();
+        let Lines2: Vec< & str> = FormattedPass2 .lines().collect();
         for (idx, (l1, l2)) in Lines1 .iter().zip(Lines2 .iter()).enumerate()
         { if l1 != l2 { eprintln ! ("First idempotence divergence at line {}:\nPass 1: {:?}\nPass 2: {:?}", idx + 1, l1, l2); break ; } }
         if Lines1 .len() != Lines2 .len()

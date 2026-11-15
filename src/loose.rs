@@ -86,7 +86,7 @@ impl ObjectMemoryMap
 
         wrtr.write_all( & offset.to_be_bytes())?;
 
-        let order_map: BTreeMap < & ObjectID, usize > = self.to_compat.keys().enumerate().map( | (i, oid) | (oid, i)).collect();
+        let order_map: BTreeMap< & ObjectID, usize> = self.to_compat.keys().enumerate().map( | (i, oid) | (oid, i)).collect();
 
         wrtr.write_all( & PADDING[0..storage_npadding as usize])?;
         for oid in self.to_compat.keys() { wrtr.write_all( & oid.as_slice().unwrap()[0..storage_short_len])?; }
@@ -140,7 +140,7 @@ impl <'a> Iterator for MmapedObjectMapIter<'a>
         if self.offset >= self.source.nitems { return None; }
         let offset = self.offset;
         self.offset += 1;
-        let v: Vec < ObjectID > = self.algos.iter().cloned().filter_map( | algo | self.source.oid_from_offset(offset, algo)).collect();
+        let v: Vec<ObjectID> = self.algos.iter().cloned().filter_map( | algo | self.source.oid_from_offset(offset, algo)).collect();
         if v.len() != self.algos.len() { return None; }
         Some(v)
     }

@@ -49,20 +49,14 @@ impl Source_Language
         Source_Language::Generic
     }
 
-    pub fn Profile(&self) -> &'static crate::profile::Language_Profile
-    {
-        crate::profile::Language_Profile::For(*self)
-    }
+    pub fn Profile( & self) -> & 'static crate::profile::Language_Profile
+    { crate::profile::Language_Profile::For( * self) }
 
     pub fn SupportsAngleGenerics( & self) -> bool
-    {
-        self.Profile().Tentative.Angle_Generics
-    }
+    { self.Profile().Tentative.Angle_Generics }
 
     pub fn SupportsPreprocessor( & self) -> bool
-    {
-        self.Profile().Directives.Enabled
-    }
+    { self.Profile().Directives.Enabled }
 
     pub fn IsJavaScriptOrTypeScript( & self) -> bool { matches ! (self, Source_Language::JavaScript | Source_Language::TypeScript) }
 

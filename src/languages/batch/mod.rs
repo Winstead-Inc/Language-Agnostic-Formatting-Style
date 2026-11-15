@@ -45,7 +45,7 @@ impl <'a> Batch_Parser<'a>
 {
     pub fn New(Source: & 'a str) -> Self
     {
-        let Lines: Vec < & 'a str > = Source.lines().map( | L | L.trim_end_matches('\r')).collect();
+        let Lines: Vec< & 'a str> = Source.lines().map( | L | L.trim_end_matches('\r')).collect();
         Batch_Parser { Lines, Index: 0 }
     }
 
@@ -400,7 +400,7 @@ pub fn VerifyBatchTokenEquivalence(OriginalSource: & str, FormattedSource: & str
 fn ExtractBatchSignificantTokens(Source: & str) -> Vec<String>
 {
     let mut Tokens = Vec:: new ();
-    let Chars: Vec < char > = Source.chars().collect();
+    let Chars: Vec<char> = Source.chars().collect();
     let Len = Chars.len();
     let mut I = 0;
     let mut AtLineStart = true;

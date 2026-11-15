@@ -52,7 +52,7 @@ impl <'a> Shell_Lexer<'a>
 
     pub fn TokenizeAll( & mut self) -> Vec<Token_Info>
     {
-        let mut RawTokens: Vec < Token_Info > = Vec:: new ();
+        let mut RawTokens: Vec<Token_Info> = Vec:: new ();
         let mut PrecedingNewlines: usize = 0;
         let mut CurrentLeadingWhitespace = String:: new ();
         let mut AtLineStart = true;
@@ -541,7 +541,7 @@ impl Shell_Container
 
     pub fn IsSoleChildChain( & self) -> bool
     {
-        let NonTrivia: Vec < & Shell_Syntax_Node > = self.Children.iter().filter( | Node | match Node { Shell_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Shell_Syntax_Node::Container(_) => true, })
+        let NonTrivia: Vec< & Shell_Syntax_Node> = self.Children.iter().filter( | Node | match Node { Shell_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Shell_Syntax_Node::Container(_) => true, })
        .collect();
 
         if NonTrivia.len() == 1 { matches ! (NonTrivia[0], Shell_Syntax_Node::Container(_)) } else { false }
@@ -549,7 +549,7 @@ impl Shell_Container
 
     pub fn GetSoleChildContainer( & self) -> Option< & Shell_Container>
     {
-        let NonTrivia: Vec < & Shell_Syntax_Node > = self.Children.iter().filter( | Node | match Node { Shell_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Shell_Syntax_Node::Container(_) => true, })
+        let NonTrivia: Vec< & Shell_Syntax_Node> = self.Children.iter().filter( | Node | match Node { Shell_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Shell_Syntax_Node::Container(_) => true, })
        .collect();
 
         if NonTrivia.len() == 1 { if let Shell_Syntax_Node::Container(C) = NonTrivia[0] { return Some(C); } }
@@ -991,10 +991,10 @@ pub fn VerifyShellTokenEquivalence(OriginalSource: & str, FormattedSource: & str
     let mut FormattedScanner = Shell_Lexer::New(FormattedSource);
     let FormattedTokens = FormattedScanner.TokenizeAll();
 
-    let OrigSignificant: Vec < & str > = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
+    let OrigSignificant: Vec< & str> = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
    .collect();
 
-    let FormSignificant: Vec < & str > = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
+    let FormSignificant: Vec< & str> = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
    .collect();
 
     if OrigSignificant.len() != FormSignificant.len()

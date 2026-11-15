@@ -66,7 +66,7 @@ impl <'a> Dart_Lexer<'a>
 
     pub fn TokenizeAll( & mut self) -> Vec<Token_Info>
     {
-        let mut RawTokens: Vec < Token_Info > = Vec:: new ();
+        let mut RawTokens: Vec<Token_Info> = Vec:: new ();
         let mut PrecedingNewlines: usize = 0;
 
         while let Some(Ch) = self.Peek()
@@ -664,16 +664,13 @@ impl <'a> Dart_Lexer<'a>
             // Preceding token check: valid type identifiers or constructors/keywords preceding <
             let PrecedingValid = if I == 0 { false }
             else
-            {
-                let Prev = & Tokens[I - 1];
-                Profile.IsTentativeAngleAdmitted(&Prev.Text, &Prev.Kind)
-            };
+            { let Prev = & Tokens[I - 1]; Profile.IsTentativeAngleAdmitted( & Prev.Text, & Prev.Kind) };
 
             if ! PrecedingValid { I += 1; continue ; }
 
             // Scan forward for matching '>'
             let mut Depth: usize = 0;
-            let mut MatchIndex: Option < usize > = None;
+            let mut MatchIndex: Option<usize> = None;
             let mut J = I;
             let mut ContainsInvalidTypeToken = false;
             let mut ParenDepth: usize = 0;
@@ -704,7 +701,7 @@ impl <'a> Dart_Lexer<'a>
                 }
                 else if Tokens[J].Text == ";" ||
                 (
-                    ParenDepth == 0 && (Tokens[J].Text == "{" || Tokens[J].Text == "}" || Profile.Tentative.Angle_Invalid_Inside.contains(&Tokens[J].Text.as_str()))
+                    ParenDepth == 0 && (Tokens[J].Text == "{" || Tokens[J].Text == "}" || Profile.Tentative.Angle_Invalid_Inside.contains( & Tokens[J].Text.as_str()))
                 )
                 { ContainsInvalidTypeToken = true; break ; }
                 J += 1;
@@ -717,7 +714,7 @@ impl <'a> Dart_Lexer<'a>
                 let FollowValid = if M + 1 < Tokens.len()
                 {
                     let Next = & Tokens[M + 1];
-                    Profile.IsTentativeAngleFollowValid(&Next.Text, &Next.Kind, Next.Preceding_Newlines)
+                    Profile.IsTentativeAngleFollowValid( & Next.Text, & Next.Kind, Next.Preceding_Newlines)
                 }
                 else
                 { true };
@@ -2060,12 +2057,12 @@ pub fn VerifyDartTokenEquivalence(OriginalSource: & str, FormattedSource: & str)
     let mut FormScanner = Dart_Lexer::New(FormattedSource);
     let FormTokens = FormScanner.TokenizeAll();
 
-    let OrigSignificant: Vec < & str > = OrigTokens.iter()
+    let OrigSignificant: Vec< & str> = OrigTokens.iter()
    .filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
    .map( | T | T.Text.as_str())
    .collect();
 
-    let FormSignificant: Vec < & str > = FormTokens.iter()
+    let FormSignificant: Vec< & str> = FormTokens.iter()
    .filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
    .map( | T | T.Text.as_str())
    .collect();
@@ -2112,8 +2109,8 @@ fn AreTokensEquivalent(Orig: & str, Form: & str) -> bool
         Form.starts_with('\'') || Form.starts_with('"') || Form.starts_with("r'") || Form.starts_with("r\"") || Form.ends_with("'''") || Form.ends_with("\"\"\"")
     )
     {
-        let OrigLines: Vec < & str > = Orig.lines().collect();
-        let FormLines: Vec < & str > = Form.lines().collect();
+        let OrigLines: Vec< & str> = Orig.lines().collect();
+        let FormLines: Vec< & str> = Form.lines().collect();
         if OrigLines.len() == FormLines.len()
         { if OrigLines.iter().zip(FormLines.iter()).all( | (OL, FL) | OL.trim() == FL.trim()) { return true; } }
     }

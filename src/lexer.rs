@@ -25,7 +25,7 @@ impl <'a> Lexer_Scanner<'a>
 
     pub fn TokenizeAll( & mut self) -> Vec<Token_Info>
     {
-        let mut RawTokens: Vec < Token_Info > = Vec:: new ();
+        let mut RawTokens: Vec<Token_Info> = Vec:: new ();
         let mut PrecedingNewlines: usize = 0;
 
         while let Some(Ch) = self.Peek()
@@ -529,7 +529,7 @@ impl <'a> Lexer_Scanner<'a>
         }
 
         let TargetEnd = format!("){}\"", Delim);
-        let TargetChars: Vec < char > = TargetEnd.chars().collect();
+        let TargetChars: Vec<char> = TargetEnd.chars().collect();
         while self.Index < self.Chars.len()
         {
             if TargetChars.iter().enumerate().all( | (Offset, & Expected) | self.PeekAhead(Offset) == Some(Expected))
@@ -797,10 +797,7 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>, Language: Source_Language
         {
             // Check left context
             let HasValidLeft = if I > 0
-            {
-                let Prev = & Tokens[I - 1];
-                Profile.IsTentativeAngleAdmitted(&Prev.Text, &Prev.Kind)
-            }
+            { let Prev = & Tokens[I - 1]; Profile.IsTentativeAngleAdmitted( & Prev.Text, & Prev.Kind) }
             else { false };
 
             if HasValidLeft
@@ -828,7 +825,7 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>, Language: Source_Language
                         Depth -= 1;
                         if Depth == 0 { MatchIndex = Some(J); break ; }
                     }
-                    else if Profile.Tentative.Angle_Invalid_Inside.contains(&Tokens[J].Text.as_str()) || matches!(Tokens[J].Text.as_str(), ";" | "{" | "}" | "=")
+                    else if Profile.Tentative.Angle_Invalid_Inside.contains( & Tokens[J].Text.as_str()) || matches!(Tokens[J].Text.as_str(), ";" | "{" | "}" | "=")
                     {
                         break;
                         // statement / expression boundary aborts
@@ -847,7 +844,7 @@ fn ResolveAngleBrackets(Tokens: & mut Vec<Token_Info>, Language: Source_Language
                     let FollowValid = if M + 1 < Tokens.len()
                     {
                         let Next = & Tokens[M + 1];
-                        Profile.IsTentativeAngleFollowValid(&Next.Text, &Next.Kind, Next.Preceding_Newlines)
+                        Profile.IsTentativeAngleFollowValid( & Next.Text, & Next.Kind, Next.Preceding_Newlines)
                     }
                     else { true };
 

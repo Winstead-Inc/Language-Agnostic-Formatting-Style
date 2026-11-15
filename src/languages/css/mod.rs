@@ -25,7 +25,7 @@ impl CSS_Formatter
 
     fn Tokenize(Source: & str) -> Vec<CSS_Token>
     {
-        let Chars: Vec < char > = Source.chars().collect();
+        let Chars: Vec<char> = Source.chars().collect();
         let Len = Chars.len();
         let mut I = 0;
         let mut Tokens = Vec:: new ();
@@ -338,7 +338,7 @@ impl CSS_Formatter
     fn FormatDeclaration(Decl: & str) -> String
     {
         let mut Result = String:: new ();
-        let Parts: Vec < & str > = Decl.split_whitespace().collect();
+        let Parts: Vec< & str> = Decl.split_whitespace().collect();
         let mut I = 0;
         while I < Parts.len()
         {

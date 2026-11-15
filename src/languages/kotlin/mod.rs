@@ -124,7 +124,7 @@ impl Kotlin_Container
 
     pub fn IsSoleChildChain( & self) -> bool
     {
-        let NonCommentChildren: Vec < & Kotlin_Syntax_Node > = self
+        let NonCommentChildren: Vec< & Kotlin_Syntax_Node> = self
        .Children
        .iter()
        .filter( | Node | match Node { Kotlin_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Kotlin_Syntax_Node::Container(_) => true, })
@@ -136,7 +136,7 @@ impl Kotlin_Container
 
     pub fn GetSoleChildContainer( & self) -> Option< & Kotlin_Container>
     {
-        let NonCommentChildren: Vec < & Kotlin_Syntax_Node > = self
+        let NonCommentChildren: Vec< & Kotlin_Syntax_Node> = self
        .Children
        .iter()
        .filter( | Node | match Node { Kotlin_Syntax_Node::Token(T) => ! T.IsTrivia() && ! T.IsComment(), Kotlin_Syntax_Node::Container(_) => true, })
@@ -241,7 +241,7 @@ impl <'a> Kotlin_Lexer<'a>
 
     pub fn TokenizeAll( & mut self) -> Vec<Token_Info>
     {
-        let mut RawTokens: Vec < Token_Info > = Vec:: new ();
+        let mut RawTokens: Vec<Token_Info> = Vec:: new ();
         let mut PrecedingNewlines: usize = 0;
 
         while let Some(Ch) = self.Peek()
@@ -1474,13 +1474,13 @@ pub fn VerifyKotlinTokenEquivalence(OriginalSource: & str, FormattedSource: & st
     let mut FormattedScanner = Kotlin_Lexer::New(FormattedSource);
     let FormattedTokens = FormattedScanner.TokenizeAll();
 
-    let OrigSignificant: Vec < & str > = OriginalTokens
+    let OrigSignificant: Vec< & str> = OriginalTokens
    .iter()
    .filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
    .map( | T | T.Text.as_str())
    .collect();
 
-    let FormSignificant: Vec < & str > = FormattedTokens
+    let FormSignificant: Vec< & str> = FormattedTokens
    .iter()
    .filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
    .map( | T | T.Text.as_str())

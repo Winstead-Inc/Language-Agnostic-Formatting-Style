@@ -83,7 +83,7 @@ impl <'a> JS_Lexer<'a>
 
     pub fn TokenizeAll( & mut self) -> Vec<Token_Info>
     {
-        let mut RawTokens: Vec < Token_Info > = Vec:: new ();
+        let mut RawTokens: Vec<Token_Info> = Vec:: new ();
         let mut PrecedingNewlines: usize = 0;
 
         while let Some(Ch) = self.Peek()
@@ -704,15 +704,12 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>, Language: Source_Langua
 
         let PrecedingValid = if I == 0 { false }
         else
-        {
-            let Prev = & Tokens[I - 1];
-            Profile.IsTentativeAngleAdmitted(&Prev.Text, &Prev.Kind)
-        };
+        { let Prev = & Tokens[I - 1]; Profile.IsTentativeAngleAdmitted( & Prev.Text, & Prev.Kind) };
 
         if ! PrecedingValid { I += 1; continue ; }
 
         let mut Depth: usize = 0;
-        let mut MatchIndex: Option < usize > = None;
+        let mut MatchIndex: Option<usize> = None;
         let mut J = I;
         let mut ContainsInvalidTypeToken = false;
         let mut ParenDepth: usize = 0;
@@ -766,7 +763,7 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>, Language: Source_Langua
             let FollowValid = if M + 1 < Tokens.len()
             {
                 let Next = & Tokens[M + 1];
-                Profile.IsTentativeAngleFollowValid(&Next.Text, &Next.Kind, Next.Preceding_Newlines)
+                Profile.IsTentativeAngleFollowValid( & Next.Text, & Next.Kind, Next.Preceding_Newlines)
             }
             else
             { true };
@@ -1202,7 +1199,7 @@ impl <'a> JS_Emitter<'a>
                     if C.Open_Token.Text == "${"
                     { self.EmitStringInterpolation(C, EffectiveLevel); Index += 1; continue ; }
 
-                    let NextTokenText: Option < & str > = if Index + 1 < Total
+                    let NextTokenText: Option< & str> = if Index + 1 < Total
                     {
                         match & Nodes[Index + 1]
                         { JS_Syntax_Node::Token(T) => Some(T.Text.as_str()), JS_Syntax_Node::Container(Sub) => Some(Sub.Open_Token.Text.as_str()), }
@@ -1564,10 +1561,10 @@ pub fn VerifyJSTokenEquivalence(OriginalSource: & str, FormattedSource: & str, L
     let mut FormattedScanner = JS_Lexer::New(FormattedSource, Language);
     let FormattedTokens = FormattedScanner.TokenizeAll();
 
-    let OrigSignificant: Vec < & str > = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
+    let OrigSignificant: Vec< & str> = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
    .collect();
 
-    let FormSignificant: Vec < & str > = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
+    let FormSignificant: Vec< & str> = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str())
    .collect();
 
     if OrigSignificant.len() != FormSignificant.len()

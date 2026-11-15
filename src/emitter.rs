@@ -749,7 +749,7 @@ impl <'a> Code_Emitter<'a>
         if ! Text.contains('\n') { return Text.to_string(); }
 
         let Newline = if Text.contains("\r\n") { "\r\n" } else { "\n" };
-        let RawLines: Vec < & str > = Text.split('\n').collect();
+        let RawLines: Vec< & str> = Text.split('\n').collect();
         if RawLines.len() < 2 { return Text.to_string(); }
 
         let Line0 = RawLines[0].trim_end_matches('\r');
@@ -820,13 +820,13 @@ impl <'a> Code_Emitter<'a>
         { return Directive.to_string(); }
 
         let Newline = if Directive.contains("\r\n") { "\r\n" } else { "\n" };
-        let RawLines: Vec < & str > = Directive.split('\n').collect();
+        let RawLines: Vec< & str> = Directive.split('\n').collect();
 
         // 1. Strip trailing backslashes and whitespace, record original indent
         struct MacroRawEntry
         { Text: String, Original_Indent: usize, }
 
-        let mut Entries: Vec < MacroRawEntry > = Vec:: new ();
+        let mut Entries: Vec<MacroRawEntry> = Vec:: new ();
 
         for RawLine in RawLines
         {
@@ -855,8 +855,8 @@ impl <'a> Code_Emitter<'a>
         { return Directive.to_string(); }
 
         // 2. Indent according to Allman block nesting
-        let mut ResultLines: Vec < String > = Vec:: new ();
-        let mut Indent_Stack: Vec < usize > = Vec:: new ();
+        let mut ResultLines: Vec<String> = Vec:: new ();
+        let mut Indent_Stack: Vec<usize> = Vec:: new ();
         let mut Last_Statement_Indent: usize = 0;
         let mut Unbraced_Body = false;
 
@@ -974,7 +974,7 @@ impl <'a> Code_Emitter<'a>
 
     fn FindUnquotedBrace(Line: & str) -> Option<usize>
     {
-        let Chars: Vec < char > = Line.chars().collect();
+        let Chars: Vec<char> = Line.chars().collect();
         let mut InString = false;
         let mut InChar = false;
         let mut InComment = false;

@@ -13,9 +13,9 @@ impl Safety_Verifier
         let mut FormattedScanner = Lexer_Scanner::New(FormattedSource, Language);
         let FormattedTokens = FormattedScanner.TokenizeAll();
 
-        let OrigSignificant: Vec < & str > = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str()).collect();
+        let OrigSignificant: Vec< & str> = OriginalTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline)).map( | T | T.Text.as_str()).collect();
 
-        let FormSignificant: Vec < & str > = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
+        let FormSignificant: Vec< & str> = FormattedTokens.iter().filter( | T | ! matches ! (T.Kind, Token_Kind::Whitespace(_) | Token_Kind::Newline))
        .map( | T | T.Text.as_str()).collect();
 
         if OrigSignificant.len() != FormSignificant.len()
@@ -79,8 +79,8 @@ impl Safety_Verifier
             Form.starts_with('"') || Form.starts_with("r\"") || Form.starts_with("r#") || Form.starts_with("br") || Form.starts_with("cr") || Form.starts_with("c\"") || Form.starts_with("b\"") || Form.starts_with("b'") || Form.starts_with('`') || Form.starts_with('\'')
         )
         {
-            let OrigLines: Vec < & str > = Orig.lines().collect();
-            let FormLines: Vec < & str > = Form.lines().collect();
+            let OrigLines: Vec< & str> = Orig.lines().collect();
+            let FormLines: Vec< & str> = Form.lines().collect();
             if OrigLines.len() == FormLines.len()
             {
                 let AllLinesMatch = OrigLines.iter().zip(FormLines.iter()).all( | (OL, FL) | OL.trim() == FL.trim());
@@ -101,7 +101,7 @@ impl Safety_Verifier
     fn ExtractDirectiveTokens(Text: & str) -> Vec<String>
     {
         let mut Tokens = Vec:: new ();
-        let Chars: Vec < char > = Text.chars().collect();
+        let Chars: Vec<char> = Text.chars().collect();
         let mut I = 0;
         let Len = Chars.len();
 
