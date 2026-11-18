@@ -1043,6 +1043,12 @@ impl <'a> JS_Layout_Planner<'a>
             | c | match c { JS_Syntax_Node::Token(t) => t.Text == ",", JS_Syntax_Node::Container(sub) => sub.Tail_Glue.iter().any( | g | g.Text == ","), }
         );
 
+        // Switch to Monolith only for generic type containers (<{, <)
+        if Container.Kind == Container_Kind::Angle && ! HasComma && ! Container.Has_Forced_Break
+        {
+            return Layout_State::Monolith;
+        }
+
         // Variadic tuple in conditional extends
         if Container.Kind == Container_Kind::Bracket && Container.Children.iter().any( | c | match c { JS_Syntax_Node::Token(t) => t.Text == "infer", _ => false, }) && HasComma
         {
@@ -1072,17 +1078,6 @@ impl <'a> JS_Layout_Planner<'a>
             }
         }
 
-        // Nested generic containing multiline/multi-property child container
-        if Container.Kind == Container_Kind::Angle && Container.Children.iter().any
-        (
-            | c | match c
-            {
-                JS_Syntax_Node::Container(sub) => sub.Kind == Container_Kind::Angle && sub.Children.iter().any( | gc | match gc { JS_Syntax_Node::Container(gsc) => gsc.Kind == Container_Kind::Brace && gsc.TotalStatements() > 1, _ => false, }),
-                _ => false,
-            }
-        )
-        { return Layout_State::Expanded; }
-
         // 2. Brace Grouping Second (Sole-Child Chain Compound Delimiters)
         if self.Config.Allow_Brace_Grouping && Container.IsSoleChildChain()
         {
@@ -1092,6 +1087,86 @@ impl <'a> JS_Layout_Planner<'a>
         // 3. Expanded Symmetry Last (Hierarchical Architecture)
         Layout_State::Expanded
     }
+}
+
+fn IsInArrowHead(Nodes: &[JS_Syntax_Node], Index: usize) -> bool
+{
+    for Node in &Nodes[Index + 1..]
+    {
+        match Node
+        {
+            JS_Syntax_Node::Token(T) =>
+            {
+                if T.Text == "=>" { return true; }
+                if T.Text == ";" || T.Text == "," { return false; }
+            }
+            _ => {}
+        }
+    }
+    false
+}
+
+fn IsConstArrowFunction(Nodes: &[JS_Syntax_Node], Index: usize) -> bool
+{
+    let mut Start = Index;
+    while Start > 0
+    {
+        match &Nodes[Start - 1]
+        {
+            JS_Syntax_Node::Token(T) if T.Text == ";" || T.Text == "," => break,
+            _ => Start -= 1,
+        }
+    }
+    let mut End = Index;
+    while End < Nodes.len()
+    {
+        match &Nodes[End]
+        {
+            JS_Syntax_Node::Token(T) if T.Text == ";" || T.Text == "," => { End += 1; break; }
+            _ => End += 1,
+        }
+    }
+
+    let Slice = &Nodes[Start..End];
+
+    let StartsWithVar = Slice.iter()
+        .filter_map(|N| match N { JS_Syntax_Node::Token(T) if !T.IsTrivia() => Some(T.Text.as_str()), _ => None })
+        .take(3)
+        .any(|Text| matches!(Text, "const" | "let" | "var"));
+
+    let IsTypeDecl = Slice.iter()
+        .filter_map(|N| match N { JS_Syntax_Node::Token(T) if !T.IsTrivia() => Some(T.Text.as_str()), _ => None })
+        .take(3)
+        .any(|Text| matches!(Text, "type" | "interface"));
+
+    let HasAssign = Slice.iter().any(|N| match N {
+        JS_Syntax_Node::Token(T) => T.Text == "=",
+        _ => false,
+    });
+    let HasArrow = Slice.iter().any(|N| match N {
+        JS_Syntax_Node::Token(T) => T.Text == "=>",
+        _ => false,
+    });
+
+    StartsWithVar && !IsTypeDecl && HasAssign && HasArrow
+}
+
+fn IsArrowFunctionBody(Nodes: &[JS_Syntax_Node], Index: usize) -> bool
+{
+    if Index == 0 { return false; }
+    for Node in Nodes[..Index].iter().rev()
+    {
+        match Node
+        {
+            JS_Syntax_Node::Token(T) =>
+            {
+                if T.Text == "=>" { return true; }
+                if T.Text == ";" || T.Text == "," { return false; }
+            }
+            _ => {}
+        }
+    }
+    false
 }
 
 pub struct JS_Emitter<'a>
@@ -1228,7 +1303,31 @@ impl <'a> JS_Emitter<'a>
                     else
                     { None };
 
-                    let Layout = self.Planner.DecideLayout(C, EffectiveLevel, self.Current_Line_Len);
+                    let InArrowHead = IsInArrowHead(Nodes, Index);
+                    let IsArrowBody = IsArrowFunctionBody(Nodes, Index);
+                    let IsConstArrow = IsConstArrowFunction(Nodes, Index);
+
+                    let mut Layout = self.Planner.DecideLayout(C, EffectiveLevel, self.Current_Line_Len);
+
+                    // Edge case: const ..... = ... => ... syntax (Monolith only)
+                    if IsConstArrow
+                    {
+                        if InArrowHead
+                        {
+                            Layout = Layout_State::Monolith;
+                        }
+                        else if IsArrowBody && C.TotalStatements() <= 1
+                        {
+                            Layout = Layout_State::Monolith;
+                        }
+                    }
+                    else if C.Kind == Container_Kind::Brace && NextTokenText == Some("=>")
+                    {
+                        // An object/type brace immediately preceding `=>` must be Monolith
+                        // to prevent detaching `=>` onto its own line
+                        Layout = Layout_State::Monolith;
+                    }
+
                     self.EmitContainerNodeWithLayout(C, EffectiveLevel, Layout, NextTokenText);
 
                     if C.Tail_Glue.iter().any( | g | g.Text == ",") && EffectiveLevel > 0
@@ -1255,6 +1354,10 @@ impl <'a> JS_Emitter<'a>
                     else { None };
 
                     if NextContinuation.is_some() { self.EnsureNewline(); }
+                    else if NextTokenText == Some("=>")
+                    {
+                        if ! self.Output.ends_with(' ') { self.EmitSpace(); }
+                    }
                     else if C.Tail_Glue.iter().any( | G | G.Text == ";") || C.Kind == Container_Kind::Brace { self.EnsureNewline(); }
                 }
             }
@@ -1295,7 +1398,11 @@ impl <'a> JS_Emitter<'a>
 
         if Token.IsTrivia() { return ; }
 
-        if Token.Preceding_Newlines > 0
+        if Token.Text == "=>"
+        {
+            if ! self.Output.ends_with(' ') { self.EmitSpace(); }
+        }
+        else if Token.Preceding_Newlines > 0
         {
             self.EnsureNewline();
             if Token.Preceding_Newlines >= 2
@@ -1361,7 +1468,7 @@ impl <'a> JS_Emitter<'a>
         match Layout
         {
             Layout_State::Monolith => { self.EmitMonolith(Container, Level); }
-            Layout_State::Grouped => { self.EmitGrouped(Container, Level); }
+            Layout_State::Grouped => { self.EmitGrouped(Container, Level, NextTokenText); }
             Layout_State::Expanded => { self.EmitExpanded(Container, Level, NextTokenText); }
         }
     }
@@ -1430,7 +1537,7 @@ impl <'a> JS_Emitter<'a>
         for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
     }
 
-    fn EmitGrouped( & mut self, Container: & JS_Container, Level: usize)
+    fn EmitGrouped( & mut self, Container: & JS_Container, Level: usize, NextTokenText: Option< & str>)
     {
         let Chain = Container.CollectChain();
         let OpenRun: String = Chain.iter().map( | C | C.Kind.OpenGlyph()).collect();
@@ -1454,7 +1561,14 @@ impl <'a> JS_Emitter<'a>
             self.EmitRaw( & CloseRun);
             if let Some(Outermost) = Chain.first()
             { for Glue in & Outermost.Tail_Glue { self.EmitRaw( & Glue.Text); } }
-            self.WriteNewline();
+            if NextTokenText == Some("=>")
+            {
+                if ! self.Output.ends_with(' ') { self.EmitSpace(); }
+            }
+            else
+            {
+                self.WriteNewline();
+            }
             return ;
         }
 
@@ -1470,7 +1584,14 @@ impl <'a> JS_Emitter<'a>
         self.EmitRaw( & CloseRun);
 
         if let Some(Outermost) = Chain.first() { for Glue in & Outermost.Tail_Glue { self.EmitRaw( & Glue.Text); } }
-        self.WriteNewline();
+        if NextTokenText == Some("=>")
+        {
+            if ! self.Output.ends_with(' ') { self.EmitSpace(); }
+        }
+        else
+        {
+            self.WriteNewline();
+        }
     }
 
     fn EmitExpanded( & mut self, Container: & JS_Container, Level: usize, NextTokenText: Option< & str>)

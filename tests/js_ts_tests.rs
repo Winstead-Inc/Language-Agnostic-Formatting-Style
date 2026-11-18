@@ -425,7 +425,7 @@ U extends keyof T[number] = keyof T[number]
 }
 
 #[test]
-fn Test_TS_Generic_Type_Monolith_And_Column_Anchored_Hybrid()
+fn Test_TS_Generic_Type_Monolith_Only()
 {
     let Input = "type Result = Promise<{ error?: Error; results: Record<string, unknown>; }>;\n";
     let mut Config = Config_Settings::default();
@@ -435,26 +435,59 @@ fn Test_TS_Generic_Type_Monolith_And_Column_Anchored_Hybrid()
     let FormattedMonolith = Source_Formatter::Format(Input, &Config).expect("Monolith format failed");
     assert_eq!(FormattedMonolith.trim(), "type Result = Promise<{ error?: Error; results: Record<string, unknown>; }>;");
 
-    // When Canvas_Width is narrow, it must use Column-Anchored Hybrid, NOT pure Allman <{ on a newline
+    // User requirement: Switch to Monolith only for (<{, <) generic type definitions to prevent syntax errors, even on narrow canvas
     Config.Canvas_Width = 40;
-    let FormattedCAH = Source_Formatter::Format(Input, &Config).expect("CAH format failed");
-    assert!(!FormattedCAH.contains("\n<{"), "Compound delimiter <{{ must NEVER be on its own line: {}", FormattedCAH);
-    assert!(FormattedCAH.contains("Promise<{\n"), "Must use Column-Anchored Hybrid attached to type identifier: {}", FormattedCAH);
-    assert!(FormattedCAH.contains("              }>;"), "Closing delimiter }}> must align with column of < (column 14): {}", FormattedCAH);
+    let FormattedNarrow = Source_Formatter::Format(Input, &Config).expect("Narrow format failed");
+    assert_eq!(FormattedNarrow.trim(), "type Result = Promise<{ error?: Error; results: Record<string, unknown>; }>;");
 
-    // Test <( with function type / parameter list
+    // Test <( with function type / parameter list (Monolith only)
     let InputFn = "type Fn = Promise<(input: string) => void>;\n";
-    Config.Canvas_Width = 160;
+    Config.Canvas_Width = 40;
     let FormattedFnMonolith = Source_Formatter::Format(InputFn, &Config).expect("Fn monolith failed");
     assert_eq!(FormattedFnMonolith.trim(), "type Fn = Promise<(input: string) => void>;");
 
-    // Idempotence verifications
-    let SecondPassMonolith = Source_Formatter::Format(&FormattedMonolith, &Config).expect("Idempotence failed");
-    assert_eq!(FormattedMonolith, SecondPassMonolith);
+    // Idempotence verification
+    let SecondPass = Source_Formatter::Format(&FormattedNarrow, &Config).expect("Idempotence failed");
+    assert_eq!(FormattedNarrow, SecondPass);
+}
 
+#[test]
+fn Test_TS_Const_Arrow_Function_Monolith_Only()
+{
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::TypeScript;
+    Config.Canvas_Width = 160;
+
+    // Test 1: Exact line 7 from user screenshot
+    let Input1 = "const isFindQuery = (query: CursorConstructionOptionsWithChains,): query is CursorConstructionOptionsWithChains & { options: { method: 'find' }; } => { return query.options.method === 'find'; };\n";
+    let Formatted1 = Source_Formatter::Format(Input1, &Config).expect("Format 1 failed");
+    assert_eq!(Formatted1.trim(), "const isFindQuery = (query: CursorConstructionOptionsWithChains,): query is CursorConstructionOptionsWithChains & { options: { method: 'find' }; } => { return query.options.method === 'find'; };");
+    assert!(!Formatted1.contains("\n=>"), "Arrow operator => must never be placed on its own line: {}", Formatted1);
+
+    // Test 2: Exact line 9 from user screenshot (where options had method: 'aggregate')
+    let Input2 = "const isAggregateQuery = (query: CursorConstructionOptionsWithChains,): query is CursorConstructionOptionsWithChains & { options: {\nmethod: 'aggregate' }; }\n=> { return query.options.method === 'aggregate'; };\n";
+    let Formatted2 = Source_Formatter::Format(Input2, &Config).expect("Format 2 failed");
+    assert_eq!(Formatted2.trim(), "const isAggregateQuery = (query: CursorConstructionOptionsWithChains,): query is CursorConstructionOptionsWithChains & { options: { method: 'aggregate' }; } => { return query.options.method === 'aggregate'; };");
+    assert!(!Formatted2.contains("\n=>"), "Arrow operator => must never be placed on its own line: {}", Formatted2);
+
+    // Test 3: Exact line 12 from user screenshot
+    let Input3 = "const isFindParsedQuery = (query: ParsedQuery,): query is ParsedQuery & { find: FindQuery }\n=> { return 'find' in query; };\n";
+    let Formatted3 = Source_Formatter::Format(Input3, &Config).expect("Format 3 failed");
+    assert_eq!(Formatted3.trim(), "const isFindParsedQuery = (query: ParsedQuery,): query is ParsedQuery & { find: FindQuery } => { return 'find' in query; };");
+    assert!(!Formatted3.contains("\n=>"), "Arrow operator => must never be placed on its own line: {}", Formatted3);
+
+    // Test 4: Exact line 15 from user screenshot
+    let Input4 = "const isAggregateParsedQuery = (query: ParsedQuery,): query is ParsedQuery & { aggregate: AggregateQuery }\n=> { return 'aggregate' in query; };\n";
+    let Formatted4 = Source_Formatter::Format(Input4, &Config).expect("Format 4 failed");
+    assert_eq!(Formatted4.trim(), "const isAggregateParsedQuery = (query: ParsedQuery,): query is ParsedQuery & { aggregate: AggregateQuery } => { return 'aggregate' in query; };");
+    assert!(!Formatted4.contains("\n=>"), "Arrow operator => must never be placed on its own line: {}", Formatted4);
+
+    // Test 5: Arrow function with multiple statements retains attached => and detached body
+    let InputMulti = "const handler = (event: Event) => {\n    log(event);\n    return true;\n};\n";
     Config.Canvas_Width = 40;
-    let SecondPassCAH = Source_Formatter::Format(&FormattedCAH, &Config).expect("Idempotence CAH failed");
-    assert_eq!(FormattedCAH, SecondPassCAH);
+    let FormattedMulti = Source_Formatter::Format(InputMulti, &Config).expect("Format multi failed");
+    assert!(FormattedMulti.contains("const handler = (event: Event) =>\n{\n"), "Body must expand with detached brace while => remains attached: {}", FormattedMulti);
+    assert!(!FormattedMulti.contains("\n=>"), "Arrow operator => must never be on its own line: {}", FormattedMulti);
 }
 
 #[test]
