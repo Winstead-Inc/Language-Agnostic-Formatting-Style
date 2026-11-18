@@ -416,20 +416,45 @@ U extends keyof T[number] = keyof T[number]
         (
             input: ToneHex,
             options?: { readonly strict: boolean; readonly fallback: '#7100FF' | '#FC6A03' | '#FF1744'; }
-        ) => Promise
-        <
-            ReadonlyArray
-            <{
-                readonly resolved: ToneHex;
-                readonly tailMatrix: Nightmare_Type_Matrix<Tail>;
-            }>
-        >
-        : never;
+        ) => Promise<ReadonlyArray<{ readonly resolved: ToneHex; readonly tailMatrix: Nightmare_Type_Matrix<Tail>; }>>: never;
 }
 : { readonly emptyMarker: '#00BFFF'; };
 "#;
 
     assert_eq!(Formatted, Expected);
+}
+
+#[test]
+fn Test_TS_Generic_Type_Monolith_And_Column_Anchored_Hybrid()
+{
+    let Input = "type Result = Promise<{ error?: Error; results: Record<string, unknown>; }>;\n";
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::TypeScript;
+    Config.Canvas_Width = 160;
+
+    let FormattedMonolith = Source_Formatter::Format(Input, &Config).expect("Monolith format failed");
+    assert_eq!(FormattedMonolith.trim(), "type Result = Promise<{ error?: Error; results: Record<string, unknown>; }>;");
+
+    // When Canvas_Width is narrow, it must use Column-Anchored Hybrid, NOT pure Allman <{ on a newline
+    Config.Canvas_Width = 40;
+    let FormattedCAH = Source_Formatter::Format(Input, &Config).expect("CAH format failed");
+    assert!(!FormattedCAH.contains("\n<{"), "Compound delimiter <{{ must NEVER be on its own line: {}", FormattedCAH);
+    assert!(FormattedCAH.contains("Promise<{\n"), "Must use Column-Anchored Hybrid attached to type identifier: {}", FormattedCAH);
+    assert!(FormattedCAH.contains("              }>;"), "Closing delimiter }}> must align with column of < (column 14): {}", FormattedCAH);
+
+    // Test <( with function type / parameter list
+    let InputFn = "type Fn = Promise<(input: string) => void>;\n";
+    Config.Canvas_Width = 160;
+    let FormattedFnMonolith = Source_Formatter::Format(InputFn, &Config).expect("Fn monolith failed");
+    assert_eq!(FormattedFnMonolith.trim(), "type Fn = Promise<(input: string) => void>;");
+
+    // Idempotence verifications
+    let SecondPassMonolith = Source_Formatter::Format(&FormattedMonolith, &Config).expect("Idempotence failed");
+    assert_eq!(FormattedMonolith, SecondPassMonolith);
+
+    Config.Canvas_Width = 40;
+    let SecondPassCAH = Source_Formatter::Format(&FormattedCAH, &Config).expect("Idempotence CAH failed");
+    assert_eq!(FormattedCAH, SecondPassCAH);
 }
 
 #[test]

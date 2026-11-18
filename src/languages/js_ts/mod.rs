@@ -837,7 +837,8 @@ impl JS_Container
         let mut Current = self;
         while let Some(Child) = Current.GetSoleChildContainer()
         {
-            if (Current.Kind == Container_Kind::Angle && Child.Kind != Container_Kind::Brace) || (Child.Kind == Container_Kind::Angle && Current.Kind != Container_Kind::Angle)
+            if (Current.Kind == Container_Kind::Angle && ! matches!(Child.Kind, Container_Kind::Brace | Container_Kind::Paren | Container_Kind::Bracket))
+            || (Child.Kind == Container_Kind::Angle && Current.Kind != Container_Kind::Angle)
             {
                 break;
             }
@@ -1058,11 +1059,17 @@ impl <'a> JS_Layout_Planner<'a>
         if Container.Kind == Container_Kind::Brace && Container.TotalStatements() >= 3
         { return Layout_State::Expanded; }
 
-        // If a generic container is a Sole-Child Chain whose inner Brace has multiple statements
-        if Container.Kind == Container_Kind::Angle && Container.IsSoleChildChain()
+        // 1. Monolith First (Horizontal Density)
+        if ! Container.Has_Forced_Break && Container.Statement_Count <= self.Config.Max_Statements_In_Monolith && Container.CalculateBlockDepth() <= self.Config.Max_Block_Depth && Container.CountTotalContainers()
+        <= self.Config.Max_Containers_In_Monolith
         {
-            if let Some(inner) = Container.GetSoleChildContainer()
-            { if inner.Kind == Container_Kind::Brace && inner.TotalStatements() > 1 { return Layout_State::Grouped; } }
+            let SingleSpan = Container.CalculateSingleLineSpan();
+            if SingleSpan != usize::MAX
+            {
+                let BaseCol = if CurrentColumn > 0 { CurrentColumn } else { CurrentIndentLevel * self.Config.Indent_Width };
+                let ProjectedCol = BaseCol + SingleSpan;
+                if ProjectedCol <= self.Config.Canvas_Width { return Layout_State::Monolith; }
+            }
         }
 
         // Nested generic containing multiline/multi-property child container
@@ -1076,18 +1083,6 @@ impl <'a> JS_Layout_Planner<'a>
         )
         { return Layout_State::Expanded; }
 
-        // 1. Monolith First (Horizontal Density)
-        if ! Container.Has_Forced_Break && Container.Statement_Count <= self.Config.Max_Statements_In_Monolith && Container.CalculateBlockDepth() <= self.Config.Max_Block_Depth && Container.CountTotalContainers()
-        <= self.Config.Max_Containers_In_Monolith
-        {
-            let SingleSpan = Container.CalculateSingleLineSpan();
-            if SingleSpan != usize::MAX
-            {
-                let BaseCol = if CurrentColumn > 0 { CurrentColumn } else { CurrentIndentLevel * self.Config.Indent_Width };
-                let ProjectedCol = BaseCol + SingleSpan;
-                if ProjectedCol <= self.Config.Canvas_Width { return Layout_State::Monolith; }
-            }
-        }
         // 2. Brace Grouping Second (Sole-Child Chain Compound Delimiters)
         if self.Config.Allow_Brace_Grouping && Container.IsSoleChildChain()
         {
@@ -1220,7 +1215,7 @@ impl <'a> JS_Emitter<'a>
                     if C.Open_Token.Text == "${"
                     { self.EmitStringInterpolation(C, EffectiveLevel); Index += 1; continue ; }
 
-                    if C.Open_Token.Preceding_Newlines >= 2
+                    if C.Kind != Container_Kind::Angle && C.Open_Token.Preceding_Newlines >= 2
                     {
                         self.EnsureBlankLine();
                     }
@@ -1387,7 +1382,7 @@ impl <'a> JS_Emitter<'a>
                 else
                 {
                     let LastChar = self.Output.chars().last();
-                    if let Some(Ch) = LastChar { if ! Ch.is_alphanumeric() && Ch != '_' && Ch != '$' && Ch != ')' && Ch != ']' && Ch != '.' { self.EmitSpace(); } }
+                    if let Some(Ch) = LastChar { if ! Ch.is_alphanumeric() && Ch != '_' && Ch != '$' && Ch != ')' && Ch != ']' && Ch != '.' && Ch != '<' { self.EmitSpace(); } }
                 }
             }
         }
@@ -1395,15 +1390,16 @@ impl <'a> JS_Emitter<'a>
         self.EmitRaw(Container.Kind.OpenGlyph());
 
         let mut PrevNeedsSpace = matches!(Container.Kind, Container_Kind::Brace);
-        for Child in & Container.Children
+        for (ChildIdx, Child) in Container.Children.iter().enumerate()
         {
             match Child
             {
                 JS_Syntax_Node::Token(T) =>
                 {
                     if T.IsTrivia() { continue ; }
+                    let NextIsColon = ChildIdx + 1 < Container.Children.len() && match & Container.Children[ChildIdx + 1] { JS_Syntax_Node::Token(next_t) => next_t.Text == ":", _ => false, };
                     let IsTemplateLit = matches!(T.Kind, Token_Kind::Template_Lit(_));
-                    let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || (T.Text == ":" && ! self.Output.ends_with('`')) || T.Text == "?." || T.Text == ">" || T.Text == "/>";
+                    let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || (T.Text == ":" && ! self.Output.ends_with('`')) || T.Text == "?." || T.Text == ">" || T.Text == "/>" || (T.Text == "?" && NextIsColon);
                     let TemplateNeedsSpace = IsTemplateLit && (self.Output.ends_with('?') || self.Output.ends_with(':') || self.Output.ends_with('='));
                     if ((PrevNeedsSpace && ! IsPunct && ! IsTemplateLit) || TemplateNeedsSpace)
                     && ! self.Output.ends_with('.')
@@ -1440,9 +1436,9 @@ impl <'a> JS_Emitter<'a>
         let OpenRun: String = Chain.iter().map( | C | C.Kind.OpenGlyph()).collect();
         let CloseRun: String = Chain.iter().rev().map( | C | C.Kind.CloseGlyph()).collect();
 
-        if Container.Is_ASI_Hybrid
+        if Container.Is_ASI_Hybrid || (self.Config.Column_Anchored_Hybrid && OpenRun.starts_with('<'))
         {
-            if ! self.Output.ends_with(' ') { self.EmitSpace(); }
+            if ! OpenRun.starts_with('<') && ! self.Output.ends_with(' ') { self.EmitSpace(); }
             let OpenCol = self.Current_Line_Len;
             self.EmitRaw( & OpenRun);
             self.WriteNewline();
@@ -1488,7 +1484,7 @@ impl <'a> JS_Emitter<'a>
             let OpenGlyph = Container.Kind.OpenGlyph();
             let CloseGlyph = Container.Kind.CloseGlyph();
 
-            if ! self.Output.ends_with(' ') { self.EmitSpace(); }
+            if Container.Kind != Container_Kind::Angle && ! self.Output.ends_with(' ') { self.EmitSpace(); }
             let OpenCol = self.Current_Line_Len;
             self.EmitRaw(OpenGlyph);
             self.WriteNewline();
@@ -1502,7 +1498,17 @@ impl <'a> JS_Emitter<'a>
             self.EmitRaw( & CloseIndent);
             self.EmitRaw(CloseGlyph);
             for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
-            self.WriteNewline();
+            if Container.Kind == Container_Kind::Angle
+            {
+                if NextTokenText == Some("=") || Container.Tail_Glue.iter().any( | g | g.Text == ",")
+                {
+                    // do not write newline, keep `> =` or `>,` on same line
+                }
+                else
+                { self.WriteNewline(); }
+            }
+            else
+            { self.WriteNewline(); }
             return ;
         }
         // Standard LAFS Detached Delimiter Symmetry
