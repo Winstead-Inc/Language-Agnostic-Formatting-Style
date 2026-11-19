@@ -686,3 +686,24 @@ fn Test_JSX_Embedded_Expression_Indentation()
     let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config).expect("Pass 2 failed");
     assert_eq!(FormattedPass1, FormattedPass2, "JSX embedded expression must be 100% idempotent");
 }
+
+#[test]
+fn Test_JSX_Text_Adjacent_Expressions()
+{
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Tsx;
+    Config.Canvas_Width = 160;
+
+    let Input = r#"const Pagination = () => (
+    <span>
+        {startItem}-{endItem} of{' '}
+    </span>
+);
+"#;
+    let FormattedPass1 = Source_Formatter::Format(Input, &Config).expect("Pass 1 failed");
+    assert!(FormattedPass1.contains("{ startItem }-{ endItem }"), "Adjacent hyphen expression must not have extra spaces around hyphen: {}", FormattedPass1);
+
+    // Idempotence
+    let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config).expect("Pass 2 failed");
+    assert_eq!(FormattedPass1, FormattedPass2, "JSX text adjacent expressions must be 100% idempotent");
+}

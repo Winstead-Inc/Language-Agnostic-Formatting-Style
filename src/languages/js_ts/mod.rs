@@ -1245,6 +1245,31 @@ impl <'a> JS_Layout_Planner<'a>
     }
 }
 
+fn ContainerHasLineComment(C: &JS_Container) -> bool
+{
+    for child in &C.Children
+    {
+        match child
+        {
+            JS_Syntax_Node::Token(t) =>
+            {
+                if t.IsComment() && matches!(t.Kind, Token_Kind::Comment_Line(_))
+                {
+                    return true;
+                }
+            }
+            JS_Syntax_Node::Container(sub) =>
+            {
+                if ContainerHasLineComment(sub)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
 fn IsInArrowHead(Nodes: &[JS_Syntax_Node], Index: usize) -> bool
 {
     for Node in &Nodes[Index + 1..]
@@ -1255,8 +1280,18 @@ fn IsInArrowHead(Nodes: &[JS_Syntax_Node], Index: usize) -> bool
             {
                 if T.Text == "=>" { return true; }
                 if T.Text == ";" || T.Text == "," { return false; }
+                if matches!(T.Text.as_str(), "const" | "let" | "var" | "function" | "class" | "interface" | "type" | "enum" | "export" | "import" | "return" | "if" | "while" | "for" | "switch" | "describe" | "it")
+                {
+                    return false;
+                }
             }
-            _ => {}
+            JS_Syntax_Node::Container(C) =>
+            {
+                if C.Tail_Glue.iter().any(|g| g.Text == ";" || g.Text == ",")
+                {
+                    return false;
+                }
+            }
         }
     }
     false
@@ -1270,6 +1305,8 @@ fn IsConstArrowFunction(Nodes: &[JS_Syntax_Node], Index: usize) -> bool
         match &Nodes[Start - 1]
         {
             JS_Syntax_Node::Token(T) if T.Text == ";" || T.Text == "," => break,
+            JS_Syntax_Node::Container(C) if C.Tail_Glue.iter().any(|g| g.Text == ";" || g.Text == ",") => break,
+            JS_Syntax_Node::Token(T) if matches!(T.Text.as_str(), "const" | "let" | "var") => { Start -= 1; break; }
             _ => Start -= 1,
         }
     }
@@ -1279,6 +1316,7 @@ fn IsConstArrowFunction(Nodes: &[JS_Syntax_Node], Index: usize) -> bool
         match &Nodes[End]
         {
             JS_Syntax_Node::Token(T) if T.Text == ";" || T.Text == "," => { End += 1; break; }
+            JS_Syntax_Node::Container(C) if C.Tail_Glue.iter().any(|g| g.Text == ";" || g.Text == ",") => { End += 1; break; }
             _ => End += 1,
         }
     }
@@ -1318,8 +1356,15 @@ fn IsArrowFunctionBody(Nodes: &[JS_Syntax_Node], Index: usize) -> bool
             {
                 if T.Text == "=>" { return true; }
                 if T.Text == ";" || T.Text == "," { return false; }
+                if matches!(T.Text.as_str(), "const" | "let" | "var" | "function" | "class" | "return") { return false; }
             }
-            _ => {}
+            JS_Syntax_Node::Container(C) =>
+            {
+                if C.Tail_Glue.iter().any(|g| g.Text == ";" || g.Text == ",")
+                {
+                    return false;
+                }
+            }
         }
     }
     false
@@ -1662,8 +1707,10 @@ impl <'a> JS_Emitter<'a>
 
                     let mut Layout = self.Planner.DecideLayout(C, EffectiveContainerLevel, self.Current_Line_Len);
 
+                    let HasCommentOrForcedBreak = C.Has_Forced_Break || ContainerHasLineComment(C);
+
                     // Edge case: const ..... = ... => ... syntax (Monolith only)
-                    if IsConstArrow
+                    if IsConstArrow && ! HasCommentOrForcedBreak
                     {
                         if InArrowHead
                         {
@@ -1674,7 +1721,7 @@ impl <'a> JS_Emitter<'a>
                             Layout = Layout_State::Monolith;
                         }
                     }
-                    else if C.Kind == Container_Kind::Brace && NextTokenText == Some("=>")
+                    else if C.Kind == Container_Kind::Brace && NextTokenText == Some("=>") && ! HasCommentOrForcedBreak
                     {
                         // An object/type brace immediately preceding `=>` must be Monolith
                         // to prevent detaching `=>` onto its own line
@@ -1874,7 +1921,7 @@ impl <'a> JS_Emitter<'a>
         {
             let NextIsColon = Index + 1 < Nodes.len() && match & Nodes[Index + 1] { JS_Syntax_Node::Token(next_t) => next_t.Text == ":", _ => false, };
             if ! (Token.Text == "?" && NextIsColon)
-            { self.EmitSpaceBeforeToken(Token); }
+            { self.EmitSpaceBeforeToken(Token, Nodes, Index); }
         }
 
         self.EmitRaw( & Token.Text);
@@ -1934,8 +1981,15 @@ impl <'a> JS_Emitter<'a>
         }
     }
 
-    fn EmitSpaceBeforeToken( & mut self, Token: & Token_Info)
+    fn EmitSpaceBeforeToken( & mut self, Token: & Token_Info, Nodes: & [JS_Syntax_Node], Index: usize)
     {
+        if (Token.Text == "<" || Token.Text == "</") && Index > 0
+        {
+            if matches!( & Nodes[Index - 1], JS_Syntax_Node::Token(ref prev_t) if matches!(prev_t.Kind, Token_Kind::String_Lit(_)))
+            { return ; }
+        }
+        if matches!(Token.Kind, Token_Kind::String_Lit(_)) && self.Output.ends_with('}')
+        { return ; }
         if matches!(Token.Kind, Token_Kind::Template_Lit(_))
         {
             if self.Output.ends_with(':') || self.Output.ends_with('?') || self.Output.ends_with('=')
@@ -1982,7 +2036,7 @@ impl <'a> JS_Emitter<'a>
         { self.EmitStringInterpolation(Container, Level); return ; }
 
         if ! self.Line_Has_Content { self.EmitIndent(Level); }
-        else if Container.Kind == Container_Kind::Brace && ! self.Output.ends_with('<') && ! self.Output.ends_with('>') { self.EmitSpace(); }
+        else if Container.Kind == Container_Kind::Brace && ! Container.Is_JSX_Expression && ! self.Output.ends_with('<') && ! self.Output.ends_with('>') { self.EmitSpace(); }
         else if Container.Kind == Container_Kind::Paren
         {
             if ! self.Output.ends_with(' ')
@@ -2007,6 +2061,15 @@ impl <'a> JS_Emitter<'a>
                 JS_Syntax_Node::Token(T) =>
                 {
                     if T.IsTrivia() { continue ; }
+                    if let Token_Kind::Comment_Line(ref Text) = T.Kind
+                    {
+                        if self.Line_Has_Content { self.EmitSpace(); }
+                        self.EmitRaw(Text);
+                        self.WriteNewline();
+                        PrevNeedsSpace = false;
+                        continue ;
+                    }
+                    let PrevIsStringLit = ChildIdx > 0 && matches!( & Container.Children[ChildIdx - 1], JS_Syntax_Node::Token(ref prev_t) if matches!(prev_t.Kind, Token_Kind::String_Lit(_)));
                     let NextIsColon = ChildIdx + 1 < Container.Children.len() && match & Container.Children[ChildIdx + 1] { JS_Syntax_Node::Token(next_t) => next_t.Text == ":", _ => false, };
                     let IsTemplateLit = matches!(T.Kind, Token_Kind::Template_Lit(_));
                     let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || (T.Text == ":" && ! self.Output.ends_with('`')) || T.Text == "?." || T.Text == ">" || T.Text == "/>" || T.Text == "</" || (T.Text == "?" && NextIsColon);
@@ -2020,6 +2083,7 @@ impl <'a> JS_Emitter<'a>
                     && ! self.Output.ends_with("</")
                     && ! self.Output.ends_with('#')
                     && ! (self.Output.ends_with('>') && matches!(T.Kind, Token_Kind::String_Lit(_)))
+                    && ! ((T.Text == "<" || T.Text == "</") && PrevIsStringLit)
                     { self.EmitSpace(); }
                     self.EmitRaw( & T.Text);
                     PrevNeedsSpace = ! matches!(T.Text.as_str(), "." | "?." | "(" | "[" | "!" | "~" | "<" | "</" | "#" | ">");
