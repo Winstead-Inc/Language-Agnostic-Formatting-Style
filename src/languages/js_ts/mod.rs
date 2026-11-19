@@ -36,6 +36,13 @@ impl JS_TS_Formatter
 struct Template_Context
 { Brace_Depth: usize, }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum JSX_Lex_Context
+{
+    Tag,
+    Expr { Brace_Depth: usize },
+}
+
 pub struct JS_Lexer<'a>
 {
     Source: & 'a str,
@@ -46,6 +53,7 @@ pub struct JS_Lexer<'a>
     Language: Source_Language,
     Expects_Expression: bool,
     Template_Stack: Vec<Template_Context>,
+    JSX_Context_Stack: Vec<JSX_Lex_Context>,
     In_JSX_Tag_Header: usize,
     JSX_Brace_Depth: usize,
     JSX_Element_Depth: usize,
@@ -68,6 +76,7 @@ impl <'a> JS_Lexer<'a>
             Language,
             Expects_Expression: true,
             Template_Stack: Vec:: new (),
+            JSX_Context_Stack: Vec:: new (),
             In_JSX_Tag_Header: 0,
             JSX_Brace_Depth: 0,
             JSX_Element_Depth: 0,
@@ -214,6 +223,24 @@ impl <'a> JS_Lexer<'a>
                 self.Advance();
                 if let Some(Ctx) = self.Template_Stack.last_mut()
                 { Ctx.Brace_Depth += 1; }
+                if let Some(top) = self.JSX_Context_Stack.last_mut()
+                {
+                    match top
+                    {
+                        JSX_Lex_Context::Tag =>
+                        {
+                            self.JSX_Context_Stack.push(JSX_Lex_Context::Expr { Brace_Depth: 0 });
+                        }
+                        JSX_Lex_Context::Expr { ref mut Brace_Depth } =>
+                        {
+                            *Brace_Depth += 1;
+                        }
+                    }
+                }
+                else if self.JSX_Element_Depth > 0
+                {
+                    self.JSX_Context_Stack.push(JSX_Lex_Context::Expr { Brace_Depth: 0 });
+                }
                 if self.In_JSX_Tag_Header > 0
                 { self.JSX_Brace_Depth += 1; }
                 else if self.JSX_Element_Depth > 0
@@ -226,6 +253,24 @@ impl <'a> JS_Lexer<'a>
 
             if Ch == '}'
             {
+                if let Some(top) = self.JSX_Context_Stack.last_mut()
+                {
+                    match top
+                    {
+                        JSX_Lex_Context::Expr { ref mut Brace_Depth } =>
+                        {
+                            if *Brace_Depth > 0
+                            {
+                                *Brace_Depth -= 1;
+                            }
+                            else
+                            {
+                                self.JSX_Context_Stack.pop();
+                            }
+                        }
+                        _ => {}
+                    }
+                }
                 if let Some(Ctx) = self.Template_Stack.last_mut()
                 {
                     if Ctx.Brace_Depth > 0
@@ -406,23 +451,29 @@ impl <'a> JS_Lexer<'a>
                     let mut Offset = 0;
                     while let Some(Ws) = self.PeekAhead(Offset)
                     { if Ws == ' ' || Ws == '\t' { Offset += 1; } else { break ; } }
-                    if self.PeekAhead(Offset).map_or(false, | C | C.is_ascii_alphabetic() || C == '>')
+                    if self.PeekAhead(Offset).map_or(false, | C | C.is_ascii_alphabetic() || C == '_' || C == '$' || C == '>')
                     {
-                        let IsGenericArrow = {
+                        let (IsGenericArrow, IsKeyword) = {
                             let mut CheckOff = Offset;
+                            let mut Name = String::new();
                             while let Some(C) = self.PeekAhead(CheckOff)
                             {
-                                if C.is_alphanumeric() || C == '_' || C == '$' { CheckOff += 1; }
-                                else { break; }
+                                if C.is_alphanumeric() || C == '_' || C == '$' {
+                                    Name.push(C);
+                                    CheckOff += 1;
+                                } else { break; }
                             }
                             while let Some(Ws) = self.PeekAhead(CheckOff)
                             { if Ws == ' ' || Ws == '\t' { CheckOff += 1; } else { break; } }
-                            self.PeekAhead(CheckOff) == Some(',')
+                            let is_arrow = self.PeekAhead(CheckOff) == Some(',') || (Name == "const" && self.PeekAhead(CheckOff).map_or(false, |c| c.is_alphabetic()));
+                            let is_kw = IsJSKeyword(&Name);
+                            (is_arrow, is_kw)
                         };
-                        if !IsGenericArrow
+                        if !IsGenericArrow && !IsKeyword
                         {
                             for _ in 0..Offset { self.Advance(); }
                             self.In_JSX_Tag_Header += 1;
+                            self.JSX_Context_Stack.push(JSX_Lex_Context::Tag);
                         }
                     }
                 }
@@ -626,7 +677,7 @@ impl <'a> JS_Lexer<'a>
         {
             if Ch.is_alphanumeric() || Ch == '_' || Ch == '$'
             { Result.push(self.Advance().unwrap()); }
-            else if Ch == '-' && self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0
+            else if Ch == '-' && (self.JSX_Context_Stack.last() == Some(&JSX_Lex_Context::Tag) || (self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0))
             {
                 let mut Offset = 1;
                 while let Some(Ws) = self.PeekAhead(Offset)
@@ -655,6 +706,8 @@ impl <'a> JS_Lexer<'a>
         if First == '/' && Next == Some('>')
         {
             Result.push(self.Advance().unwrap());
+            if self.JSX_Context_Stack.last() == Some(&JSX_Lex_Context::Tag)
+            { self.JSX_Context_Stack.pop(); }
             if self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0
             { self.In_JSX_Tag_Header -= 1; }
             return Result;
@@ -704,16 +757,23 @@ impl <'a> JS_Lexer<'a>
             {
                 self.JSX_Generic_Depth -= 1;
             }
-            else if self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0
-            {
-                self.In_JSX_Tag_Header -= 1;
-                self.JSX_Element_Depth += 1;
-            }
             else if self.In_JSX_Closing_Tag
             {
                 self.In_JSX_Closing_Tag = false;
                 if self.JSX_Element_Depth > 0
                 { self.JSX_Element_Depth -= 1; }
+            }
+            else if self.JSX_Context_Stack.last() == Some(&JSX_Lex_Context::Tag)
+            {
+                self.JSX_Context_Stack.pop();
+                self.JSX_Element_Depth += 1;
+                if self.In_JSX_Tag_Header > 0
+                { self.In_JSX_Tag_Header -= 1; }
+            }
+            else if self.In_JSX_Tag_Header > 0 && self.JSX_Brace_Depth == 0
+            {
+                self.In_JSX_Tag_Header -= 1;
+                self.JSX_Element_Depth += 1;
             }
         }
 
@@ -787,8 +847,24 @@ fn ResolveJSAngleBrackets(Tokens: & mut Vec<Token_Info>, Language: Source_Langua
         else
         {
             let Prev = & Tokens[I - 1];
+            let IsArrowGeneric = Prev.Text == "=" && {
+                let mut d = 0;
+                let mut found_close = None;
+                for k in I..Tokens.len() {
+                    if Tokens[k].Text == "<" { d += 1; }
+                    else if Tokens[k].Text == ">" {
+                        d -= 1;
+                        if d == 0 { found_close = Some(k); break; }
+                    }
+                    else if Tokens[k].Text == ";" || Tokens[k].Text == "{" { break; }
+                }
+                found_close.map_or(false, |close_idx| {
+                    close_idx + 1 < Tokens.len() && Tokens[close_idx + 1].Text == "("
+                })
+            };
             Profile.IsTentativeAngleAdmitted( & Prev.Text, & Prev.Kind)
                 || (Prev.Text == "=" && I + 2 < Tokens.len() && (Tokens[I + 2].Text == "," || Tokens[I + 2].Text == "extends"))
+                || IsArrowGeneric
         };
 
         if ! PrecedingValid { I += 1; continue ; }
@@ -1084,7 +1160,7 @@ impl JS_Container_Builder
                     let mut Container = Stack.pop().unwrap();
                     Container.Close_Token = Some(Token.clone());
 
-                    // Tail glue (; or , or : or [] or [],)
+                    // Tail glue (; or , or : or [] or [], or IIFE ())
                     Idx += 1;
                     while Idx < self.Tokens.len()
                     {
@@ -1095,6 +1171,12 @@ impl JS_Container_Builder
                             {
                                 Container.Tail_Glue.push(NextToken.clone());
                                 Idx += 1;
+                            }
+                            else if Container.Kind == Container_Kind::Paren && NextToken.Text == "(" && Idx + 1 < self.Tokens.len() && self.Tokens[Idx + 1].Text == ")" && self.Tokens[Idx + 1].Preceding_Newlines == 0
+                            {
+                                Container.Tail_Glue.push(NextToken.clone());
+                                Container.Tail_Glue.push(self.Tokens[Idx + 1].clone());
+                                Idx += 2;
                             }
                             else if Container.Kind == Container_Kind::Angle && NextToken.Text == "[" && Idx + 1 < self.Tokens.len() && self.Tokens[Idx + 1].Text == "]" && self.Tokens[Idx + 1].Preceding_Newlines == 0
                             {
@@ -1130,7 +1212,28 @@ impl JS_Container_Builder
                 _ =>
                 {
                     if Token.Text == "<"
-                    { self.In_JSX_Tag_Header += 1; }
+                    {
+                        let PrecededByIdOrNum = Idx > 0 && match &self.Tokens[Idx - 1].Kind {
+                            Token_Kind::Identifier(_) | Token_Kind::Number(_) | Token_Kind::Close_Delim(Container_Kind::Paren) | Token_Kind::Close_Delim(Container_Kind::Bracket) => true,
+                            _ => false,
+                        };
+                        let NextIsKw = Idx + 1 < self.Tokens.len() && match &self.Tokens[Idx + 1].Kind {
+                            Token_Kind::Keyword(_) => true,
+                            Token_Kind::Identifier(ref name) => IsJSKeyword(name),
+                            _ => false,
+                        };
+                        let NextIsTagName = Idx + 1 < self.Tokens.len() && (
+                            self.Tokens[Idx + 1].Text == ">" ||
+                            match &self.Tokens[Idx + 1].Kind {
+                                Token_Kind::Identifier(ref name) => !IsJSKeyword(name),
+                                _ => false,
+                            }
+                        );
+                        if !PrecededByIdOrNum && !NextIsKw && NextIsTagName
+                        {
+                            self.In_JSX_Tag_Header += 1;
+                        }
+                    }
                     else if Token.Text == "</"
                     { self.In_JSX_Closing_Tag = true; }
                     else if Token.Text == "/>"
@@ -1391,6 +1494,7 @@ pub struct JS_Emitter<'a>
     JSX_Depth: usize,
     JSX_Open_Tags: Vec<String>,
     In_JSX_Tag_Header: bool,
+    In_JSX_Closing_Tag: bool,
     Pending_Multiline_Tag_Open: bool,
 }
 
@@ -1409,6 +1513,7 @@ impl <'a> JS_Emitter<'a>
             JSX_Depth: 0,
             JSX_Open_Tags: Vec:: new (),
             In_JSX_Tag_Header: false,
+            In_JSX_Closing_Tag: false,
             Pending_Multiline_Tag_Open: false,
         }
     }
@@ -1482,6 +1587,27 @@ impl <'a> JS_Emitter<'a>
             _ => return None,
         }
 
+        // A JSX tag cannot be preceded by an identifier, number, string, ), ], ++, --
+        if Index > 0
+        {
+            match &Nodes[Index - 1]
+            {
+                JS_Syntax_Node::Token(prev_t) => {
+                    let is_preceding_kw = matches!(prev_t.Text.as_str(), "return" | "default" | "yield" | "case" | "await" | "typeof");
+                    if (matches!(prev_t.Kind, Token_Kind::Identifier(_) | Token_Kind::Number(_) | Token_Kind::String_Lit(_)) && !is_preceding_kw)
+                        || matches!(prev_t.Text.as_str(), ")" | "]" | "++" | "--")
+                    {
+                        return None;
+                    }
+                }
+                JS_Syntax_Node::Container(prev_c) => {
+                    if prev_c.Kind == Container_Kind::Paren || prev_c.Kind == Container_Kind::Bracket {
+                        return None;
+                    }
+                }
+            }
+        }
+
         let mut ScanIdx = Index + 1;
         let TagName = if ScanIdx < Nodes.len()
         {
@@ -1490,6 +1616,7 @@ impl <'a> JS_Emitter<'a>
                 JS_Syntax_Node::Token(T) if T.Text == ">" => String:: new (),
                 JS_Syntax_Node::Token(T) if T.Text.chars().next().map_or(false, | c | c.is_ascii_alphabetic() || c == '_' || c == '$') =>
                 {
+                    if IsJSKeyword(&T.Text) { return None; }
                     let mut FullName = T.Text.clone();
                     ScanIdx += 1;
                     while ScanIdx < Nodes.len()
@@ -1551,13 +1678,31 @@ impl <'a> JS_Emitter<'a>
 
         let HeaderEnd = HeaderEndIndex?;
 
+        let mut HeaderTokenLen: usize = 0;
+        let mut HeaderHasComment = false;
+        for n in &Nodes[Index..=HeaderEnd] {
+            match n {
+                JS_Syntax_Node::Token(t) => {
+                    if t.IsComment() || t.Text.contains('\n') { HeaderHasComment = true; }
+                    HeaderTokenLen = HeaderTokenLen.saturating_add(t.Text.len() + 1);
+                }
+                JS_Syntax_Node::Container(c) => {
+                    if c.Has_Forced_Break { HeaderHasComment = true; }
+                    let span = c.CalculateSingleLineSpan();
+                    if span == usize::MAX { HeaderHasComment = true; }
+                    else { HeaderTokenLen = HeaderTokenLen.saturating_add(span); }
+                }
+            }
+        }
+
         if IsSelfClosing
         {
+            let IsMultiline = if !HeaderHasComment && HeaderTokenLen <= 90 { false } else { HeaderHasNewlines };
             return Some
             (
                 JsxTagInfo
                 {
-                    TagName, HeaderEndIndex: HeaderEnd, CloseTagIndex: None, IsSelfClosing: true, IsMultiline: HeaderHasNewlines,
+                    TagName, HeaderEndIndex: HeaderEnd, CloseTagIndex: None, IsSelfClosing: true, IsMultiline,
                 }
             );
         }
@@ -1618,11 +1763,13 @@ impl <'a> JS_Emitter<'a>
 
         let CloseTagIdx = if Depth == 0 && SearchIdx < Nodes.len() { Some(SearchIdx) } else { None };
 
+        let IsTrulyMultiline = HeaderHasNewlines || HasChildNewlines;
+
         Some
         (
             JsxTagInfo
             {
-                TagName, HeaderEndIndex: HeaderEnd, CloseTagIndex: CloseTagIdx, IsSelfClosing: false, IsMultiline: HeaderHasNewlines || HasChildNewlines,
+                TagName, HeaderEndIndex: HeaderEnd, CloseTagIndex: CloseTagIdx, IsSelfClosing: false, IsMultiline: IsTrulyMultiline,
             }
         )
     }
@@ -1679,7 +1826,10 @@ impl <'a> JS_Emitter<'a>
                     { self.EmitSingleToken(T, EffectiveLevel, Nodes, Index, & Multiline_Open_Indices, & Multiline_Close_Indices); }
 
                     if T.Text == ";"
-                    { InPropertyValue = false; }
+                    {
+                        InPropertyValue = false;
+                        if Level == 0 { self.JSX_Depth = 0; }
+                    }
                 }
                 JS_Syntax_Node::Container(C) =>
                 {
@@ -1742,10 +1892,15 @@ impl <'a> JS_Emitter<'a>
                     self.In_JSX_Tag_Header = Saved_In_Header;
                     self.Pending_Multiline_Tag_Open = Saved_Pending_Open;
 
+                    if Level == 0 && C.Kind == Container_Kind::Brace
+                    {
+                        InPropertyValue = false;
+                    }
+
                     if C.Tail_Glue.iter().any( | g | g.Text == ",") && EffectiveLevel > 0
                     { self.WriteNewline(); }
 
-                    if C.Tail_Glue.iter().any( | g | g.Text == ":")
+                    if C.Kind == Container_Kind::Bracket && C.Tail_Glue.iter().any( | g | g.Text == ":")
                     {
                         let HasMultiLineValue = Nodes[Index + 1..].iter()
                        .take_while( | n | match n { JS_Syntax_Node::Token(t) => t.Text != ";" && t.Text != ",", _ => true })
@@ -1783,14 +1938,26 @@ impl <'a> JS_Emitter<'a>
                         if ! self.Output.ends_with(' ') { self.EmitSpace(); }
                     }
                     else if C.Tail_Glue.iter().any( | G | G.Text == ";")
-                    { self.EnsureNewline(); }
+                    {
+                        self.EnsureNewline();
+                        if Level == 0 { self.JSX_Depth = 0; InPropertyValue = false; }
+                    }
                     else if C.Kind == Container_Kind::Brace
                     {
                         if C.Is_JSX_Expression
                         {
+                            let NextIsContainer = Index + 1 < Total && matches!(&Nodes[Index + 1], JS_Syntax_Node::Container(_));
+                            let NextHasNewlines = Index + 1 < Total && match &Nodes[Index + 1] {
+                                JS_Syntax_Node::Token(t) => t.Preceding_Newlines > 0,
+                                JS_Syntax_Node::Container(c) => c.Open_Token.Preceding_Newlines > 0,
+                            };
                             if NextTokenText == Some("/>") && ! self.Output.ends_with(' ')
                             { self.EmitSpace(); }
-                            else if PrecededByEquals && NextIsSameLineToken && NextTokenText != Some(">") && ! self.Output.ends_with(' ')
+                            else if NextHasNewlines
+                            {
+                                self.EnsureNewline();
+                            }
+                            else if (PrecededByEquals || NextIsContainer) && ! self.Output.ends_with(' ') && NextTokenText != Some(">")
                             { self.EmitSpace(); }
                         }
                         else if SuppressNewlineAfterBrace
@@ -1827,6 +1994,11 @@ impl <'a> JS_Emitter<'a>
     {
         if let Token_Kind::Comment_Line(CommentText) = & Token.Kind
         {
+            if Token.Preceding_Newlines > 0
+            {
+                self.EnsureNewline();
+                if Token.Preceding_Newlines >= 2 { self.EnsureBlankLine(); }
+            }
             if self.Line_Has_Content { self.EmitSpace(); } else { self.EmitIndent(Level + self.JSX_Depth); }
             self.EmitRaw(CommentText);
             self.WriteNewline();
@@ -1835,8 +2007,17 @@ impl <'a> JS_Emitter<'a>
 
         if let Token_Kind::Comment_Block(CommentText) = & Token.Kind
         {
+            if Token.Preceding_Newlines > 0
+            {
+                self.EnsureNewline();
+                if Token.Preceding_Newlines >= 2 { self.EnsureBlankLine(); }
+            }
             if ! self.Line_Has_Content { self.EmitIndent(Level + self.JSX_Depth); } else { self.EmitSpace(); }
             self.EmitRaw(CommentText);
+            if CommentText.contains("@jsx")
+            {
+                self.WriteNewline();
+            }
             return ;
         }
 
@@ -1855,23 +2036,31 @@ impl <'a> JS_Emitter<'a>
 
         if Token.IsTrivia() { return ; }
 
-        if Token.Text == "<" && Multiline_Open_Indices.contains(& Index)
+        let IsJsxTag = Token.Text == "<" && Self::InspectJsxTag(Nodes, Index).is_some();
+        if IsJsxTag
         {
             self.In_JSX_Tag_Header = true;
-            let IsSelfClosing = match Self::InspectJsxTag(Nodes, Index)
+            if Multiline_Open_Indices.contains(& Index)
             {
-                Some(info) => info.IsSelfClosing,
-                None => false,
-            };
-            if ! IsSelfClosing
-            {
-                self.Pending_Multiline_Tag_Open = true;
+                let IsSelfClosing = match Self::InspectJsxTag(Nodes, Index)
+                {
+                    Some(info) => info.IsSelfClosing,
+                    None => false,
+                };
+                if ! IsSelfClosing
+                {
+                    self.Pending_Multiline_Tag_Open = true;
+                }
             }
         }
-        else if Token.Text == "</" && Multiline_Close_Indices.contains(& Index)
+        else if Token.Text == "</"
         {
-            self.JSX_Depth = self.JSX_Depth.saturating_sub(1);
-            self.EnsureNewline();
+            self.In_JSX_Closing_Tag = true;
+            if Multiline_Close_Indices.contains(& Index)
+            {
+                self.JSX_Depth = self.JSX_Depth.saturating_sub(1);
+                self.EnsureNewline();
+            }
         }
 
         let EffectiveTokenLevel = if Token.Text == "</" && Multiline_Close_Indices.contains(& Index)
@@ -1924,6 +2113,9 @@ impl <'a> JS_Emitter<'a>
             { self.EmitSpaceBeforeToken(Token, Nodes, Index); }
         }
 
+        let WasInHeader = self.In_JSX_Tag_Header;
+        let WasInClosing = self.In_JSX_Closing_Tag;
+
         self.EmitRaw( & Token.Text);
 
         if Token.Text == ">" && self.In_JSX_Tag_Header
@@ -1949,16 +2141,9 @@ impl <'a> JS_Emitter<'a>
                 }
             }
         }
-        else if Token.Text == ">" && ! self.In_JSX_Tag_Header
+        else if Token.Text == ">" && self.In_JSX_Closing_Tag
         {
-            if Index + 1 < Nodes.len()
-            {
-                match & Nodes[Index + 1]
-                {
-                    JS_Syntax_Node::Token(next_t) if next_t.Preceding_Newlines > 0 => { self.EnsureNewline(); }
-                    _ => {}
-                }
-            }
+            self.In_JSX_Closing_Tag = false;
         }
 
         if Token.Text == ";" || (Token.Text == "," && Level > 0) { self.WriteNewline(); }
@@ -1968,25 +2153,65 @@ impl <'a> JS_Emitter<'a>
             (
                 K.as_str(), "if" | "while" | "for" | "switch" | "catch" | "with" | "return" | "throw" | "yield" | "case" | "new" | "typeof" | "void" | "delete" | "as" | "from" | "export" | "import" | "const" | "let" | "var" | "function" | "class" | "interface" | "type" | "enum" | "extends" | "implements" | "async" | "await" | "default" | "else" | "readonly" | "infer" | "keyof" | "in"
             )
-            { self.EmitSpace(); }
+            {
+                let NextIsPunct = Index + 1 < Nodes.len() && match &Nodes[Index + 1] {
+                    JS_Syntax_Node::Token(nt) => matches!(nt.Text.as_str(), ":" | ";" | "," | ")" | "]" | ">"),
+                    _ => false,
+                };
+                if !NextIsPunct {
+                    self.EmitSpace();
+                }
+            }
         }
         else if let Token_Kind::Operator(Op) = & Token.Kind
         {
             if matches!
             (
                 Op.as_str(),
-                "=" | "=>" | "===" | "!==" | "==" | "!=" | "<=" | ">=" | "&&" | "||" | "??" | "??=" | "&&=" | "||=" | "+=" | "-=" | "*=" | "/=" | "%=" | "**=" | "&=" | "|=" | "^=" | "<<" | ">>" | ">>>" | "+" | "-" | "*" | "/" | "%" | "**" | "&" | "|" | "^"
+                "<" | ">" | "=" | "=>" | "===" | "!==" | "==" | "!=" | "<=" | ">=" | "&&" | "||" | "??" | "??=" | "&&=" | "||=" | "+=" | "-=" | "*=" | "/=" | "%=" | "**=" | "&=" | "|=" | "^=" | "<<" | ">>" | ">>>" | "+" | "-" | "*" | "/" | "%" | "**" | "&" | "|" | "^"
             )
-            { self.EmitSpace(); }
+            {
+                if Op == "<" && IsJsxTag
+                {
+                    // JSX opening tag `<` does not get trailing space
+                }
+                else if (Op == "<" || Op == ">") && (WasInHeader || WasInClosing || self.In_JSX_Tag_Header || self.In_JSX_Closing_Tag)
+                {
+                    // inside tag header or tag close, `<` and `>` do not get automatic trailing space
+                }
+                else
+                {
+                    self.EmitSpace();
+                }
+            }
         }
     }
 
     fn EmitSpaceBeforeToken( & mut self, Token: & Token_Info, Nodes: & [JS_Syntax_Node], Index: usize)
     {
+        // Postfix ++ / --
+        if (Token.Text == "++" || Token.Text == "--")
+            && Index > 0
+            && matches!(&Nodes[Index - 1], JS_Syntax_Node::Token(ref prev_t) if matches!(prev_t.Kind, Token_Kind::Identifier(_)) || prev_t.Text == ")")
+        {
+            return;
+        }
+
+        let IsJsxTag = Token.Text == "<" && Self::InspectJsxTag(Nodes, Index).is_some();
         if (Token.Text == "<" || Token.Text == "</") && Index > 0
         {
             if matches!( & Nodes[Index - 1], JS_Syntax_Node::Token(ref prev_t) if matches!(prev_t.Kind, Token_Kind::String_Lit(_)))
             { return ; }
+        }
+        if IsJsxTag
+        {
+            if self.Output.ends_with('(') || self.Output.ends_with('[') || self.Output.ends_with('{') { return; }
+        }
+        if (Token.Text == "[" || Token.Text == "(")
+            && Index > 0
+            && matches!(&Nodes[Index - 1], JS_Syntax_Node::Token(ref prev_t) if matches!(prev_t.Kind, Token_Kind::Identifier(_)) || matches!(prev_t.Text.as_str(), ")" | "]" | ">"))
+        {
+            return;
         }
         if matches!(Token.Kind, Token_Kind::String_Lit(_)) && self.Output.ends_with('}')
         { return ; }
@@ -1999,13 +2224,17 @@ impl <'a> JS_Emitter<'a>
         if Token.Text == ";" || Token.Text == "," || Token.Text == "." || Token.Text == "?." { return ; }
         if self.Output.ends_with('.') || self.Output.ends_with("?.") { return ; }
         if self.Output.ends_with('(') || self.Output.ends_with('[') { return ; }
-        if self.Output.ends_with('<') || self.Output.ends_with("</") || self.Output.ends_with('#') { return ; }
+        if self.Output.ends_with("</") { return ; }
+        if self.Output.ends_with('<') && (self.In_JSX_Tag_Header || IsJsxTag) { return ; }
+        if self.Output.ends_with('#') { return ; }
         if self.Output.ends_with("${") { return ; }
-        if Token.Text == ">" || Token.Text == "</" { return ; }
+        if (Token.Text == ">" || Token.Text == "</") && self.In_JSX_Tag_Header { return ; }
+        if Token.Text == "</" { return ; }
+        if Token.Text == ">" && (self.In_JSX_Tag_Header || self.In_JSX_Closing_Tag || (Index > 0 && matches!(&Nodes[Index - 1], JS_Syntax_Node::Token(ref pt) if IsHtmlTagName(&pt.Text) || pt.Text.chars().next().map_or(false, |c| c.is_uppercase()) || pt.Text == "/" || pt.Text == "="))) { return ; }
         if Token.Text == "/>" { self.EmitSpace(); return ; }
         if self.Output.ends_with('>') && ! self.Output.ends_with(" >") && ! self.Output.ends_with("=>") && ! self.Output.ends_with("->")
         {
-            if Token.Text == "<" || Token.Text == "</" || Token.Text == "/>"
+            if self.In_JSX_Tag_Header && (Token.Text == "<" || Token.Text == "</" || Token.Text == "/>")
             { return ; }
             if matches!(Token.Kind, Token_Kind::String_Lit(_))
             { return ; }
@@ -2013,7 +2242,37 @@ impl <'a> JS_Emitter<'a>
         if self.Output.ends_with(' ') || Token.Text.starts_with(' ') { return ; }
         if self.Output.ends_with('}') && Token.Text.starts_with('\'') { return ; }
         if Token.Text == ":"
-        { if self.Output.ends_with('`') { self.EmitSpace(); } return ; }
+        {
+            let IsTernaryColon = {
+                let mut QuestionCount = 0;
+                let mut ColonCount = 0;
+                for k in (0..Index).rev() {
+                    match &Nodes[k] {
+                        JS_Syntax_Node::Token(t) => {
+                            if t.Text == ";" || t.Text == "{" || t.Text == "}" { break; }
+                            if t.Text == "?" {
+                                let NextIsColon = k + 1 < Nodes.len() && match &Nodes[k + 1] {
+                                    JS_Syntax_Node::Token(nt) => nt.Text == ":",
+                                    _ => false,
+                                };
+                                if !NextIsColon {
+                                    QuestionCount += 1;
+                                }
+                            }
+                            else if t.Text == ":" {
+                                ColonCount += 1;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                QuestionCount > ColonCount
+            };
+            if (IsTernaryColon && !self.Output.ends_with('>')) || self.Output.ends_with('`') {
+                self.EmitSpace();
+            }
+            return;
+        }
         self.EmitSpace();
     }
 
@@ -2035,6 +2294,10 @@ impl <'a> JS_Emitter<'a>
         if Container.Open_Token.Text == "${"
         { self.EmitStringInterpolation(Container, Level); return ; }
 
+        let IsAlloy = Container.Kind == Container_Kind::Brace
+            && Container.Children.len() == 1
+            && matches!(&Container.Children[0], JS_Syntax_Node::Container(sub) if sub.Kind == Container_Kind::Brace);
+
         if ! self.Line_Has_Content { self.EmitIndent(Level); }
         else if Container.Kind == Container_Kind::Brace && ! Container.Is_JSX_Expression && ! self.Output.ends_with('<') && ! self.Output.ends_with('>') { self.EmitSpace(); }
         else if Container.Kind == Container_Kind::Paren
@@ -2053,7 +2316,7 @@ impl <'a> JS_Emitter<'a>
 
         self.EmitRaw(Container.Kind.OpenGlyph());
 
-        let mut PrevNeedsSpace = matches!(Container.Kind, Container_Kind::Brace);
+        let mut PrevNeedsSpace = matches!(Container.Kind, Container_Kind::Brace) && !IsAlloy;
         for (ChildIdx, Child) in Container.Children.iter().enumerate()
         {
             match Child
@@ -2072,34 +2335,116 @@ impl <'a> JS_Emitter<'a>
                     let PrevIsStringLit = ChildIdx > 0 && matches!( & Container.Children[ChildIdx - 1], JS_Syntax_Node::Token(ref prev_t) if matches!(prev_t.Kind, Token_Kind::String_Lit(_)));
                     let NextIsColon = ChildIdx + 1 < Container.Children.len() && match & Container.Children[ChildIdx + 1] { JS_Syntax_Node::Token(next_t) => next_t.Text == ":", _ => false, };
                     let IsTemplateLit = matches!(T.Kind, Token_Kind::Template_Lit(_));
-                    let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || (T.Text == ":" && ! self.Output.ends_with('`')) || T.Text == "?." || T.Text == ">" || T.Text == "/>" || T.Text == "</" || (T.Text == "?" && NextIsColon);
+
+                    let IsTernaryColon = if T.Text == ":" && !self.Output.ends_with('>') {
+                        let mut QuestionCount = 0;
+                        let mut ColonCount = 0;
+                        for k in (0..ChildIdx).rev() {
+                            match &Container.Children[k] {
+                                JS_Syntax_Node::Token(t) => {
+                                    if t.Text == ";" { break; }
+                                    if t.Text == "?" {
+                                        let NextIsCol = k + 1 < Container.Children.len() && match &Container.Children[k + 1] {
+                                            JS_Syntax_Node::Token(nt) => nt.Text == ":",
+                                            _ => false,
+                                        };
+                                        if !NextIsCol { QuestionCount += 1; }
+                                    } else if t.Text == ":" {
+                                        ColonCount += 1;
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                        QuestionCount > ColonCount
+                    } else { false };
+
+                    let IsPostfix = (T.Text == "++" || T.Text == "--")
+                        && ChildIdx > 0
+                        && matches!(&Container.Children[ChildIdx - 1], JS_Syntax_Node::Token(ref prev_t) if matches!(prev_t.Kind, Token_Kind::Identifier(_)) || prev_t.Text == ")");
+
+                    let IsJsxTagOpen = T.Text == "<" && ChildIdx + 1 < Container.Children.len() && match &Container.Children[ChildIdx + 1] {
+                        JS_Syntax_Node::Token(next_t) => IsHtmlTagName(&next_t.Text) || next_t.Text.chars().next().map_or(false, |c| c.is_uppercase()) || next_t.Text == ">",
+                        _ => false,
+                    };
+                    let IsJsxTagClose = (T.Text == ">" || T.Text == "/>") && {
+                        if T.Text == "/>" { true }
+                        else if ChildIdx > 0 {
+                            match &Container.Children[ChildIdx - 1] {
+                                JS_Syntax_Node::Token(pt) => {
+                                    pt.Text == "/" || pt.Text == "=" || pt.Text == "<" || pt.Text == "</" ||
+                                    (ChildIdx > 1 && matches!(&Container.Children[ChildIdx - 2], JS_Syntax_Node::Token(p2) if p2.Text == "<" || p2.Text == "</") && (IsHtmlTagName(&pt.Text) || pt.Text.chars().next().map_or(false, |c| c.is_uppercase())))
+                                }
+                                JS_Syntax_Node::Container(pc) => {
+                                    pc.Is_JSX_Expression || matches!(pc.Kind, Container_Kind::Brace)
+                                }
+                            }
+                        } else {
+                            false
+                        }
+                    };
+
+                    let IsRelational = (T.Text == "<" && !IsJsxTagOpen) || (T.Text == ">" && !IsJsxTagClose && !Container.Is_JSX_Expression);
+
+                    let PrevWasRelational = ChildIdx > 0 && match &Container.Children[ChildIdx - 1] {
+                        JS_Syntax_Node::Token(prev_t) => {
+                            let prev_is_jsx_tag_open = prev_t.Text == "<" && match T.Text.as_str() {
+                                name if IsHtmlTagName(name) || name.chars().next().map_or(false, |c| c.is_uppercase()) || name == ">" => true,
+                                _ => false,
+                            };
+                            let prev_is_jsx_close = (prev_t.Text == ">" || prev_t.Text == "/>") && Container.Is_JSX_Expression;
+                            (prev_t.Text == "<" && !prev_is_jsx_tag_open) || (prev_t.Text == ">" && !prev_is_jsx_close)
+                        }
+                        _ => false,
+                    };
+
+                    let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || (T.Text == ":" && !IsTernaryColon && ! self.Output.ends_with('`')) || T.Text == "?." || (!IsRelational && (T.Text == ">" || T.Text == "/>" || T.Text == "</")) || (T.Text == "?" && NextIsColon) || IsPostfix;
                     let TemplateNeedsSpace = IsTemplateLit && (self.Output.ends_with('?') || self.Output.ends_with(':') || self.Output.ends_with('='));
-                    if ((PrevNeedsSpace && ! IsPunct && ! IsTemplateLit) || TemplateNeedsSpace)
+                    if ((PrevNeedsSpace && ! IsPunct && ! IsTemplateLit) || TemplateNeedsSpace || (IsTernaryColon && !self.Output.ends_with(' ')) || PrevWasRelational || IsRelational)
                     && ! self.Output.ends_with('.')
                     && ! self.Output.ends_with("?.")
                     && ! self.Output.ends_with('(')
                     && ! self.Output.ends_with('[')
-                    && ! self.Output.ends_with('<')
+                    && ! (self.Output.ends_with('<') && !PrevWasRelational)
                     && ! self.Output.ends_with("</")
                     && ! self.Output.ends_with('#')
                     && ! (self.Output.ends_with('>') && matches!(T.Kind, Token_Kind::String_Lit(_)))
                     && ! ((T.Text == "<" || T.Text == "</") && PrevIsStringLit)
                     { self.EmitSpace(); }
                     self.EmitRaw( & T.Text);
-                    PrevNeedsSpace = ! matches!(T.Text.as_str(), "." | "?." | "(" | "[" | "!" | "~" | "<" | "</" | "#" | ">");
+
+                    let NextIsRelational = ChildIdx + 1 < Container.Children.len() && match &Container.Children[ChildIdx + 1] {
+                        JS_Syntax_Node::Token(nt) => {
+                            let next_is_jsx_open = nt.Text == "<" && ChildIdx + 2 < Container.Children.len() && match &Container.Children[ChildIdx + 2] {
+                                JS_Syntax_Node::Token(n2) => IsHtmlTagName(&n2.Text) || n2.Text.chars().next().map_or(false, |c| c.is_uppercase()) || n2.Text == ">",
+                                _ => false,
+                            };
+                            let next_is_jsx_close = (nt.Text == ">" || nt.Text == "/>") && Container.Is_JSX_Expression;
+                            (nt.Text == "<" && !next_is_jsx_open) || (nt.Text == ">" && !next_is_jsx_close)
+                        }
+                        _ => false,
+                    };
+
+                    let NextIsPunct = !NextIsRelational && ChildIdx + 1 < Container.Children.len() && match &Container.Children[ChildIdx + 1] {
+                        JS_Syntax_Node::Token(nt) => matches!(nt.Text.as_str(), ":" | ";" | "," | ")" | "]" | ">"),
+                        _ => false,
+                    };
+
+                    PrevNeedsSpace = !NextIsPunct && !IsJsxTagOpen && ! matches!(T.Text.as_str(), "." | "?." | "(" | "[" | "!" | "~" | "#");
                 }
                 JS_Syntax_Node::Container(Sub) =>
                 {
                     if Sub.Open_Token.Text == "${"
                     { self.EmitStringInterpolation(Sub, Level); PrevNeedsSpace = false; continue ; }
-                    if PrevNeedsSpace && Sub.Kind == Container_Kind::Brace && ! self.Output.ends_with('<') { self.EmitSpace(); }
+                    let PrevIsIndexer = ChildIdx > 0 && matches!(&Container.Children[ChildIdx - 1], JS_Syntax_Node::Token(ref prev_t) if matches!(prev_t.Kind, Token_Kind::Identifier(_)) || matches!(prev_t.Text.as_str(), ")" | "]" | ">"));
+                    if !IsAlloy && !PrevIsIndexer && PrevNeedsSpace && (Sub.Kind == Container_Kind::Brace || Sub.Kind == Container_Kind::Bracket) && ! self.Output.ends_with('<') { self.EmitSpace(); }
                     self.EmitMonolith(Sub, Level);
                     PrevNeedsSpace = true;
                 }
             }
         }
 
-        if matches!(Container.Kind, Container_Kind::Brace) && ! self.Output.ends_with(' ') && ! self.Output.ends_with('{') { self.EmitSpace(); }
+        if matches!(Container.Kind, Container_Kind::Brace) && !IsAlloy && ! self.Output.ends_with(' ') && ! self.Output.ends_with('{') { self.EmitSpace(); }
 
         self.EmitRaw(Container.Kind.CloseGlyph());
         for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }

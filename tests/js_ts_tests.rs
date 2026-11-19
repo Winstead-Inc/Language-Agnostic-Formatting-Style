@@ -16,7 +16,7 @@ k > wu ? 1 : 2;
     let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
     let Formatted = Source_Formatter::Format(Input, & Config).expect("Should format comparison operators without treating them as generics");
-    assert!(Formatted.contains("p <ku"));
+    assert!(Formatted.contains("p < ku"));
 }
 
 #[test]
@@ -312,6 +312,36 @@ fn Test_JS_Torture_Test_Slop_And_Idempotence()
     assert!(FormattedPass1 .contains("GLOBAL_SPECTRUM_CONFIG"), "Config present");
     assert!(FormattedPass1 .contains("embeddedGlslShader"), "GLSL shader present");
     assert!(FormattedPass1 .contains("renderDiagnosticsPanel"), "JSX panel present");
+}
+
+#[test]
+fn Test_TSX_Brainrot_Format()
+{
+    let Path = std::path::Path::new("J-TS K&R BRAINROT.TSX");
+    if !Path.exists() { return; }
+    let Source = std::fs::read_to_string(Path).expect("Failed to read");
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Tsx;
+    Config.Canvas_Width = 160;
+
+    let FormattedPass1 = Source_Formatter::Format(&Source, &Config).expect("Pass 1 of TSX torture test formatting failed");
+    let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config).expect("Pass 2 of TSX torture test formatting failed");
+
+    assert_eq!(FormattedPass1, FormattedPass2, "TSX formatting must be 100% idempotent");
+
+    // Invariant verifications
+    assert!(FormattedPass1.contains("data-node-name = { row.nodeName }"), "Hyphenated JSX attribute intact: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("data-latency-ms = { row.latencyMs }"), "Hyphenated JSX attribute intact");
+    assert!(FormattedPass1.contains("data-tag-idx = { tagIdx }"), "Hyphenated JSX attribute intact");
+    assert!(FormattedPass1.contains("data-parent-idx = { rowIdx }"), "Hyphenated JSX attribute intact");
+    assert!(FormattedPass1.contains("data-badge-color = \"#C77DFF\""), "Hyphenated JSX attribute intact");
+    assert!(FormattedPass1.contains("i < count"), "Relational < spaced intact");
+    assert!(FormattedPass1.contains("count > 0"), "Relational > spaced intact");
+    assert!(FormattedPass1.contains("i++"), "Postfix ++ attached without space");
+    assert!(!FormattedPass1.contains("i ++"), "No spaced postfix i ++");
+    assert!(!FormattedPass1.contains("\n=>"), "Arrow operator => must never be on its own line");
+    assert!(FormattedPass1.contains(")()"), "IIFE call invocation must remain attached as )()");
+    assert!(!FormattedPass1.contains(")\n()"), "No detached IIFE call invocation");
 }
 
 #[test]
