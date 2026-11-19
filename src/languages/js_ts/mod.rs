@@ -928,9 +928,39 @@ impl JS_Container
         Chain
     }
 
+    pub fn HasMultilineJSX( & self) -> bool
+    {
+        let mut InJSX = false;
+        for Child in & self.Children
+        {
+            match Child
+            {
+                JS_Syntax_Node::Token(T) =>
+                {
+                    if T.Text == "<" || T.Text == "</"
+                    {
+                        InJSX = true;
+                        if T.Preceding_Newlines > 0
+                        { return true; }
+                    }
+                    else if InJSX && T.Preceding_Newlines > 0
+                    {
+                        return true;
+                    }
+                }
+                JS_Syntax_Node::Container(Sub) =>
+                {
+                    if Sub.HasMultilineJSX()
+                    { return true; }
+                }
+            }
+        }
+        false
+    }
+
     pub fn CalculateSingleLineSpan( & self) -> usize
     {
-        if self.Has_Forced_Break { return usize::MAX; }
+        if self.Has_Forced_Break || self.HasMultilineJSX() { return usize::MAX; }
 
         let mut Total = self.Kind.OpenGlyph().len() + self.Kind.CloseGlyph().len();
         for Glue in & self.Tail_Glue { Total += Glue.Text.len(); }
@@ -1159,6 +1189,11 @@ impl <'a> JS_Layout_Planner<'a>
 
     pub fn DecideLayout( & self, Container: & JS_Container, CurrentIndentLevel: usize, CurrentColumn: usize,) -> Layout_State
     {
+        if Container.HasMultilineJSX()
+        {
+            return Layout_State::Expanded;
+        }
+
         let HasComma = Container.Children.iter().any
         (
             | c | match c { JS_Syntax_Node::Token(t) => t.Text == ",", JS_Syntax_Node::Container(sub) => sub.Tail_Glue.iter().any( | g | g.Text == ","), }
@@ -1290,6 +1325,16 @@ fn IsArrowFunctionBody(Nodes: &[JS_Syntax_Node], Index: usize) -> bool
     false
 }
 
+#[derive(Debug, Clone)]
+struct JsxTagInfo
+{
+    TagName: String,
+    HeaderEndIndex: usize,
+    CloseTagIndex: Option<usize>,
+    IsSelfClosing: bool,
+    IsMultiline: bool,
+}
+
 pub struct JS_Emitter<'a>
 {
     Config: & 'a Config_Settings,
@@ -1298,6 +1343,10 @@ pub struct JS_Emitter<'a>
     Current_Line_Len: usize,
     Line_Has_Content: bool,
     Base_Column_Offsets: Vec<usize>,
+    JSX_Depth: usize,
+    JSX_Open_Tags: Vec<String>,
+    In_JSX_Tag_Header: bool,
+    Pending_Multiline_Tag_Open: bool,
 }
 
 impl <'a> JS_Emitter<'a>
@@ -1312,6 +1361,10 @@ impl <'a> JS_Emitter<'a>
             Current_Line_Len: 0,
             Line_Has_Content: false,
             Base_Column_Offsets: Vec:: new (),
+            JSX_Depth: 0,
+            JSX_Open_Tags: Vec:: new (),
+            In_JSX_Tag_Header: false,
+            Pending_Multiline_Tag_Open: false,
         }
     }
 
@@ -1375,11 +1428,188 @@ impl <'a> JS_Emitter<'a>
         }
     }
 
+    fn InspectJsxTag(Nodes: & [JS_Syntax_Node], Index: usize) -> Option<JsxTagInfo>
+    {
+        if Index >= Nodes.len() { return None; }
+        match & Nodes[Index]
+        {
+            JS_Syntax_Node::Token(T) if T.Text == "<" => {}
+            _ => return None,
+        }
+
+        let mut ScanIdx = Index + 1;
+        let TagName = if ScanIdx < Nodes.len()
+        {
+            match & Nodes[ScanIdx]
+            {
+                JS_Syntax_Node::Token(T) if T.Text == ">" => String:: new (),
+                JS_Syntax_Node::Token(T) if T.Text.chars().next().map_or(false, | c | c.is_ascii_alphabetic() || c == '_' || c == '$') =>
+                {
+                    let mut FullName = T.Text.clone();
+                    ScanIdx += 1;
+                    while ScanIdx < Nodes.len()
+                    {
+                        if let JS_Syntax_Node::Token(dot) = & Nodes[ScanIdx]
+                        {
+                            if dot.Text == "." && ScanIdx + 1 < Nodes.len()
+                            {
+                                if let JS_Syntax_Node::Token(sub_name) = & Nodes[ScanIdx + 1]
+                                {
+                                    FullName.push('.');
+                                    FullName.push_str( & sub_name.Text);
+                                    ScanIdx += 2;
+                                    continue;
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    FullName
+                }
+                _ => return None,
+            }
+        }
+        else
+        { return None; };
+
+        let mut HeaderEndIndex = None;
+        let mut IsSelfClosing = false;
+        let mut HeaderHasNewlines = false;
+
+        while ScanIdx < Nodes.len()
+        {
+            match & Nodes[ScanIdx]
+            {
+                JS_Syntax_Node::Token(T) =>
+                {
+                    if T.Preceding_Newlines > 0 { HeaderHasNewlines = true; }
+                    if T.Text == "/>"
+                    {
+                        HeaderEndIndex = Some(ScanIdx);
+                        IsSelfClosing = true;
+                        break;
+                    }
+                    if T.Text == ">"
+                    {
+                        HeaderEndIndex = Some(ScanIdx);
+                        IsSelfClosing = false;
+                        break;
+                    }
+                }
+                JS_Syntax_Node::Container(C) =>
+                {
+                    if C.HasMultilineJSX() { HeaderHasNewlines = true; }
+                }
+            }
+            ScanIdx += 1;
+        }
+
+        let HeaderEnd = HeaderEndIndex?;
+
+        if IsSelfClosing
+        {
+            return Some
+            (
+                JsxTagInfo
+                {
+                    TagName, HeaderEndIndex: HeaderEnd, CloseTagIndex: None, IsSelfClosing: true, IsMultiline: HeaderHasNewlines,
+                }
+            );
+        }
+
+        let mut Depth = 1;
+        let mut SearchIdx = HeaderEnd + 1;
+        let mut HasChildNewlines = false;
+
+        while SearchIdx < Nodes.len()
+        {
+            match & Nodes[SearchIdx]
+            {
+                JS_Syntax_Node::Token(T) =>
+                {
+                    if T.Preceding_Newlines > 0 { HasChildNewlines = true; }
+                    if T.Text == "<"
+                    {
+                        if SearchIdx + 1 < Nodes.len()
+                        {
+                            let IsOpen = match & Nodes[SearchIdx + 1]
+                            {
+                                JS_Syntax_Node::Token(name_tok) => name_tok.Text == ">" || name_tok.Text.chars().next().map_or(false, | c | c.is_ascii_alphabetic() || c == '_' || c == '$'),
+                                _ => false,
+                            };
+                            if IsOpen
+                            {
+                                let mut CheckIdx = SearchIdx + 1;
+                                let mut SelfClose = false;
+                                while CheckIdx < Nodes.len()
+                                {
+                                    if let JS_Syntax_Node::Token(ct) = & Nodes[CheckIdx]
+                                    {
+                                        if ct.Text == "/>" { SelfClose = true; break ; }
+                                        if ct.Text == ">" { break ; }
+                                    }
+                                    CheckIdx += 1;
+                                }
+                                if ! SelfClose { Depth += 1; }
+                            }
+                        }
+                    }
+                    else if T.Text == "</"
+                    {
+                        Depth -= 1;
+                        if Depth == 0
+                        {
+                            break;
+                        }
+                    }
+                }
+                JS_Syntax_Node::Container(C) =>
+                {
+                    if C.HasMultilineJSX() { HasChildNewlines = true; }
+                }
+            }
+            SearchIdx += 1;
+        }
+
+        let CloseTagIdx = if Depth == 0 && SearchIdx < Nodes.len() { Some(SearchIdx) } else { None };
+
+        Some
+        (
+            JsxTagInfo
+            {
+                TagName, HeaderEndIndex: HeaderEnd, CloseTagIndex: CloseTagIdx, IsSelfClosing: false, IsMultiline: HeaderHasNewlines || HasChildNewlines,
+            }
+        )
+    }
+
     fn EmitNodeList( & mut self, Nodes: & [JS_Syntax_Node], Level: usize)
     {
         let Total = Nodes.len();
         let mut Index = 0;
         let mut InPropertyValue = false;
+
+        let mut Multiline_Open_Indices = std::collections::HashSet::new();
+        let mut Multiline_Close_Indices = std::collections::HashSet::new();
+        for i in 0..Total
+        {
+            if let JS_Syntax_Node::Token(t) = & Nodes[i]
+            {
+                if t.Text == "<"
+                {
+                    if let Some(info) = Self::InspectJsxTag(Nodes, i)
+                    {
+                        if info.IsMultiline
+                        {
+                            Multiline_Open_Indices.insert(i);
+                            if let Some(close_idx) = info.CloseTagIndex
+                            {
+                                Multiline_Close_Indices.insert(close_idx);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         while Index < Total
         {
@@ -1401,7 +1631,7 @@ impl <'a> JS_Emitter<'a>
                     else if T.Text == ":" && ! self.Line_Has_Content
                     { self.EmitIndent(EffectiveLevel); self.EmitRaw(":"); self.EmitSpace(); }
                     else
-                    { self.EmitSingleToken(T, EffectiveLevel, Nodes, Index); }
+                    { self.EmitSingleToken(T, EffectiveLevel, Nodes, Index, & Multiline_Open_Indices, & Multiline_Close_Indices); }
 
                     if T.Text == ";"
                     { InPropertyValue = false; }
@@ -1428,7 +1658,9 @@ impl <'a> JS_Emitter<'a>
                     let IsArrowBody = IsArrowFunctionBody(Nodes, Index);
                     let IsConstArrow = IsConstArrowFunction(Nodes, Index);
 
-                    let mut Layout = self.Planner.DecideLayout(C, EffectiveLevel, self.Current_Line_Len);
+                    let EffectiveContainerLevel = if self.In_JSX_Tag_Header || InPropertyValue { Level + self.JSX_Depth + 1 } else { Level + self.JSX_Depth };
+
+                    let mut Layout = self.Planner.DecideLayout(C, EffectiveContainerLevel, self.Current_Line_Len);
 
                     // Edge case: const ..... = ... => ... syntax (Monolith only)
                     if IsConstArrow
@@ -1437,7 +1669,7 @@ impl <'a> JS_Emitter<'a>
                         {
                             Layout = Layout_State::Monolith;
                         }
-                        else if IsArrowBody && C.TotalStatements() <= 1
+                        else if IsArrowBody && C.TotalStatements() <= 1 && ! C.HasMultilineJSX()
                         {
                             Layout = Layout_State::Monolith;
                         }
@@ -1449,7 +1681,19 @@ impl <'a> JS_Emitter<'a>
                         Layout = Layout_State::Monolith;
                     }
 
-                    self.EmitContainerNodeWithLayout(C, EffectiveLevel, Layout, NextTokenText);
+                    let Saved_JSX_Depth = self.JSX_Depth;
+                    let Saved_In_Header = self.In_JSX_Tag_Header;
+                    let Saved_Pending_Open = self.Pending_Multiline_Tag_Open;
+
+                    self.JSX_Depth = 0;
+                    self.In_JSX_Tag_Header = false;
+                    self.Pending_Multiline_Tag_Open = false;
+
+                    self.EmitContainerNodeWithLayout(C, EffectiveContainerLevel, Layout, NextTokenText);
+
+                    self.JSX_Depth = Saved_JSX_Depth;
+                    self.In_JSX_Tag_Header = Saved_In_Header;
+                    self.Pending_Multiline_Tag_Open = Saved_Pending_Open;
 
                     if C.Tail_Glue.iter().any( | g | g.Text == ",") && EffectiveLevel > 0
                     { self.WriteNewline(); }
@@ -1523,11 +1767,20 @@ impl <'a> JS_Emitter<'a>
         }
     }
 
-    fn EmitSingleToken( & mut self, Token: & Token_Info, Level: usize, Nodes: & [JS_Syntax_Node], Index: usize)
+    fn EmitSingleToken
+    (
+        & mut self,
+        Token: & Token_Info,
+        Level: usize,
+        Nodes: & [JS_Syntax_Node],
+        Index: usize,
+        Multiline_Open_Indices: & std::collections::HashSet<usize>,
+        Multiline_Close_Indices: & std::collections::HashSet<usize>,
+    )
     {
         if let Token_Kind::Comment_Line(CommentText) = & Token.Kind
         {
-            if self.Line_Has_Content { self.EmitSpace(); } else { self.EmitIndent(Level); }
+            if self.Line_Has_Content { self.EmitSpace(); } else { self.EmitIndent(Level + self.JSX_Depth); }
             self.EmitRaw(CommentText);
             self.WriteNewline();
             return ;
@@ -1535,7 +1788,7 @@ impl <'a> JS_Emitter<'a>
 
         if let Token_Kind::Comment_Block(CommentText) = & Token.Kind
         {
-            if ! self.Line_Has_Content { self.EmitIndent(Level); } else { self.EmitSpace(); }
+            if ! self.Line_Has_Content { self.EmitIndent(Level + self.JSX_Depth); } else { self.EmitSpace(); }
             self.EmitRaw(CommentText);
             return ;
         }
@@ -1545,7 +1798,7 @@ impl <'a> JS_Emitter<'a>
             if Text.starts_with("`\n")
             {
                 self.WriteNewline();
-                self.EmitIndent(Level);
+                self.EmitIndent(Level + self.JSX_Depth);
                 self.EmitRaw("`");
                 let Rest = & Text[1..];
                 self.EmitRaw(Rest);
@@ -1554,6 +1807,53 @@ impl <'a> JS_Emitter<'a>
         }
 
         if Token.IsTrivia() { return ; }
+
+        if Token.Text == "<" && Multiline_Open_Indices.contains(& Index)
+        {
+            self.In_JSX_Tag_Header = true;
+            let IsSelfClosing = match Self::InspectJsxTag(Nodes, Index)
+            {
+                Some(info) => info.IsSelfClosing,
+                None => false,
+            };
+            if ! IsSelfClosing
+            {
+                self.Pending_Multiline_Tag_Open = true;
+            }
+        }
+        else if Token.Text == "</" && Multiline_Close_Indices.contains(& Index)
+        {
+            self.JSX_Depth = self.JSX_Depth.saturating_sub(1);
+            self.EnsureNewline();
+        }
+
+        let EffectiveTokenLevel = if Token.Text == "</" && Multiline_Close_Indices.contains(& Index)
+        {
+            Level + self.JSX_Depth
+        }
+        else if Token.Text == "<"
+        {
+            Level + self.JSX_Depth
+        }
+        else if self.In_JSX_Tag_Header
+        {
+            if Token.Text == ">" || Token.Text == "/>"
+            {
+                Level + self.JSX_Depth
+            }
+            else if Token.Preceding_Newlines > 0
+            {
+                Level + self.JSX_Depth + 1
+            }
+            else
+            {
+                Level + self.JSX_Depth
+            }
+        }
+        else
+        {
+            Level + self.JSX_Depth
+        };
 
         if Token.Text == "=>"
         {
@@ -1569,15 +1869,51 @@ impl <'a> JS_Emitter<'a>
         }
 
         if ! self.Line_Has_Content
-        { self.EmitIndent(Level); }
+        { self.EmitIndent(EffectiveTokenLevel); }
         else
         {
             let NextIsColon = Index + 1 < Nodes.len() && match & Nodes[Index + 1] { JS_Syntax_Node::Token(next_t) => next_t.Text == ":", _ => false, };
-            if !(Token.Text == "?" && NextIsColon)
+            if ! (Token.Text == "?" && NextIsColon)
             { self.EmitSpaceBeforeToken(Token); }
         }
 
         self.EmitRaw( & Token.Text);
+
+        if Token.Text == ">" && self.In_JSX_Tag_Header
+        {
+            self.In_JSX_Tag_Header = false;
+            if self.Pending_Multiline_Tag_Open
+            {
+                self.Pending_Multiline_Tag_Open = false;
+                self.JSX_Depth += 1;
+                self.EnsureNewline();
+            }
+        }
+        else if Token.Text == "/>" && self.In_JSX_Tag_Header
+        {
+            self.In_JSX_Tag_Header = false;
+            self.Pending_Multiline_Tag_Open = false;
+            if Index + 1 < Nodes.len()
+            {
+                match & Nodes[Index + 1]
+                {
+                    JS_Syntax_Node::Token(next_t) if next_t.Preceding_Newlines > 0 => { self.EnsureNewline(); }
+                    _ => {}
+                }
+            }
+        }
+        else if Token.Text == ">" && ! self.In_JSX_Tag_Header
+        {
+            if Index + 1 < Nodes.len()
+            {
+                match & Nodes[Index + 1]
+                {
+                    JS_Syntax_Node::Token(next_t) if next_t.Preceding_Newlines > 0 => { self.EnsureNewline(); }
+                    _ => {}
+                }
+            }
+        }
+
         if Token.Text == ";" || (Token.Text == "," && Level > 0) { self.WriteNewline(); }
         else if let Token_Kind::Keyword(K) = & Token.Kind
         {
@@ -1673,7 +2009,7 @@ impl <'a> JS_Emitter<'a>
                     if T.IsTrivia() { continue ; }
                     let NextIsColon = ChildIdx + 1 < Container.Children.len() && match & Container.Children[ChildIdx + 1] { JS_Syntax_Node::Token(next_t) => next_t.Text == ":", _ => false, };
                     let IsTemplateLit = matches!(T.Kind, Token_Kind::Template_Lit(_));
-                    let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || (T.Text == ":" && ! self.Output.ends_with('`')) || T.Text == "?." || T.Text == ">" || T.Text == "/>" || (T.Text == "?" && NextIsColon);
+                    let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || (T.Text == ":" && ! self.Output.ends_with('`')) || T.Text == "?." || T.Text == ">" || T.Text == "/>" || T.Text == "</" || (T.Text == "?" && NextIsColon);
                     let TemplateNeedsSpace = IsTemplateLit && (self.Output.ends_with('?') || self.Output.ends_with(':') || self.Output.ends_with('='));
                     if ((PrevNeedsSpace && ! IsPunct && ! IsTemplateLit) || TemplateNeedsSpace)
                     && ! self.Output.ends_with('.')
@@ -1683,9 +2019,10 @@ impl <'a> JS_Emitter<'a>
                     && ! self.Output.ends_with('<')
                     && ! self.Output.ends_with("</")
                     && ! self.Output.ends_with('#')
+                    && ! (self.Output.ends_with('>') && matches!(T.Kind, Token_Kind::String_Lit(_)))
                     { self.EmitSpace(); }
                     self.EmitRaw( & T.Text);
-                    PrevNeedsSpace = ! matches!(T.Text.as_str(), "." | "?." | "(" | "[" | "!" | "~" | "<" | "</" | "#");
+                    PrevNeedsSpace = ! matches!(T.Text.as_str(), "." | "?." | "(" | "[" | "!" | "~" | "<" | "</" | "#" | ">");
                 }
                 JS_Syntax_Node::Container(Sub) =>
                 {

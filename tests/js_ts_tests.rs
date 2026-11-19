@@ -594,3 +594,95 @@ fn Test_TSX_Generic_Arrow_Function()
     let FormattedComp = Source_Formatter::Format(InputComp, &Config).expect("Format comp failed");
     assert_eq!(FormattedComp.trim(), "const elem = <List<string> items = { items } />;");
 }
+
+#[test]
+fn Test_JSX_Multiline_HTML_Tree_Indentation()
+{
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Tsx;
+    Config.Canvas_Width = 160;
+
+    let Input = r#"const App = () => (
+    <div>
+        <h1>Title</h1>
+        <p>
+            Paragraph
+        </p>
+    </div>
+);
+"#;
+    let FormattedPass1 = Source_Formatter::Format(Input, &Config).expect("Pass 1 failed");
+    assert!(FormattedPass1.contains("    <div>"), "div must be indented 4 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("        <h1>Title</h1>"), "h1 monolith must be indented 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("        <p>"), "p opener must be indented 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("            Paragraph"), "text inside p must be indented 12 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("        </p>"), "p closer must align with <p> at 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("    </div>"), "div closer must align with <div> at 4 spaces: {}", FormattedPass1);
+
+    // Idempotence
+    let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config).expect("Pass 2 failed");
+    assert_eq!(FormattedPass1, FormattedPass2, "Multiline JSX formatting must be 100% idempotent");
+}
+
+#[test]
+fn Test_JSX_Multiline_Props()
+{
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Jsx;
+    Config.Canvas_Width = 160;
+
+    let Input = r#"const Card = () => (
+    <div
+        className="card-container"
+        id="main-card"
+    >
+        <Component
+            propA="val1"
+            propB="val2"
+        />
+    </div>
+);
+"#;
+    let FormattedPass1 = Source_Formatter::Format(Input, &Config).expect("Pass 1 failed");
+    assert!(FormattedPass1.contains("    <div"), "div header must be at 4 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("        className = \"card-container\""), "prop must be indented 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("        id = \"main-card\""), "prop must be indented 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("    >"), "header > must align with <div at 4 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("        <Component"), "Component must be at 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("            propA = \"val1\""), "Component prop must be at 12 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("            propB = \"val2\""), "Component prop must be at 12 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("        />"), "Component closer /> must align at 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("    </div>"), "div closer must align at 4 spaces: {}", FormattedPass1);
+
+    // Idempotence
+    let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config).expect("Pass 2 failed");
+    assert_eq!(FormattedPass1, FormattedPass2, "Multiline JSX with props must be 100% idempotent");
+}
+
+#[test]
+fn Test_JSX_Embedded_Expression_Indentation()
+{
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Tsx;
+    Config.Canvas_Width = 160;
+
+    let Input = r#"const List = ({ items }) => (
+    <ul>
+        {items.map(item => (
+            <li key={item.id}>
+                {item.text}
+            </li>
+        ))}
+    </ul>
+);
+"#;
+    let FormattedPass1 = Source_Formatter::Format(Input, &Config).expect("Pass 1 failed");
+    assert!(FormattedPass1.contains("    <ul>"), "ul must be at 4 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("        {"), "expression opener must be at 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("        }"), "expression closer must be at 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("    </ul>"), "ul closer must be at 4 spaces: {}", FormattedPass1);
+
+    // Idempotence
+    let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config).expect("Pass 2 failed");
+    assert_eq!(FormattedPass1, FormattedPass2, "JSX embedded expression must be 100% idempotent");
+}
