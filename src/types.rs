@@ -1,6 +1,6 @@
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Source_Language { C, Cpp, CSharp, JavaScript, TypeScript, Shell, Go, Php, Html, Css, Rust, Kotlin, KotlinOfficial, Batch, Toml, CargoLock, Dart, Generic, }
+pub enum Source_Language { C, Cpp, CSharp, JavaScript, TypeScript, Jsx, Tsx, Shell, Go, Php, Html, Css, Rust, Kotlin, KotlinOfficial, Batch, Toml, CargoLock, Dart, Generic, }
 
 impl Source_Language
 {
@@ -12,8 +12,10 @@ impl Source_Language
         || Lower.ends_with(".inl") || Lower.ends_with(".cu") { return Source_Language::Cpp; }
         if Lower.ends_with(".c") || Lower.ends_with(".h") { return Source_Language::C; }
         if Lower.ends_with(".rs") { return Source_Language::Rust; }
-        if Lower.ends_with(".ts") || Lower.ends_with(".tsx") || Lower.ends_with(".mts") || Lower.ends_with(".cts") { return Source_Language::TypeScript; }
-        if Lower.ends_with(".js") || Lower.ends_with(".jsx") || Lower.ends_with(".mjs") || Lower.ends_with(".cjs") { return Source_Language::JavaScript; }
+        if Lower.ends_with(".tsx") { return Source_Language::Tsx; }
+        if Lower.ends_with(".jsx") { return Source_Language::Jsx; }
+        if Lower.ends_with(".ts") || Lower.ends_with(".mts") || Lower.ends_with(".cts") { return Source_Language::TypeScript; }
+        if Lower.ends_with(".js") || Lower.ends_with(".mjs") || Lower.ends_with(".cjs") { return Source_Language::JavaScript; }
         if Lower.ends_with(".sh") || Lower.ends_with(".bash") || Lower.ends_with(".zsh") || Lower.ends_with(".ksh") { return Source_Language::Shell; }
         if Lower.ends_with(".go") { return Source_Language::Go; }
         if Lower.ends_with(".php") || Lower.ends_with(".phtml") { return Source_Language::Php; }
@@ -58,7 +60,9 @@ impl Source_Language
     pub fn SupportsPreprocessor( & self) -> bool
     { self.Profile().Directives.Enabled }
 
-    pub fn IsJavaScriptOrTypeScript( & self) -> bool { matches ! (self, Source_Language::JavaScript | Source_Language::TypeScript) }
+    pub fn IsJavaScriptOrTypeScript( & self) -> bool { matches ! (self, Source_Language::JavaScript | Source_Language::TypeScript | Source_Language::Jsx | Source_Language::Tsx) }
+
+    pub fn IsJsxOrTsx( & self) -> bool { matches ! (self, Source_Language::Jsx | Source_Language::Tsx) }
 
     pub fn IsShell( & self) -> bool { matches ! (self, Source_Language::Shell) }
 
@@ -77,7 +81,8 @@ impl Source_Language
         match self
         {
             Source_Language::C => & ["c", "h"], Source_Language::Cpp => & ["cpp", "hpp", "cc", "cxx", "hh", "hxx", "inl", "cu", "h"], Source_Language::CSharp => & ["cs"],
-            Source_Language::JavaScript => & ["js", "mjs", "cjs", "jsx"], Source_Language::TypeScript => & ["ts", "tsx", "mts", "cts"], Source_Language::Shell => & ["sh", "bash", "zsh", "ksh"],
+            Source_Language::JavaScript => & ["js", "mjs", "cjs"], Source_Language::TypeScript => & ["ts", "mts", "cts"],
+            Source_Language::Jsx => & ["jsx"], Source_Language::Tsx => & ["tsx"], Source_Language::Shell => & ["sh", "bash", "zsh", "ksh"],
             Source_Language::Go => & ["go"], Source_Language::Php => & ["php"], Source_Language::Html => & ["html", "htm"], Source_Language::Css => & ["css"], Source_Language::Rust => & ["rs"],
             Source_Language::Kotlin | Source_Language::KotlinOfficial => & ["kt", "kts"],
             Source_Language::Batch => & ["bat", "cmd"],
@@ -92,7 +97,7 @@ impl Source_Language
     {
         match self
         {
-            Source_Language::C => "c", Source_Language::Cpp => "cpp", Source_Language::CSharp => "cs", Source_Language::JavaScript => "js", Source_Language::TypeScript => "ts", Source_Language::Shell => "sh", Source_Language::Go => "go", Source_Language::Php => "php", Source_Language::Html => "html", Source_Language::Css => "css", Source_Language::Rust => "rs", Source_Language::Kotlin => "kt", Source_Language::KotlinOfficial => "kt-official", Source_Language::Batch => "bat", Source_Language::Toml => "toml", Source_Language::CargoLock => "cargo-lock", Source_Language::Dart => "dart", Source_Language::Generic => "generic",
+            Source_Language::C => "c", Source_Language::Cpp => "cpp", Source_Language::CSharp => "cs", Source_Language::JavaScript => "js", Source_Language::TypeScript => "ts", Source_Language::Jsx => "jsx", Source_Language::Tsx => "tsx", Source_Language::Shell => "sh", Source_Language::Go => "go", Source_Language::Php => "php", Source_Language::Html => "html", Source_Language::Css => "css", Source_Language::Rust => "rs", Source_Language::Kotlin => "kt", Source_Language::KotlinOfficial => "kt-official", Source_Language::Batch => "bat", Source_Language::Toml => "toml", Source_Language::CargoLock => "cargo-lock", Source_Language::Dart => "dart", Source_Language::Generic => "generic",
         }
     }
 }

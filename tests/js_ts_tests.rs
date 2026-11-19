@@ -520,3 +520,77 @@ fn Test_JS_Preserve_Empty_Lines()
     assert!(!Formatted_Stripped.contains("{\n\n"), "Empty line after opener stripped: {}", Formatted_Stripped);
     assert!(!Formatted_Stripped.contains("};\n\n}"), "Empty line before closer stripped: {}", Formatted_Stripped);
 }
+
+#[test]
+fn Test_JSX_Self_Closing_And_Props()
+{
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Jsx;
+    Config.Canvas_Width = 160;
+
+    // Self-closing component with space before />
+    let Input1 = "const elem = <Component />;\n";
+    let Formatted1 = Source_Formatter::Format(Input1, &Config).expect("Format 1 failed");
+    assert_eq!(Formatted1.trim(), "const elem = <Component />;");
+
+    // Single-line component with prop
+    let Input2 = "const elem = <Component prop={value} />;\n";
+    let Formatted2 = Source_Formatter::Format(Input2, &Config).expect("Format 2 failed");
+    assert_eq!(Formatted2.trim(), "const elem = <Component prop = { value } />;");
+
+    // Single-line component with multiple props
+    let Input3 = "const elem = <Component a={1} b={2} title=\"Hello\" />;\n";
+    let Formatted3 = Source_Formatter::Format(Input3, &Config).expect("Format 3 failed");
+    assert_eq!(Formatted3.trim(), "const elem = <Component a = { 1 } b = { 2 } title = \"Hello\" />;");
+
+    // Button with onClick prop
+    let Input4 = "const elem = <button onClick={handleClick}>Click Me</button>;\n";
+    let Formatted4 = Source_Formatter::Format(Input4, &Config).expect("Format 4 failed");
+    assert_eq!(Formatted4.trim(), "const elem = <button onClick = { handleClick }>Click Me</button>;");
+}
+
+#[test]
+fn Test_JSX_Text_Mode_And_Apostrophe()
+{
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Jsx;
+    Config.Canvas_Width = 160;
+
+    // Text with apostrophe (L6c)
+    let Input1 = "const elem = <p>Don't touch that</p>;\n";
+    let Formatted1 = Source_Formatter::Format(Input1, &Config).expect("Format 1 failed");
+    assert_eq!(Formatted1.trim(), "const elem = <p>Don't touch that</p>;");
+
+    // Text with embedded expression and trailing apostrophe
+    let Input2 = "const elem = <p>It's {name}'s birthday!</p>;\n";
+    let Formatted2 = Source_Formatter::Format(Input2, &Config).expect("Format 2 failed");
+    assert_eq!(Formatted2.trim(), "const elem = <p>It's { name }'s birthday!</p>;");
+
+    // Nested inline elements
+    let Input3 = "const elem = <div><span>Hello World</span></div>;\n";
+    let Formatted3 = Source_Formatter::Format(Input3, &Config).expect("Format 3 failed");
+    assert_eq!(Formatted3.trim(), "const elem = <div><span>Hello World</span></div>;");
+
+    // Fragment
+    let Input4 = "const elem = <><span>Fragment Content</span></>;\n";
+    let Formatted4 = Source_Formatter::Format(Input4, &Config).expect("Format 4 failed");
+    assert_eq!(Formatted4.trim(), "const elem = <><span>Fragment Content</span></>;");
+}
+
+#[test]
+fn Test_TSX_Generic_Arrow_Function()
+{
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Tsx;
+    Config.Canvas_Width = 160;
+
+    // Generic arrow function with trailing comma in TSX
+    let Input = "const identity = <T,>(x: T): T => x;\n";
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Format failed");
+    assert_eq!(Formatted.trim(), "const identity = <T,>(x: T): T => x;");
+
+    // TSX component with generic prop
+    let InputComp = "const elem = <List<string> items={items} />;\n";
+    let FormattedComp = Source_Formatter::Format(InputComp, &Config).expect("Format comp failed");
+    assert_eq!(FormattedComp.trim(), "const elem = <List<string> items = { items } />;");
+}

@@ -94,6 +94,8 @@ impl Language_Profile
             Source_Language::Rust => & RUST_PROFILE,
             Source_Language::JavaScript => & JAVASCRIPT_PROFILE,
             Source_Language::TypeScript => & TYPESCRIPT_PROFILE,
+            Source_Language::Jsx => & JAVASCRIPT_PROFILE,
+            Source_Language::Tsx => & TYPESCRIPT_PROFILE,
             Source_Language::C => & C_PROFILE,
             Source_Language::Cpp => & CPP_PROFILE,
             Source_Language::CSharp => & CSHARP_PROFILE,
