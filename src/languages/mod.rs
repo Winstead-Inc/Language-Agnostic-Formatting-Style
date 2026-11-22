@@ -9,6 +9,7 @@ pub mod kotlin;
 pub mod markdown;
 pub mod polyglot;
 pub mod shell;
+pub mod typst;
 
 pub use batch::Batch_Formatter;
 pub use css::CSS_Formatter;
@@ -19,3 +20,4 @@ pub use kotlin::Kotlin_Formatter;
 pub use markdown::Markdown_Formatter;
 pub use polyglot::Polyglot_Formatter;
 pub use shell::Shell_Formatter;
+pub use typst::Typst_Formatter;

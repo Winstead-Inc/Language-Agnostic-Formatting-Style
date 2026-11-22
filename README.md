@@ -41,7 +41,8 @@ LAFS provides native, AST/CST-level lexing, boundary pairing, and formatting acr
 
 | Language Family             | File Extensions                                                                             | Key Capabilities & Highlights                                                                                                                                                                                                                                                                                                                |
 | :-------------------------- | :------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Rust**              | `Upd.rs`                                                                                  | Structs, enums, pattern matching, match guards, closures, raw strings (`r#"..."#`), byte literals, macros, attributes, HRTB lifetimes, turbofish `::<T>`, and Cargo manifests/lockfiles (`Cargo.toml`, `Cargo.lock`).                                                                                                                |
+| **Rust**              | `.rs`                                                                                     | Structs, enums, pattern matching, match guards, closures, raw strings (`r#"..."#`), byte literals, macros, attributes, HRTB lifetimes, turbofish `::<T>`, and Cargo manifests/lockfiles (`Cargo.toml`, `Cargo.lock`).                                                                                                                |
+| **Typst**             | `.typ`                                                                                    | Full native AST/CST-level lexing, boundary pairing, and formatting for Typst markup, scripting, and vector typesetting. Supports `#` code transitions without stray space injection, nested block comments (`/* /* ... */ */`), hyphenated identifiers (`content-base`, `extra-chapters`, `starts-with`), labels (`<sec:intro>`), empty dictionaries `(:)` and arrays `()`, math equations (`$...$`, `math.equation`), parameter lists, and detached Allman braces/brackets/parentheses. |
 | **TypeScript & TSX**  | `.ts`, `.tsx`, `.mts`, `.cts`                                                       | AST/CST disambiguation of `<const T,>` generic arrow parameters vs JSX opening tags, relational `<`/`>` operators vs JSX tags, multiline JSX elements with full HTML tree indentation, attribute `=` vertical column alignment (LAFS Section 6.3), alloyed style props `style={{ ... }}`, and Column-Anchored Hybrid `return (`. |
 | **JavaScript & JSX**  | `.js`, `.jsx`, `.mjs`, `.cjs`                                                       | ESNext features, JSX tree indentation, render-prop callbacks, IIFE invocation closure `)()`, object destructuring, and template literals.                                                                                                                                                                                                  |
 | **Dart & Flutter**    | `.dart`                                                                                   | Primary constructors, cascade notation `..`, switch expressions, records, single-element tuples `(x,)`, collection `if`/`for`, dot shorthands, and generic typedefs.                                                                                                                                                                 |
@@ -140,9 +141,9 @@ lafs [OPTIONS] <FILES... | DIRECTORIES...>
 | **`-c`**, **`--canvas-width`**                      | `<WIDTH>`   | Maximum column width before vertical expansion                                                                                                | `160`                                        |
 | **`-i`**, **`--indent`**                            | `<SIZE>`    | Indentation size in spaces                                                                                                                    | `4`                                          |
 | **`-t`**, **`--tabs`**                              | None          | Use hard tabs instead of spaces for indentation                                                                                               | Spaces                                         |
-| **`-l`**, **`--language`**                          | `<LANG>`    | Force language mode (`c`, `cpp`, `cs`, `js`, `ts`, `jsx`, `tsx`, `sh`, `kt`, `dart`, `rust`, `md`, `html`, `css`) | Auto-detect                                    |
-| **`--preserve-empty-lines`**                                | `<0\|1>`     | Preserve existing empty lines (`1`) or strip them (`0`)                                                                                   | `1` (Preserve)                               |
-| **`--no-preserve-empty-lines`**                             | None          | Strip redundant empty lines                                                                                                                   | False                                          |
+| **`-l`**, **`--language`**                          | `<LANG>`    | Force language mode (`c`, `cpp`, `cs`, `js`, `ts`, `jsx`, `tsx`, `sh`, `kt`, `dart`, `rust`, `md`, `html`, `css`, `typ`) | Auto-detect                                    |
+| **`--preserve-empty-lines`**                                | `<0\|1>`     | Preserve existing intentional empty lines (`1`, default on ALL supported and generic files) or strip them (`0`)           | `1` (Preserve)                               |
+| **`--no-preserve-empty-lines`**                             | None          | Strip redundant empty lines across all formatted files (alias for `--preserve-empty-lines 0`)                                | False                                          |
 | **`-mbl`**, **`--max-blank-lines`**                 | `<NUM>`     | Maximum consecutive blank lines to preserve                                                                                                   | `1`                                          |
 | **`--max-statements`**                                      | `<NUM>`     | Maximum statements permitted in a single-line monolith block                                                                                  | `4`                                          |
 | **`--check`**                                               | None          | Dry-run check: exits with `0` if clean, `1` if unformatted                                                                                | False                                          |
@@ -214,7 +215,20 @@ lafs docs/ -e md -y
 lafs docs/README.md --unwrap-paragraphs
 ```
 
-#### 5. Automated Changelog Generator (`lafs changelog`)
+#### 5. Formatting Typst Documents (`.typ`)
+
+```bash
+# Format a Typst document in-place
+lafs document.typ
+
+# Format an entire directory of Typst files
+lafs -e typ -d docs/
+
+# Verify that all Typst documentation files are clean in CI
+lafs --check -e typ -d docs/
+```
+
+#### 6. Automated Changelog Generator (`lafs changelog`)
 
 ```bash
 # Generate or update CHANGELOG.md from git commit history
@@ -227,7 +241,7 @@ lafs changelog -v 1.2.0 -o RELEASE_NOTES.md
 lafs changelog --stdout
 ```
 
-#### 6. Controlling Column-Anchored Hybrid (CAH)
+#### 7. Controlling Column-Anchored Hybrid (CAH)
 
 ```bash
 # Enforce pure Allman geometry everywhere (even on return / closures)
@@ -237,7 +251,7 @@ lafs --cah -1 src/app.tsx
 lafs --cah 1 src/app.tsx
 ```
 
-#### 6. Kotlin Formatting Engine Selection
+#### 8. Kotlin Formatting Engine Selection
 
 ```bash
 # Enforce Version 1 (Pure Allman style for all Kotlin containers)
@@ -247,7 +261,7 @@ lafs --allman-kotlin src/App.kt
 lafs --official-kotlin src/App.kt
 ```
 
-#### 7. Shallow vs. Recursive Directory Targeting
+#### 9. Shallow vs. Recursive Directory Targeting
 
 ```bash
 # Shallow / Non-recursive (trailing slash): formats ONLY files directly in scratch
@@ -257,7 +271,7 @@ lafs -f "scratch/"
 lafs -f "scratch"
 ```
 
-#### 8. Stdin / Stdout Streaming (Editor Integration)
+#### 10. Stdin / Stdout Streaming (Editor Integration)
 
 ```bash
 # Stream code via pipe
@@ -267,14 +281,14 @@ cat MyFile.cpp | lafs -
 cat MySnippet.tsx | lafs --stdin-filepath app.tsx -
 ```
 
-#### 9. CI/CD Automated Verification Gate
+#### 11. CI/CD Automated Verification Gate
 
 ```bash
 # Check if any repository file requires formatting (exits 1 on unformatted)
 lafs --check --no-log -a
 ```
 
-#### 10. Retrying Failed Files
+#### 12. Retrying Failed Files
 
 ```bash
 # Re-runs formatting on all files logged in failed.txt

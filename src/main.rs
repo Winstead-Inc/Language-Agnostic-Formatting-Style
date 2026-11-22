@@ -45,7 +45,7 @@ const PYTHON_EXTENSIONS: & [ & str] = &
 
 const DEFAULT_SUPPORTED_EXTENSIONS: & [ & str] = &
 [
-    "c", "h", "cpp", "hpp", "cc", "cxx", "hh", "hxx", "inl", "cu", "cs", "rs", "java", "kt", "kts", "scala", "js", "mjs", "cjs", "jsx", "ts", "tsx", "mts", "cts", "go", "dart", "php", "swift", "m", "mm", "sh", "bash", "zsh", "ksh", "json", "jsonc", "json5", "toml", "lock", "css", "scss", "less", "sql", "graphql", "proto", "html", "htm", "bat", "cmd", "md", "markdown", "mdown", "mkd",
+    "c", "h", "cpp", "hpp", "cc", "cxx", "hh", "hxx", "inl", "cu", "cs", "rs", "java", "kt", "kts", "scala", "js", "mjs", "cjs", "jsx", "ts", "tsx", "mts", "cts", "go", "dart", "php", "swift", "m", "mm", "sh", "bash", "zsh", "ksh", "json", "jsonc", "json5", "toml", "lock", "css", "scss", "less", "sql", "graphql", "proto", "html", "htm", "bat", "cmd", "md", "markdown", "mdown", "mkd", "typ",
 ];
 
 #[derive(Clone)]
@@ -156,7 +156,7 @@ fn PrintUsage(Logger: & Terminal_Logger)
     Logger.Println("  -c, --canvas-width <WIDTH>  Set maximum canvas width before expansion (default: 160)");
     Logger.Println("  -i, --indent <SIZE>         Set indentation width in spaces (default: 4)");
     Logger.Println("  -t, --tabs                  Use tabs instead of spaces for indentation");
-    Logger.Println("  -l, --language <LANG>       Force source language: 'c', 'cpp', 'csharp', 'js', 'ts', 'jsx', 'tsx', 'sh', 'kt', 'dart', 'rust', 'md'");
+    Logger.Println("  -l, --language <LANG>       Force source language: 'c', 'cpp', 'csharp', 'js', 'ts', 'jsx', 'tsx', 'sh', 'kt', 'dart', 'rust', 'md', 'typ'");
     Logger.Println("      --kotlin-version <1|2>  Kotlin formatting version (1 = Allman for all containers, 2 = Official Kotlin)");
     Logger.Println("      --kotlin-style <STYLE>  Kotlin style: 'allman' (Version 1) or 'official' (Version 2)");
     Logger.Println("      --allman-kotlin         Enforce Version 1 (Pure Allman style for all containers)");
@@ -876,7 +876,7 @@ fn Main()
                     let LangStr = Args[I].to_lowercase();
                     Config.Language = match LangStr.as_str()
                     {
-                        "c" => Source_Language::C, "cpp" | "c++" => Source_Language::Cpp, "cs" | "csharp" | "c#" => Source_Language::CSharp, "js" | "javascript" => Source_Language::JavaScript, "ts" | "typescript" => Source_Language::TypeScript, "jsx" => Source_Language::Jsx, "tsx" => Source_Language::Tsx, "sh" | "shell" | "bash" | "zsh" | "ksh" => Source_Language::Shell, "go" => Source_Language::Go, "php" | "phtml" => Source_Language::Php, "polyglot" | "html" | "htm" | "xhtml" | "vue" | "svelte" => Source_Language::Html, "css" | "scss" | "less" => Source_Language::Css, "rs" | "rust" => Source_Language::Rust, "bat" | "cmd" => Source_Language::Batch, "toml" => Source_Language::Toml, "cargo-lock" | "cargolock" | "lock" => Source_Language::CargoLock, "dart" | "flutter" => Source_Language::Dart, "md" | "markdown" => Source_Language::Markdown, "kt" | "kotlin" | "kotlin-allman" | "kt-allman" | "kotlin-v1" | "kt-v1" =>
+                        "c" => Source_Language::C, "cpp" | "c++" => Source_Language::Cpp, "cs" | "csharp" | "c#" => Source_Language::CSharp, "js" | "javascript" => Source_Language::JavaScript, "ts" | "typescript" => Source_Language::TypeScript, "jsx" => Source_Language::Jsx, "tsx" => Source_Language::Tsx, "sh" | "shell" | "bash" | "zsh" | "ksh" => Source_Language::Shell, "go" => Source_Language::Go, "php" | "phtml" => Source_Language::Php, "polyglot" | "html" | "htm" | "xhtml" | "vue" | "svelte" => Source_Language::Html, "css" | "scss" | "less" => Source_Language::Css, "rs" | "rust" => Source_Language::Rust, "bat" | "cmd" => Source_Language::Batch, "toml" => Source_Language::Toml, "cargo-lock" | "cargolock" | "lock" => Source_Language::CargoLock, "dart" | "flutter" => Source_Language::Dart, "md" | "markdown" => Source_Language::Markdown, "typ" | "typst" => Source_Language::Typst, "kt" | "kotlin" | "kotlin-allman" | "kt-allman" | "kotlin-v1" | "kt-v1" =>
                         {
                             Config.Kotlin_Style = Kotlin_Style::Allman;
                             Source_Language::Kotlin
@@ -1768,6 +1768,7 @@ mod Tests
         assert!(IsSpecifiedFileEligible(Path::new ("sample.c"), false, & EmptyExts, & Excludes, Source_Language::Generic));
         assert!(IsSpecifiedFileEligible(Path::new ("sample.cpp"), false, & EmptyExts, & Excludes, Source_Language::Generic));
         assert!(IsSpecifiedFileEligible(Path::new ("sample.cs"), false, & EmptyExts, & Excludes, Source_Language::Generic));
+        assert!(IsSpecifiedFileEligible(Path::new ("sample.typ"), false, & EmptyExts, & Excludes, Source_Language::Generic));
         assert!(IsSpecifiedFileEligible(Path::new ("sample.custom"), false, & EmptyExts, & Excludes, Source_Language::C));
         assert!( ! IsSpecifiedFileEligible(Path::new ("app.exe"), false, & EmptyExts, & Excludes, Source_Language::Generic));
     }

@@ -111,6 +111,7 @@ impl Language_Profile
             Source_Language::Toml => & TOML_PROFILE,
             Source_Language::CargoLock => & CARGO_LOCK_PROFILE,
             Source_Language::Markdown => & GENERIC_PROFILE,
+            Source_Language::Typst => & TYPST_PROFILE,
             Source_Language::Generic => & GENERIC_PROFILE,
         }
     }
@@ -748,5 +749,30 @@ pub static GENERIC_PROFILE: Language_Profile = Language_Profile
         Angle_Follow_Tokens: TS_ANGLE_FOLLOW_TOKENS,
         Angle_Invalid_Inside: COMMON_ANGLE_INVALID_INSIDE,
     },
+    Keyword_Containers: Keyword_Container_Profile { Pairs: & [], },
+};
+
+pub static TYPST_PROFILE: Language_Profile = Language_Profile
+{
+    Language: Source_Language::Typst,
+    Name: "Typst",
+    Comments: Comment_Profile { Line_Prefixes: & ["//"], Block_Pairs: & [("/*", "*/")], Nestable_Blocks: true, },
+    Strings: String_Profile
+    {
+        Delimiters: & ['"'],
+        Escape_Char: Some('\\'),
+        Allows_Multiline: true,
+        Supports_Raw_Strings: true,
+        Supports_Triple_Quotes: false,
+        Supports_Backticks: true,
+        Raw_Prefixes: & [],
+    },
+    Interpolation: Interpolation_Profile { Enabled: false, Openers: & [], },
+    Char_Literals: Char_Literal_Profile { Enabled: false, Lifetime_Or_Label_Prefix: false, Digit_Separator_Apostrophe: false, },
+    Regex: Regex_Profile { Enabled: false, Suffix_Flags: & [], },
+    Directives: Directive_Profile { Enabled: false, Prefix: None, Supports_Continuation: false, },
+    Markup: Markup_Profile { Supports_JSX: false, Supports_HTML: false, Raw_Text_Elements: & [], },
+    Atomic_Tokens: Atomic_Tokens_Profile { Multi_Char_Operators: & ["->", "=>", "==", "!=", "<=", ">=", "and", "or", "not", "in", "..", "\\"], },
+    Tentative: NO_TENTATIVE,
     Keyword_Containers: Keyword_Container_Profile { Pairs: & [], },
 };
