@@ -799,9 +799,7 @@ impl <'a> Shell_Emitter<'a>
         {
             if ! self.Config.Preserve_Empty_Lines
             && (self.Output.ends_with("{\n") || self.Output.ends_with("[\n") || self.Output.ends_with("(\n"))
-            {
-                return ;
-            }
+            { return ; }
             self.WriteNewline();
         }
     }
@@ -843,9 +841,7 @@ impl <'a> Shell_Emitter<'a>
                 Shell_Syntax_Node::Container(C) =>
                 {
                     if C.Open_Token.Preceding_Newlines >= 2
-                    {
-                        self.EnsureBlankLine();
-                    }
+                    { self.EnsureBlankLine(); }
                     let Layout = self.Planner.DecideLayout(C, Level, self.Current_Line_Len);
                     self.EmitContainerNodeWithLayout(C, Level, Layout);
                     // If brace block ended, next statement on new line
@@ -862,13 +858,7 @@ impl <'a> Shell_Emitter<'a>
         if Token.IsTrivia() { return ; }
         // 1. Preceding newlines MUST be handled before comments or tokens
         if Token.Preceding_Newlines > 0
-        {
-            self.EnsureNewline();
-            if Token.Preceding_Newlines >= 2
-            {
-                self.EnsureBlankLine();
-            }
-        }
+        { self.EnsureNewline(); if Token.Preceding_Newlines >= 2 { self.EnsureBlankLine(); } }
         // 2. Line comment
         if let Token_Kind::Comment_Line(CommentText) = & Token.Kind
         {
@@ -1002,13 +992,9 @@ impl <'a> Shell_Emitter<'a>
                 self.EnsureNewline();
                 let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
                 if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
-                {
-                    if ! self.Output.ends_with("\n\n") { self.WriteNewline(); }
-                }
+                { if ! self.Output.ends_with("\n\n") { self.WriteNewline(); } }
                 else if self.Output.ends_with("\n\n")
-                {
-                    self.Output.pop();
-                }
+                { self.Output.pop(); }
                 if ! Container.Decl_Indent.is_empty() { self.EmitRaw( & Container.Decl_Indent); } else { self.EmitIndent(Level); }
             }
             self.EmitRaw(Container.Close_Token.as_ref().map_or(Container.Kind.CloseGlyph(), | T | T.Text.as_str()));
@@ -1034,7 +1020,10 @@ pub fn VerifyShellTokenEquivalence(OriginalSource: & str, FormattedSource: & str
 
     if OrigSignificant.len() != FormSignificant.len()
     {
-        return Err(format ! ("E_VERIFY(V1): Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
+        return Err
+        (
+            format!("E_VERIFY(V1): Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len())
+        );
     }
 
     for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate()

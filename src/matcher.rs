@@ -85,7 +85,12 @@ impl fmt::Display for Match_Error
             { write ! (F, "E_UNTERMINATED: Unterminated literal starting at line {}, column {}", Payload_Start.Line, Payload_Start.Column) }
             Match_Error::Branch { Directive }
             =>
-            { write ! (F, "E_BRANCH: Conditional branches leave different container stacks at directive '{}' at line {}, column {}", Directive.Text, Directive.Line, Directive.Column) }
+            {
+                write!
+                (
+                    F, "E_BRANCH: Conditional branches leave different container stacks at directive '{}' at line {}, column {}", Directive.Text, Directive.Line, Directive.Column
+                )
+            }
             Match_Error::Depth { Opener, Max_Depth }
             =>
             { write ! (F, "E_DEPTH: Maximum container nesting depth ({}) exceeded at line {}, column {}", Max_Depth, Opener.Line, Opener.Column) }

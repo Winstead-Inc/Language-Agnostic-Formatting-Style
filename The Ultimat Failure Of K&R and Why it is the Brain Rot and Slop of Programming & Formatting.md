@@ -18,399 +18,413 @@ It deliberately incorporates every structural anti-pattern that LAFS is built to
 // WARNING: INTENTIONALLY CORRUPTED K&R / HYBRID BRAIN-ROT TORTURE TEST INPUT
 // DESIGNED TO STRESS-TEST A LAFS CST/AST FORMATTER ON DART 3.13+ GRAMMAR
 // ============================================================================
-@Deprecated(
-  'Torture test library metadata with K&R hugging'
-) @pragma(
-'vm:prefer-inline', [
-  {'mode': 'aggressive', 'color': '#7100FF'}]) library
-    lafs.torture_test.brain_rot_slop;
-
-import 'dart:async'
-    as async_lib show
-        Future, Stream, Completer, FutureOr, StreamController, Zone
-    hide
-        Timer;
-import 'dart:collection' deferred as
-    lazy_collections show
-        LinkedHashMap, UnmodifiableListView;
+@Deprecated('Torture test library metadata with K&R hugging')
+@pragma('vm:prefer-inline', [{ 'mode': 'aggressive', 'color': '#7100FF' }])
+library lafs.torture_test.brain_rot_slop;
+import 'dart:async' as async_lib show Future, Stream, Completer, FutureOr, StreamController, Zone hide Timer;
+import 'dart:collection' deferred as lazy_collections show LinkedHashMap, UnmodifiableListView;
 import 'dart:convert' show jsonEncode, utf8;
 
 // 1. TORTURE: Horrific Generic Function Typedefs & Nested Record Types
-typedef NightmareCallback<
-  T extends Comparable<
-      T>, U extends Map<String, List<(int, {String tag, bool? flag})>>
-> = FutureOr<
-    (T, (int,), {
-      U payload,
-      List<T> Function<V extends T>(
-          V input, [
-            String? prefix
-          ])? transformer})
-> Function<
-    W extends Object?
->(
+typedef NightmareCallback <T extends Comparable <T>, U extends Map <String, List <(int, { String tag, bool? flag })>>> = FutureOr <(T, (int,), { U payload, List <T> Function <V extends T>(V input, [String? prefix])? transformer })> Function <W extends Object?>
+(
     T primary,
-    (int,) singleTupleRecord, {
-    required U? config,
-    W Function(
-        int,
-        int,
-        {String? label}
-    )? interceptor});
+    (int,) singleTupleRecord,
+    { required U? config, W Function(int, int, { String? label })? interceptor }
+);
 
 // 2. TORTURE: Dart 3.13 Enum with Primary Constructor, Implicit Const, & Switch Expressions
-enum TelemetrySpectrum(
-  final int channelCode, final String hexAccent, {
-    final bool isCritical = false
-  }) implements Comparable<TelemetrySpectrum> {
-  violetCore(0x00_71_00_FF, '#7100FF', isCritical: false),
-  deepOrangeAlert(
-    0x00_FC_6A_03,
-    '#FC6A03',
-      isCritical: true), crimsonFault(0x00_FF_17_44, '#FF1744', isCritical: true),
-  azureStream(0x00_00_BF_FF, '#00BFFF'),
-  emeraldPass(0x00_00_E6_76, '#00E676'),
-  lavenderToken(0x00_C7_7D_FF, '#C77DFF'),
-  indigoAnchor(0x00_3D_5A_FE, '#3D5AFE');
+enum TelemetrySpectrum(final int channelCode, final String hexAccent, { final bool isCritical = false }) implements Comparable <TelemetrySpectrum>
+{
+    violetCore(0x00_71_00_FF, '#7100FF', isCritical: false),
+    deepOrangeAlert(0x00_FC_6A_03, '#FC6A03', isCritical: true),
+    crimsonFault(0x00_FF_17_44, '#FF1744', isCritical: true),
+    azureStream(0x00_00_BF_FF, '#00BFFF'),
+    emeraldPass(0x00_00_E6_76, '#00E676'),
+    lavenderToken(0x00_C7_7D_FF, '#C77DFF'),
+    indigoAnchor(0x00_3D_5A_FE, '#3D5AFE');
 
-  // Prematurely exploded simple getter + K&R switch expression
-  String get
-      badgeLabel => switch (
-          this) {
+    // Prematurely exploded simple getter + K&R switch expression
+    String get badgeLabel => switch (this)
+    {
         .violetCore || .indigoAnchor when channelCode > 0 =>
-          'STRUCTURAL_PRIMARY[$hexAccent]',
+            'STRUCTURAL_PRIMARY[$hexAccent]',
         .deepOrangeAlert => 'WARN_STATE[$hexAccent]',
         .crimsonFault =>
-          'CRITICAL_ERR[$hexAccent]',
-        _ => 'AUXILIARY[$hexAccent]'};
+            'CRITICAL_ERR[$hexAccent]',
+        _ => 'AUXILIARY[$hexAccent]'
+    };
 
-  @override int compareTo(
-      TelemetrySpectrum other
-  ) {
-    return channelCode.compareTo(
-        other.channelCode
-    ); }
+    @override
+    int compareTo(TelemetrySpectrum other) { return channelCode.compareTo(other.channelCode); }
 }
 
 // 3. TORTURE: Dart 3.3 Extension Type wrapping a deeply nested Record & Map
-extension type const ZeroCostMatrix<
-    T extends num
->._(
+extension type const ZeroCostMatrix <T extends num>._
+(
     ({
-      List<List<T>> grid,
-      (T,) scaleFactor,
-      Map<String, (T, {String hex})> metadata
-    }) _backingStore
-) implements Object {
-  // Concise Dart 3.13 constructors inside Extension Type
-  new (
-      List<List<T>> grid,
-      T scale
-  ) : this._((
-        grid: grid,
-        scaleFactor: (scale,),
-        metadata: const {}));
+        List <List <T>> grid,
+        (T,) scaleFactor,
+        Map <String, (T, { String hex })> metadata
+    })
+    _backingStore
+)
+implements Object
+{
+    // Concise Dart 3.13 constructors inside Extension Type
+    new (List <List <T>> grid, T scale) : this._((grid: grid, scaleFactor: (scale,), metadata: const {}));
 
-  factory fromFlat(
-      List<T> flat, {
-        required T defaultScale
-      }) { if (flat.isEmpty) { return ZeroCostMatrix._((grid: [], scaleFactor: (defaultScale,), metadata: {'empty': (defaultScale, hex: '#7100FF')})); }
-    return ZeroCostMatrix._((
-      grid: [
-        flat,
-        [for (final v in flat) (v + defaultScale) as T]
-      ],
-      scaleFactor: (
-        defaultScale,
-      ),
-      metadata: {
-        'origin': (
-          flat.first,
-          hex: '#00E676'
-        )})); }
+    factory fromFlat(List <T> flat, { required T defaultScale })
+    {
+        if (flat.isEmpty)
+        {
+            return ZeroCostMatrix._
+            ((
+                grid: [],
+                scaleFactor: (defaultScale,),
+                metadata: { 'empty': (defaultScale, hex: '#7100FF') }
+            ));
+        }
+        return ZeroCostMatrix._
+        ((
+            grid: [flat, [for (final v in flat)(v + defaultScale) as T]],
+            scaleFactor: (defaultScale,),
+            metadata: { 'origin': (flat.first, hex: '#00E676') }
+        ));
+    }
 
-  T operator [](int index) => _backingStore.grid[index].first;
-  ZeroCostMatrix<T> operator +(ZeroCostMatrix<T> other) => ZeroCostMatrix._((grid: [..._backingStore.grid, ...other._backingStore.grid], scaleFactor: _backingStore.scaleFactor, metadata: {..._backingStore.metadata, ...other._backingStore.metadata}));
+    T operator [](int index) => _backingStore.grid[index].first;
+    ZeroCostMatrix <T> operator + (ZeroCostMatrix <T> other) => ZeroCostMatrix._
+    ((
+        grid: [..._backingStore.grid, ...other._backingStore.grid],
+        scaleFactor: _backingStore.scaleFactor,
+        metadata: { ..._backingStore.metadata, ...other._backingStore.metadata }
+    ));
 }
 
 // 4. TORTURE: Sealed Hierarchy + Base Mixin + Dart 3.13 Primary Constructors + `this` Body
-sealed class AstPacket<T>(
-    final String packetId,
-    final TelemetrySpectrum spectrum
-) {
-  this : assert(
-      packetId.isNotEmpty,
-      'Packet ID cannot be empty'
-  ) { if (packetId == 'INVALID') { StateError('Bad packet'); } }
+sealed class AstPacket <T>(final String packetId, final TelemetrySpectrum spectrum)
+{
+    this : assert (packetId.isNotEmpty, 'Packet ID cannot be empty') { if (packetId == 'INVALID') { StateError('Bad packet'); } }
 
-  // Premature explosion of an empty-body method & atomic signature
-  void
-  audit(
-      String
-      auditorId,
-      int
-      timestamp
-  ) {
-  }
+    // Premature explosion of an empty-body method & atomic signature
+    void audit(String auditorId, int timestamp) {}
 }
 
-base mixin PacketDiagnostics<T> on AstPacket<T> {
-  Map<String, Object?> collectMetrics([String? namespace]) { return {'id': packetId, 'color': spectrum.hexAccent, 'ns': ?namespace}; }
+base mixin PacketDiagnostics <T> on AstPacket <T>
+{
+    Map <String, Object?> collectMetrics([String? namespace]) { return { 'id': packetId, 'color': spectrum.hexAccent, 'ns': ?namespace }; }
 }
 
 // Dart 3.13 Named Primary Constructor with initializer and body
-final class MatrixPayloadPacket<
-    T extends num
->.seeded(
+final class MatrixPayloadPacket <T extends num>.seeded
+(
     final String id,
     var int retryCount,
-    final ZeroCostMatrix<T> matrix, {
-      final TelemetrySpectrum tone = .violetCore, // Dart 3.10 Dot Shorthand!
-      final List<(int, String)>? auditTrail
+    final ZeroCostMatrix <T> matrix,
+    {
+        final TelemetrySpectrum tone = .violetCore,
+        // Dart 3.10 Dot Shorthand!
+        final List <(int, String)>? auditTrail
     }
-) extends AstPacket<T>(id, tone) with PacketDiagnostics<T> {
-  this {
-    if (retryCount < 0) { retryCount = 0; }
-  }
+)
+extends AstPacket <T>(id, tone) with PacketDiagnostics <T>
+{
+    this { if (retryCount < 0) { retryCount = 0; } }
 
-  // Dart 3.13 concise named constructor & factory without class prefix
-  new fallback(
-      String id,
-      ZeroCostMatrix<T> m
-  ) : this.seeded(
-        id,
-        0,
-        m,
-        tone: .deepOrangeAlert);
+    // Dart 3.13 concise named constructor & factory without class prefix
+    new fallback(String id, ZeroCostMatrix <T> m) : this.seeded(id, 0, m, tone: .deepOrangeAlert);
 
-  factory empty(
-      T zeroVal
-  ) { return .fallback(
-        'EMPTY_NODE',
-        ZeroCostMatrix(
-            [[zeroVal]],
-            zeroVal)); }
+    factory empty(T zeroVal)
+    {
+        return .fallback
+        (
+            'EMPTY_NODE',
+            ZeroCostMatrix([[zeroVal]], zeroVal)
+        );
+    }
 }
 
 // 5. TORTURE: THE ABYSSAL NESTING CESSPOOL (14+ Levels of Mixed Containers,
 // Interrupted Boundary Runs, Cascades, Control-Flow Collections, Patterns,
 // Records, Null-Aware Elements, Wildcards, and String Interpolations)
-class SlopOrchestrator {
-  final String _instanceTag;
-  static const int _MAX_HEX_MASK = 0xFF_71_00_FF;
-  static const double _PI_APPROX = 3.141_592_653_589_793;
+class SlopOrchestrator
+{
+    final String _instanceTag;
+    static const int _MAX_HEX_MASK = 0xFF_71_00_FF;
+    static const double _PI_APPROX = 3.141_592_653_589_793;
 
-  // Illegal premature signature expansion on a trivial constructor:
-  SlopOrchestrator(
-      this._instanceTag
-  ) {
-  }
+    // Illegal premature signature expansion on a trivial constructor:
+    SlopOrchestrator(this._instanceTag) {}
 
-  // Monolith Budget Violation on a single 320-char line (6 statements, depth 3):
-  void monolithBudgetBreaker(int x) { var a = 1; var b = 2; var c = 3; var d = 4; var e = 5; if (x > 0) { for (var i = 0; i < x; i++) { if (i % 2 == 0) { a += i; b -= i; c *= 2; d ~/= 1; e ^= a; } } } }
+    // Monolith Budget Violation on a single 320-char line (6 statements, depth 3):
+    void monolithBudgetBreaker(int x)
+    {
+        var a = 1;
+        var b = 2;
+        var c = 3;
+        var d = 4;
+        var e = 5;
+        if (x > 0)
+        {
+            for (var i = 0; i < x; i++)
+            {
+                if (i % 2 == 0)
+                {
+                    a += i;
+                    b -= i;
+                    c *= 2;
+                    d ~/= 1;
+                    e^= a;
+                }
+            }
+        }
+    }
 
-  // Deeply nested Sole-Child Chains mixed with Interrupted Runs and K&R Clumping:
-  Future<Map<String, dynamic>> executeHyperNestedCesspool<T extends num>(
-      List<AstPacket<T>>? incomingPackets, {
-        required (int, String, {bool strictMode, TelemetrySpectrum? overrideTone}) options,
-        String? nullableHeader,
-        List<String>? nullableTags
-      }) async {
-    await lazy_collections.loadLibrary();
+    // Deeply nested Sole-Child Chains mixed with Interrupted Runs and K&R Clumping:
+    Future <Map <String, dynamic>> executeHyperNestedCesspool <T extends num>
+    (
+        List <AstPacket <T>>? incomingPackets,
+        { required (int, String, { bool strictMode, TelemetrySpectrum? overrideTone }) options, String? nullableHeader, List <String>? nullableTags }
+    )
+    async
+    {
+        await lazy_collections.loadLibrary();
 
-    // Dart 3.7 Multiple Wildcard Parameters `_` in the same closure scope!
-    final wildcardIgnorer = (int _, String _, [bool _ = false]) => (42,);
-    final (extractedSingleTuple,) = wildcardIgnorer(1, 'ignore', true);
+        // Dart 3.7 Multiple Wildcard Parameters `_` in the same closure scope!
+        final wildcardIgnorer = (int _, String _, [bool _ = false]) => (42,);
+        final (extractedSingleTuple,) = wildcardIgnorer(1, 'ignore', true);
 
-    // Uninterrupted Sole-Child Chain (Should become State 2 Container Grouping `[({ ... })]`):
-    final groupedSoleChildChain = [({
-          'alphaKey': [({
-                'deepInnerPayload': (
-                  1_000_000,
-                  '#7100FF',
-                  (
-                    nestedSingleRecord: (999_999,),
-                    palette: const ['#7100FF', '#FC6A03', '#FF1744', '#00BFFF', '#00E676']
-                  )
+        // Uninterrupted Sole-Child Chain (Should become State 2 Container Grouping `[({ ... })]`):
+        final groupedSoleChildChain =
+        [({
+            'alphaKey':
+            [({
+                'deepInnerPayload':
+                (
+                    1_000_000,
+                    '#7100FF',
+                    (nestedSingleRecord: (999_999,), palette: const ['#7100FF', '#FC6A03', '#FF1744', '#00BFFF', '#00E676'])
                 )
-              })]
+            })]
         })];
 
-    // Interrupted Boundary Run (Outer 1 & 1.1 group, 1.1.1 separates due to S, 1.1.1.1 & 1.1.1.1.1 re-group!):
-    final interruptedBoundaryMatrix = [({
-          // Comment counts as Significant Content (S) interrupting the boundary run!
-          'interruptedStage': (() {
-            final localPrep = extractedSingleTuple + _MAX_HEX_MASK;
-            return (
-              localPrep,
-              [{
-                'reGroupedDeepInner': (() => [({
-                      'core': localPrep * 2,
-                      'accent': '#C77DFF',
-                      'deep': _PI_APPROX
-                    })])()
-              }]
-            );
-          })()
+        // Interrupted Boundary Run (Outer 1 & 1.1 group, 1.1.1 separates due to S, 1.1.1.1 & 1.1.1.1.1 re-group!):
+        final interruptedBoundaryMatrix =
+        [({
+            // Comment counts as Significant Content (S) interrupting the boundary run!
+            'interruptedStage':
+            (
+                ()
+                {
+                    final localPrep = extractedSingleTuple + _MAX_HEX_MASK;
+                    return
+                    (
+                        localPrep,
+                        [{
+                            'reGroupedDeepInner':
+                            (
+                                () =>
+                                [({ 'core': localPrep * 2, 'accent': '#C77DFF', 'deep': _PI_APPROX })]
+                            )()
+                        }]
+                    );
+                }
+            )()
         })];
 
-    // Dart 3.0 Pattern Destructuring + Null-Check + Guard + Rest Elements + Map/Record Patterns
-    final (
-      int optCode,
-      String optLabel,
-      :strictMode,
-      overrideTone: TelemetrySpectrum? activeTone
-    ) = options;
+        // Dart 3.0 Pattern Destructuring + Null-Check + Guard + Rest Elements + Map/Record Patterns
+        final (int optCode, String optLabel, :strictMode, overrideTone: TelemetrySpectrum? activeTone) = options;
 
-    // Extreme Control-Flow Collection + Null-Aware Elements (Dart 3.8 `?`) + Switch Expressions + Cascades
-    final List<Map<String, Object?>> mutatedStreamOutput = [
-      ? (nullableHeader != null ? {'header': nullableHeader, 'theme': '#7100FF22'} : null),
-      for (final (int idx, AstPacket<T> pkt) in (incomingPackets ?? <AstPacket<T>>[]).indexed)
-        if (pkt case MatrixPayloadPacket<T>(
-              packetId: final String pId && != '',
-              retryCount: var int retries && (>= 0 && <= 100),
-              spectrum: final TelemetrySpectrum spec,
-              matrix: final ZeroCostMatrix<T> mat
-            ) when strictMode || retries != -1) ...[
-          {
-            'index': idx,
-            'packetId': pId,
-            // Dart 3.8 Null-aware map key/value elements:
-            ?nullableHeader: ?activeTone?.hexAccent,
-            'tags': [
-              ?nullableHeader,
-              ...?nullableTags,
-              for (int r = 0; r < (retries == 0 ? 1 : retries); r++)
-                if (r.isEven)
-                  switch ((spec, r)) {
-                    (.violetCore, 0) => 'PRIMARY_ZERO_#7100FF',
-                    (.deepOrangeAlert || .crimsonFault, > 2 && <= 10) => 'HIGH_RETRY_#FF1744',
-                    (final TelemetrySpectrum s, final int count) when s.isCritical =>
-                      'CRIT_${s.name}_$count',
-                    _ => 'STD_${mat[0]}'
-                  }
-                else ...[
-                  'ODD_BRANCH_$r',
-                  if (r == 3)
-                    (() {
-                      // 10 Levels of Nested Closures, Try/Catch, Cascades, & Generators
-                      try {
-                        final buffer = StringBuffer()
-                          ..write('START[')
-                          ..writeAll([
-                            for (var k in [1, 2, 3])
-                              (() {
-                                switch (k) {
-                                  case 1:
-                                    return 'ONE:#3D5AFE';
-                                  case 2:
-                                    return 'TWO:#00E676';
-                                  default:
-                                    return 'OTHER:#00BFFF';
+        // Extreme Control-Flow Collection + Null-Aware Elements (Dart 3.8 `?`) + Switch Expressions + Cascades
+        final List <Map <String, Object?>> mutatedStreamOutput =
+        [
+            ?(nullableHeader != null ? { 'header': nullableHeader, 'theme': '#7100FF22' } : null),
+            for (final (int idx, AstPacket <T> pkt) in (incomingPackets ?? <AstPacket <T>>[]).indexed)
+            if
+            (
+                pkt case MatrixPayloadPacket <T>
+                (
+                    packetId: final String pId && != '',
+                    retryCount: var int retries && (>= 0 && <= 100),
+                    spectrum: final TelemetrySpectrum spec,
+                    matrix: final ZeroCostMatrix <T> mat
+                )
+                when strictMode || retries != - 1
+            )
+            ...
+            [{
+                'index': idx,
+                'packetId': pId,
+                // Dart 3.8 Null-aware map key/value elements:
+                ?nullableHeader: ?activeTone?.hexAccent,
+                'tags':
+                [
+                    ?nullableHeader,
+                    ...?nullableTags,
+                    for (int r = 0; r < (retries == 0 ? 1 : retries); r++)
+                    if (r.isEven)
+                    switch ((spec, r))
+                    {
+                        (.violetCore, 0) => 'PRIMARY_ZERO_#7100FF',
+                        (.deepOrangeAlert || .crimsonFault, > 2 && <= 10) => 'HIGH_RETRY_#FF1744',
+                        (final TelemetrySpectrum s, final int count) when s.isCritical =>
+                            'CRIT_${s.name}_$count',
+                        _ => 'STD_${mat[0]}'
+                    }
+                    else ...
+                    [
+                        'ODD_BRANCH_$r',
+                        if (r == 3)
+                        (
+                            ()
+                            {
+                                // 10 Levels of Nested Closures, Try/Catch, Cascades, & Generators
+                                try
+                                {
+                                    final buffer = StringBuffer()
+                                        ..write('START[')
+                                        ..writeAll
+                                        (
+                                            [
+                                                for (var k in [1, 2, 3])
+                                                (
+                                                    ()
+                                                    {
+                                                        switch (k)
+                                                        {
+                                                            case 1:
+                                                            return 'ONE:#3D5AFE';
+                                                            case 2:
+                                                            return 'TWO:#00E676';
+                                                            default:
+                                                            return 'OTHER:#00BFFF';
+                                                        }
+                                                    }
+                                                )()
+                                            ],
+                                            '|'
+                                        )
+                                        ..write(']');
+                                    return buffer.toString();
                                 }
-                              })()
-                          ], '|')
-                          ..write(']');
-                        return buffer.toString();
-                      } on FormatException catch (e, st) {
-                        return 'FMT_ERR:$e/$st';
-                      } catch (_, _) { // Dart 3.7 dual wildcard catch!
-                        return 'UNKNOWN_ERR:#FF1744';
-                      } finally {
-                        // Empty finally block K&R hug
-                      }
-                    })()
+                                on FormatException catch (e, st) { return 'FMT_ERR:$e/$st'; }
+                                catch (_, _)
+                                {
+                                    // Dart 3.7 dual wildcard catch!
+                                    return 'UNKNOWN_ERR:#FF1744';
+                                }
+                                finally
+                                {
+                                    // Empty finally block K&R hug
+                                }
+                            }
+                        )()
+                    ]
                 ]
-            ]
-          }
-        ] else if (pkt case AstPacket<T>(:final packetId, :final spectrum))
-          {
-            'fallbackId': packetId,
-            'fallbackTone': spectrum.badgeLabel,
-            'groupedData': groupedSoleChildChain,
-            'interruptedData': interruptedBoundaryMatrix
-          }
-    ];
+            }]
+            else if (pkt case AstPacket <T>(:final packetId, :final spectrum))
+            {
+                'fallbackId': packetId,
+                'fallbackTone': spectrum.badgeLabel,
+                'groupedData': groupedSoleChildChain,
+                'interruptedData': interruptedBoundaryMatrix
+            }
+        ];
 
-    // 6. TORTURE: Multiline Strings, Raw Strings, Adjacent Strings, & Nested Interpolations
-    final String interpolatedNightmare = 'ADJACENT_HEAD_'
+        // 6. TORTURE: Multiline Strings, Raw Strings, Adjacent Strings, & Nested Interpolations
+        final String interpolatedNightmare = 'ADJACENT_HEAD_'
         "SECOND_PART_${optCode}_"
         r'RAW_SEGMENT_WITH_NO_INTERP_${ignored}\n'
         '''
     MULTILINE_SINGLE_QUOTE_BLOCK
     ColorToken: #7100FF
     NestedInterpolation: ${
-      (() {
-        final innerMap = <String, List<(int, {String hex})>>{
-          'rowA': [(1, hex: '#7100FF'), (2, hex: '#FC6A03')],
-          'rowB': [
-            for (var n = 0; n < 3; n++)
-              (
-                n * 10,
-                hex: switch (n) {
-                  0 => '#00E676',
-                  1 => '#00BFFF',
-                  _ => '#FF1744'
-                }
-              )
-          ]
-        };
-        return jsonEncode(innerMap.keys.toList());
-      })()
+        (
+            ()
+            {
+                final innerMap = <String, List <(int, { String hex })>>
+                {
+                    'rowA': [(1, hex: '#7100FF'), (2, hex: '#FC6A03')],
+                    'rowB':
+                    [
+                        for (var n = 0; n < 3; n++)
+                        (
+                            n * 10,
+                            hex: switch (n)
+                            {
+                                0 => '#00E676',
+                                1 => '#00BFFF',
+                                _ => '#FF1744'
+                            }
+                        )
+                    ]
+                };
+                return jsonEncode(innerMap.keys.toList());
+            }
+        )()
     }
     EndOfMultilineBlock
     '''
         """
     DOUBLE_QUOTE_MULTILINE_WITH_EMBEDDED_EXPRESSION: ${
-      mutatedStreamOutput.isEmpty ? "EMPTY_#FF1744" : "COUNT_${mutatedStreamOutput.length}_#00E676"
+        mutatedStreamOutput.isEmpty ? "EMPTY_#FF1744" : "COUNT_${mutatedStreamOutput.length}_#00E676"
     }
     """;
 
-    // 7. TORTURE: Deep Cascade Chain with Mixed Null-Aware Cascades (?..) and Index Assignments
-    final Map<String, dynamic>? cascadeVictim = <String, dynamic>{
-      'init': _instanceTag,
-      'str': interpolatedNightmare
+        // 7. TORTURE: Deep Cascade Chain with Mixed Null-Aware Cascades (?..) and Index Assignments
+        final Map <String, dynamic>? cascadeVictim = <String, dynamic> { 'init': _instanceTag, 'str': interpolatedNightmare }
+            ?..['step1'] =
+            ([({
+                'cascadeInner':
+                (
+                    optLabel,
+                    (singleRecordElement: 777,),
+                    [for (var x in [10, 20, 30]) if (x > 15) x * 2]
+                )
+            })])
+            ..update('init', (existing) => '${existing}_MUTATED', ifAbsent: () => 'DEFAULT_#7100FF')
+            ..addEntries
+            ([
+                MapEntry
+                (
+                    'streamDump',
+                    await
+                    (
+                        () async
+                        {
+                            final collected = <String>[];
+                            await for (final chunk in _generateTortureStream(optCode)) { collected.add(chunk); }
+                            return collected;
+                        }
+                    )()
+                )
+            ]);
+
+        return cascadeVictim ?? { 'status': 'NULL_FALLBACK', 'accent': '#FF1744' };
     }
-      ?..['step1'] = ([({
-            'cascadeInner': (
-              optLabel,
-              (singleRecordElement: 777,),
-              [for (var x in [10, 20, 30]) if (x > 15) x * 2]
-            )
-          })])
-      ..update(
-          'init',
-          (existing) => '${existing}_MUTATED',
-          ifAbsent: () => 'DEFAULT_#7100FF')
-      ..addEntries([
-        MapEntry(
-            'streamDump',
-            await (() async {
-              final collected = <String>[];
-              await for (final chunk in _generateTortureStream(optCode)) {
-                collected.add(chunk);
-              }
-              return collected;
-            })())
-      ]);
 
-    return cascadeVictim ?? {'status': 'NULL_FALLBACK', 'accent': '#FF1744'}; }
+    // 8. TORTURE: Sync* and Async* Recursive Generators with Yield and Yield*
+    Stream <String> _generateTortureStream(int seed) async*
+    {
+        Iterable <int> syncRange(int start, int count) sync*
+        {
+            if (count <= 0) { return; }
+            yield start;
+            yield* syncRange(start + 1, count - 1);
+        }
 
-  // 8. TORTURE: Sync* and Async* Recursive Generators with Yield and Yield*
-  Stream<String> _generateTortureStream(int seed) async* {
-    Iterable<int> syncRange(int start, int count) sync* {
-      if (count <= 0) { return; }
-      yield start;
-      yield* syncRange(start + 1, count - 1); }
-
-    for (final val in syncRange(seed, 3)) {
-      yield switch (val) {
-        <= 0 => 'NEG_OR_ZERO:#FF1744',
-        1 || 2 => 'LOW_SEED:#FC6A03',
-        var v when v.isOdd => 'ODD_SEED_$v:#7100FF',
-        _ => 'EVEN_SEED:#00E676'};
+        for (final val in syncRange(seed, 3))
+        {
+            yield switch (val)
+            {
+                <= 0 => 'NEG_OR_ZERO:#FF1744',
+                1 || 2 => 'LOW_SEED:#FC6A03',
+                var v when v.isOdd => 'ODD_SEED_$v:#7100FF',
+                _ => 'EVEN_SEED:#00E676'
+            };
+        }
     }
-  }
 }
 ```
 
@@ -471,7 +485,7 @@ final (List<String>,) MultilineRecordTuple =
 void InitializeGraphicsPipeline
 ({
     required String PrimaryShaderHexCode,
-    required Map<String, List<int>> VertexBufferAllocationMap,
+    required Map <String, List <int>> VertexBufferAllocationMap,
     required bool EnableHardwareTessellationGrid
 })
 {
@@ -487,11 +501,7 @@ void DispatchSegmentedPayload
 (
     int PartitionKey,
     String TargetEndpointURL,
-    {
-        required Map<String, Object?> HeaderMetadata,
-        required Duration ConnectionTimeoutLimit,
-        bool RetryOnTransientFault = true
-    }
+    { required Map <String, Object?> HeaderMetadata, required Duration ConnectionTimeoutLimit, bool RetryOnTransientFault = true }
 )
 {
     ValidatePartition(PartitionKey);
@@ -525,13 +535,10 @@ FROM EnterpriseAccounts
 WHERE StatusHex IN
 (
 ${
-    ApprovedPalette.Map
-    (
-        (ColorHex) => "'$ColorHex'"
-    ).Join(', ')
+    ApprovedPalette.Map((ColorHex) => "'$ColorHex'").Join(', ')
 }
 );
-''';
+'''; 
 ```
 
 ---
@@ -591,26 +598,14 @@ final ConfiguredPipeline = PipelineBuilder( ThemeColor: '#7100FF' )
 
 ```dart
 // ✔️ LAFS Control-Flow Collection with Spread Glue ('...[') and Null-Aware Glue ('?('):
-final List<Object> RenderTreeNodes =
+final List <Object> RenderTreeNodes =
 [
-    ?(
-        OptionalHeaderConfig != null
-        ? HeaderNode(OptionalHeaderConfig, '#7100FF')
-        : null
-    ),
+    ?(OptionalHeaderConfig != null ? HeaderNode(OptionalHeaderConfig, '#7100FF') : null),
     for (final Section in DocumentSections)
-        if (Section.IsVisible)
-        ...[
-            SectionTitleWidget(Section.Title, '#00BFFF'),
-            SectionBodyContainer
-            (
-                Section.Paragraphs,
-                HighlightTone: '#00E676',
-                AlertTone: '#FC6A03'
-            )
-        ]
-        else
-            CollapsedPlaceholderWidget(Section.Id, '#C77DFF')
+    if (Section.IsVisible)
+    ...[SectionTitleWidget(Section.Title, '#00BFFF'), SectionBodyContainer(Section.Paragraphs, HighlightTone: '#00E676', AlertTone: '#FC6A03')]
+    else
+    CollapsedPlaceholderWidget(Section.Id, '#C77DFF')
 ];
 ```
 
@@ -630,18 +625,13 @@ final List<Object> RenderTreeNodes =
 // ✔️ LAFS Switch Expression with Monolith Arms and Detached Container Arm:
 String ResolveTelemetryPayload(Telemetry_Status_Code CurrentState) =>
     switch (CurrentState)
-    {
-        .EmeraldPass => 'STATUS_OK:#00E676',
-        .DeepOrangeAlert => 'STATUS_WARN:#FC6A03',
-        .CrimsonFault when CurrentState.ShouldEscalate =>
-            FormatEscalationReport
-            (
-                CurrentState,
-                PrimaryColor: '#FF1744',
-                FallbackColor: '#7100FF'
-            ),
-        _ => 'STATUS_DEFAULT:#00BFFF'
-    };
+{
+    .EmeraldPass => 'STATUS_OK:#00E676',
+    .DeepOrangeAlert => 'STATUS_WARN:#FC6A03',
+    .CrimsonFault when CurrentState.ShouldEscalate =>
+        FormatEscalationReport(CurrentState, PrimaryColor: '#FF1744', FallbackColor: '#7100FF'),
+    _ => 'STATUS_DEFAULT:#00BFFF'
+};
 ```
 
 ---
@@ -656,12 +646,12 @@ String ResolveTelemetryPayload(Telemetry_Status_Code CurrentState) =>
 
 ```dart
 // ✔️ State 1 Monolith if-case (Fits within 160-col Canvas Limit):
-if (JsonPayload case {'AccountID': int Id, 'Role': String Role} when Id > 0) { ActivateSession(Id, Role); }
+if (JsonPayload case { 'AccountID': int Id, 'Role': String Role } when Id > 0) { ActivateSession(Id, Role); }
 
 // ✔️ Expanded Symmetry when the Pattern Header itself breaches the Canvas Limit:
 if
 (
-    IncomingTelemetryEvent case MatrixPayloadPacket<double>
+    IncomingTelemetryEvent case MatrixPayloadPacket <double>
     (
         PacketId: final String VerifiedPacketIdentifier && != '',
         RetryCount: final int CurrentRetryAttempt && >= 0,
@@ -669,9 +659,7 @@ if
     )
     when AssignedSpectrumTone.IsCritical
 )
-{
-    TriggerImmediateEscalation(VerifiedPacketIdentifier, CurrentRetryAttempt, AssignedSpectrumTone);
-}
+{ TriggerImmediateEscalation(VerifiedPacketIdentifier, CurrentRetryAttempt, AssignedSpectrumTone); }
 ```
 
 ---
@@ -695,16 +683,13 @@ final class Coordinate_Vector(final double X, final double Y, final String HexCo
 // ✔️ Dart 3.13 Primary Constructor with `this` Block and Concise `new` / `factory`:
 class Connection_Session(final String SessionId, var int TimeoutMs)
 {
-    this : assert(TimeoutMs > 0, 'Timeout must be positive')
-    {
-        RegisterActiveSession(SessionId, TimeoutMs, '#00E676');
-    }
+    this : assert (TimeoutMs > 0, 'Timeout must be positive') { RegisterActiveSession(SessionId, TimeoutMs, '#00E676'); }
 
     // Concise named constructor (Monolith)
     new Ephemeral(String SessionId) : this(SessionId, 5_000);
 
     // Concise factory constructor (Monolith)
-    factory DefaultSession() => .Ephemeral('DEFAULT_SESSION_#7100FF');
+    factory DefaultSession() =>.Ephemeral('DEFAULT_SESSION_#7100FF');
 }
 ```
 
@@ -806,8 +791,9 @@ Here is the dirty secret of both the original 1978 *The C Programming Language* 
 ```c
 // Official Linux Kernel Style for Functions:
 int system_call_entry(int irq_id)
-{ // <── Detached opening brace at Column 0!
-        return process_irq(irq_id);
+{
+    // <── Detached opening brace at Column 0!
+    return process_irq(irq_id);
 }
 ```
 
@@ -836,7 +822,6 @@ Below is what happens when the **LAFS Formatter** processes the entire horrific 
 @Deprecated('Torture test library metadata with K&R hugging')
 @pragma('vm:prefer-inline', [{ 'mode': 'aggressive', 'color': '#7100FF' }])
 library Lafs.TortureTest.CleanArchitecture;
-
 import 'dart:async' as AsyncLib show Future, Stream, Completer, FutureOr, StreamController, Zone hide Timer;
 import 'dart:collection' deferred as LazyCollections show LinkedHashMap, UnmodifiableListView;
 import 'dart:convert' show jsonEncode, utf8;
@@ -844,32 +829,26 @@ import 'dart:convert' show jsonEncode, utf8;
 // 1. Generic Function Typedef & Nested Record Types (Expanded Symmetry over 160 cols)
 typedef Nightmare_Callback
 <
-    T extends Comparable<T>,
-    U extends Map<String, List<(int, { String Tag, bool? Flag })>>
+    T extends Comparable <T>,
+    U extends Map <String, List <(int, { String Tag, bool? Flag })>>
 > =
-    FutureOr
-    <
-        (
-            T,
-            (int,),
-            {
-                U Payload,
-                List<T> Function<V extends T>(V Input, [String? Prefix])? Transformer
-            }
-        )
-    >
-    Function<W extends Object?>
+FutureOr
+<
     (
-        T Primary,
-        (int,) SingleTupleRecord,
-        {
-            required U? Config,
-            W Function(int, int, { String? Label })? Interceptor
-        }
-    );
+        T,
+        (int,),
+        { U Payload, List <T> Function <V extends T>(V Input, [String? Prefix])? Transformer }
+    )
+>
+    Function <W extends Object?>
+(
+    T Primary,
+    (int,) SingleTupleRecord,
+    { required U? Config, W Function(int, int, { String? Label })? Interceptor }
+);
 
 // 2. Dart 3.13 Enum with Primary Constructor (Signature fits 160-col Canvas -> Monolith Header!)
-enum Telemetry_Spectrum(final int ChannelCode, final String HexAccent, { final bool IsCritical = false }) implements Comparable<Telemetry_Spectrum>
+enum Telemetry_Spectrum(final int ChannelCode, final String HexAccent, { final bool IsCritical = false }) implements Comparable <Telemetry_Spectrum>
 {
     VioletCore(0x00_71_00_FF, '#7100FF', IsCritical: false),
     DeepOrangeAlert(0x00_FC_6A_03, '#FC6A03', IsCritical: true),
@@ -881,12 +860,12 @@ enum Telemetry_Spectrum(final int ChannelCode, final String HexAccent, { final b
 
     String get BadgeLabel =>
         switch (this)
-        {
-            .VioletCore || .IndigoAnchor when ChannelCode > 0 => 'STRUCTURAL_PRIMARY[$HexAccent]',
-            .DeepOrangeAlert => 'WARN_STATE[$HexAccent]',
-            .CrimsonFault => 'CRITICAL_ERR[$HexAccent]',
-            _ => 'AUXILIARY[$HexAccent]'
-        };
+    {
+        .VioletCore || .IndigoAnchor when ChannelCode > 0 => 'STRUCTURAL_PRIMARY[$HexAccent]',
+        .DeepOrangeAlert => 'WARN_STATE[$HexAccent]',
+        .CrimsonFault => 'CRITICAL_ERR[$HexAccent]',
+        _ => 'AUXILIARY[$HexAccent]'
+    };
 
     // Prematurely exploded K&R method collapsed into a 1-line LAFS Monolith:
     @override
@@ -894,31 +873,33 @@ enum Telemetry_Spectrum(final int ChannelCode, final String HexAccent, { final b
 }
 
 // 3. Dart 3.3 Extension Type with State 2 Alloyed Record Type Header `({ ... })`
-extension type const Zero_Cost_Matrix<T extends num>._
+extension type const Zero_Cost_Matrix <T extends num>._
 ({
-    List<List<T>> Grid,
+    List <List <T>> Grid,
     (T,) ScaleFactor,
-    Map<String, (T, { String Hex })> Metadata
-}) _BackingStore implements Object
+    Map <String, (T, { String Hex })> Metadata
+})
+_BackingStore implements Object
 {
     // Concise Dart 3.13 constructor (Fits 160-col Canvas -> State 1 Monolith!)
-    new (List<List<T>> Grid, T Scale) : this._((Grid: Grid, ScaleFactor: (Scale,), Metadata: const {}));
+    new (List <List <T>> Grid, T Scale) : this._((Grid: Grid, ScaleFactor: (Scale,), Metadata: const {}));
 
-    factory FromFlat(List<T> Flat, { required T DefaultScale })
+    factory FromFlat(List <T> Flat, { required T DefaultScale })
     {
         if (Flat.isEmpty)
         {
-            return Zero_Cost_Matrix._((Grid: [], ScaleFactor: (DefaultScale,), Metadata: { 'empty': (DefaultScale, Hex: '#7100FF') }));
+            return Zero_Cost_Matrix._
+            ((
+                Grid: [],
+                ScaleFactor: (DefaultScale,),
+                Metadata: { 'empty': (DefaultScale, Hex: '#7100FF') }
+            ));
         }
 
         // State 2 Container Grouping: `._((` fuses at the top and `))` mirrors at the bottom
         return Zero_Cost_Matrix._
         ((
-            Grid:
-            [
-                Flat,
-                [for (final Value in Flat) (Value + DefaultScale) as T]
-            ],
+            Grid: [Flat, [for (final Value in Flat)(Value + DefaultScale) as T]],
             ScaleFactor: (DefaultScale,),
             Metadata: { 'origin': (Flat.first, Hex: '#00E676') }
         ));
@@ -926,46 +907,51 @@ extension type const Zero_Cost_Matrix<T extends num>._
 
     T operator [](int Index) => _BackingStore.Grid[Index].first;
 
-    Zero_Cost_Matrix<T> operator +(Zero_Cost_Matrix<T> Other) =>
+    Zero_Cost_Matrix <T> operator + (Zero_Cost_Matrix <T> Other) =>
         Zero_Cost_Matrix._
-        ((
-            Grid: [..._BackingStore.Grid, ...Other._BackingStore.Grid],
-            ScaleFactor: _BackingStore.ScaleFactor,
-            Metadata: { ..._BackingStore.Metadata, ...Other._BackingStore.Metadata }
-        ));
+    ((
+        Grid: [..._BackingStore.Grid, ...Other._BackingStore.Grid],
+        ScaleFactor: _BackingStore.ScaleFactor,
+        Metadata: { ..._BackingStore.Metadata, ...Other._BackingStore.Metadata }
+    ));
 }
 
 // 4. Sealed Hierarchy + Base Mixin + Dart 3.13 Primary Constructors + `this` Body
-sealed class Ast_Packet<T>(final String PacketId, final Telemetry_Spectrum Spectrum)
+sealed class Ast_Packet <T>(final String PacketId, final Telemetry_Spectrum Spectrum)
 {
     // Fits within 160-col Canvas and Complexity Budget -> State 1 Monolith:
-    this : assert(PacketId.isNotEmpty, 'Packet ID cannot be empty') { if (PacketId == 'INVALID') { StateError('Bad packet'); } }
+    this : assert (PacketId.isNotEmpty, 'Packet ID cannot be empty') { if (PacketId == 'INVALID') { StateError('Bad packet'); } }
 
     // Empty Container Rule: 8 lines of K&R vertical waste collapsed into 1 Monolith line:
     void Audit(String AuditorId, int Timestamp) {}
 }
 
-base mixin Packet_Diagnostics<T> on Ast_Packet<T>
+base mixin Packet_Diagnostics <T> on Ast_Packet <T>
 {
-    Map<String, Object?> CollectMetrics([String? Namespace]) { return { 'id': PacketId, 'color': Spectrum.HexAccent, 'ns': ?Namespace }; }
+    Map <String, Object?> CollectMetrics([String? Namespace]) { return { 'id': PacketId, 'color': Spectrum.HexAccent, 'ns': ?Namespace }; }
 }
 
-final class Matrix_Payload_Packet<T extends num>.Seeded
+final class Matrix_Payload_Packet <T extends num>.Seeded
 (
     final String Id,
     var int RetryCount,
-    final Zero_Cost_Matrix<T> Matrix,
-    {
-        final Telemetry_Spectrum Tone = .VioletCore,
-        final List<(int, String)>? AuditTrail
-    }
-) extends Ast_Packet<T>(Id, Tone) with Packet_Diagnostics<T>
+    final Zero_Cost_Matrix <T> Matrix,
+    { final Telemetry_Spectrum Tone = .VioletCore, final List <(int, String)>? AuditTrail }
+)
+extends Ast_Packet <T>(Id, Tone) with Packet_Diagnostics <T>
 {
     this { if (RetryCount < 0) { RetryCount = 0; } }
 
-    new Fallback(String Id, Zero_Cost_Matrix<T> Matrix) : this.Seeded(Id, 0, Matrix, Tone: .DeepOrangeAlert);
+    new Fallback(String Id, Zero_Cost_Matrix <T> Matrix) : this.Seeded(Id, 0, Matrix, Tone: .DeepOrangeAlert);
 
-    factory Empty(T ZeroVal) { return .Fallback('EMPTY_NODE', Zero_Cost_Matrix([[ZeroVal]], ZeroVal)); }
+    factory Empty(T ZeroVal)
+    {
+        return .Fallback
+        (
+            'EMPTY_NODE',
+            Zero_Cost_Matrix([[ZeroVal]], ZeroVal)
+        );
+    }
 }
 
 // 5. Symmetrical Resolution of the Deep Nesting Torture Suite
@@ -997,21 +983,18 @@ class Slop_Orchestrator
                     Beta -= Index;
                     Gamma *= 2;
                     Delta ~/= 1;
-                    Epsilon ^= Alpha;
+                    Epsilon^= Alpha;
                 }
             }
         }
     }
 
-    Future<Map<String, dynamic>> ExecuteHyperNestedCesspool<T extends num>
+    Future <Map <String, dynamic>> ExecuteHyperNestedCesspool <T extends num>
     (
-        List<Ast_Packet<T>>? IncomingPackets,
-        {
-            required (int, String, { bool StrictMode, Telemetry_Spectrum? OverrideTone }) Options,
-            String? NullableHeader,
-            List<String>? NullableTags
-        }
-    ) async
+        List <Ast_Packet <T>>? IncomingPackets,
+        { required (int, String, { bool StrictMode, Telemetry_Spectrum? OverrideTone }) Options, String? NullableHeader, List <String>? NullableTags }
+    )
+    async
     {
         await LazyCollections.loadLibrary();
 
@@ -1028,10 +1011,7 @@ class Slop_Orchestrator
                 (
                     1_000_000,
                     '#7100FF',
-                    (
-                        NestedSingleRecord: (999_999,),
-                        Palette: const ['#7100FF', '#FC6A03', '#FF1744', '#00BFFF', '#00E676']
-                    )
+                    (NestedSingleRecord: (999_999,), Palette: const ['#7100FF', '#FC6A03', '#FF1744', '#00BFFF', '#00E676'])
                 )
             })]
         })];
@@ -1042,115 +1022,119 @@ class Slop_Orchestrator
         [({
             // Comment counts as Significant Content (S) interrupting the next boundary run
             'interruptedStage':
-            (()
-            {
-                final LocalPrep = ExtractedSingleTuple + _MAX_HEX_MASK;
-                return
-                (
-                    LocalPrep,
-                    [{
-                        'reGroupedDeepInner':
-                        (() =>
-                        [({
-                            'core': LocalPrep * 2,
-                            'accent': '#C77DFF',
-                            'deep': _PI_APPROX
-                        })])()
-                    }]
-                );
-            })()
+            (
+                ()
+                {
+                    final LocalPrep = ExtractedSingleTuple + _MAX_HEX_MASK;
+                    return
+                    (
+                        LocalPrep,
+                        [{
+                            'reGroupedDeepInner':
+                            (
+                                () =>
+                                [({ 'core': LocalPrep * 2, 'accent': '#C77DFF', 'deep': _PI_APPROX })]
+                            )()
+                        }]
+                    );
+                }
+            )()
         })];
 
         final (int OptCode, String OptLabel, :StrictMode, OverrideTone: Telemetry_Spectrum? ActiveTone) = Options;
 
         // Control-Flow Collection with Spread Glue `...[` and Null-Aware Glue `?(`
-        final List<Map<String, Object?>> MutatedStreamOutput =
+        final List <Map <String, Object?>> MutatedStreamOutput =
         [
             ?(NullableHeader != null ? { 'header': NullableHeader, 'theme': '#7100FF22' } : null),
-            for (final (int Idx, Ast_Packet<T> Pkt) in (IncomingPackets ?? <Ast_Packet<T>>[]).indexed)
-                if
+            for (final (int Idx, Ast_Packet <T> Pkt) in (IncomingPackets ?? <Ast_Packet <T>>[]).indexed)
+            if
+            (
+                Pkt case Matrix_Payload_Packet <T>
                 (
-                    Pkt case Matrix_Payload_Packet<T>
-                    (
-                        PacketId: final String PId && != '',
-                        RetryCount: var int Retries && (>= 0 && <= 100),
-                        Spectrum: final Telemetry_Spectrum Spec,
-                        Matrix: final Zero_Cost_Matrix<T> Mat
-                    )
-                    when StrictMode || Retries != -1
+                    PacketId: final String PId && != '',
+                    RetryCount: var int Retries && (>= 0 && <= 100),
+                    Spectrum: final Telemetry_Spectrum Spec,
+                    Matrix: final Zero_Cost_Matrix <T> Mat
                 )
-                ...[{
-                    'index': Idx,
-                    'packetId': PId,
-                    ?NullableHeader: ?ActiveTone?.HexAccent,
-                    'tags':
+                when StrictMode || Retries != - 1
+            )
+            ...
+            [{
+                'index': Idx,
+                'packetId': PId,
+                ?NullableHeader: ?ActiveTone?.HexAccent,
+                'tags':
+                [
+                    ?NullableHeader,
+                    ...?NullableTags,
+                    for (int RetryIdx = 0; RetryIdx < (Retries == 0 ? 1 : Retries); RetryIdx++)
+                    if (RetryIdx.isEven)
+                    switch ((Spec, RetryIdx))
+                    {
+                        (.VioletCore, 0) => 'PRIMARY_ZERO_#7100FF',
+                        (.DeepOrangeAlert || .CrimsonFault, > 2 && <= 10) => 'HIGH_RETRY_#FF1744',
+                        (final Telemetry_Spectrum S, final int Count) when S.IsCritical => 'CRIT_${S.name}_$Count',
+                        _ => 'STD_${Mat[0]}'
+                    }
+                    else
+                    ...
                     [
-                        ?NullableHeader,
-                        ...?NullableTags,
-                        for (int RetryIdx = 0; RetryIdx < (Retries == 0 ? 1 : Retries); RetryIdx++)
-                            if (RetryIdx.isEven)
-                                switch ((Spec, RetryIdx))
+                        'ODD_BRANCH_$RetryIdx',
+                        if (RetryIdx == 3)
+                        (
+                            ()
+                            {
+                                try
                                 {
-                                    (.VioletCore, 0) => 'PRIMARY_ZERO_#7100FF',
-                                    (.DeepOrangeAlert || .CrimsonFault, > 2 && <= 10) => 'HIGH_RETRY_#FF1744',
-                                    (final Telemetry_Spectrum S, final int Count) when S.IsCritical => 'CRIT_${S.name}_$Count',
-                                    _ => 'STD_${Mat[0]}'
+                                    final Buffer = StringBuffer()
+                                        ..write('START[')
+                                        ..writeAll
+                                        (
+                                            [
+                                                for (var Key in [1, 2, 3])
+                                                switch (Key)
+                                                {
+                                                    1 => 'ONE:#3D5AFE',
+                                                    2 => 'TWO:#00E676',
+                                                    _ => 'OTHER:#00BFFF'
+                                                }
+                                            ],
+                                            '|'
+                                        )
+                                        ..write(']');
+                                    return Buffer.toString();
                                 }
-                            else
-                            ...[
-                                'ODD_BRANCH_$RetryIdx',
-                                if (RetryIdx == 3)
-                                    (()
-                                    {
-                                        try
-                                        {
-                                            final Buffer = StringBuffer()
-                                                ..write('START[')
-                                                ..writeAll
-                                                (
-                                                    [
-                                                        for (var Key in [1, 2, 3])
-                                                            switch (Key)
-                                                            {
-                                                                1 => 'ONE:#3D5AFE',
-                                                                2 => 'TWO:#00E676',
-                                                                _ => 'OTHER:#00BFFF'
-                                                            }
-                                                    ],
-                                                    '|'
-                                                )
-                                                ..write(']');
-                                            return Buffer.toString();
-                                        }
-                                        on FormatException catch (Fault, Stack) { return 'FMT_ERR:$Fault/$Stack'; }
-                                        catch (_, _) { return 'UNKNOWN_ERR:#FF1744'; }
-                                        finally {}
-                                    })()
-                            ]
+                                on FormatException catch (Fault, Stack) { return 'FMT_ERR:$Fault/$Stack'; }
+                                catch (_, _) { return 'UNKNOWN_ERR:#FF1744'; }
+                                finally {}
+                            }
+                        )()
                     ]
-                }]
-                else if (Pkt case Ast_Packet<T>(:final PacketId, :final Spectrum))
-                {
-                    'fallbackId': PacketId,
-                    'fallbackTone': Spectrum.BadgeLabel,
-                    'groupedData': GroupedSoleChildChain,
-                    'interruptedData': InterruptedBoundaryMatrix
-                }
+                ]
+            }]
+            else if (Pkt case Ast_Packet <T>(:final PacketId, :final Spectrum))
+            {
+                'fallbackId': PacketId,
+                'fallbackTone': Spectrum.BadgeLabel,
+                'groupedData': GroupedSoleChildChain,
+                'interruptedData': InterruptedBoundaryMatrix
+            }
         ];
 
         // 6. Multiline Strings & Internal `${ ... }` LAFS Code Containers
         final String InterpolatedNightmare =
-            'ADJACENT_HEAD_'
-            "SECOND_PART_${OptCode}_"
-            r'RAW_SEGMENT_WITH_NO_INTERP_${ignored}\n'
-            '''
+        'ADJACENT_HEAD_'
+        "SECOND_PART_${OptCode}_"
+        r'RAW_SEGMENT_WITH_NO_INTERP_${ignored}\n'
+        '''
     MULTILINE_SINGLE_QUOTE_BLOCK
     ColorToken: #7100FF
     NestedInterpolation: ${
         (
             ()
             {
-                final InnerMap = <String, List<(int, { String Hex })>>
+                final InnerMap = <String, List <(int, { String Hex })>>
                 {
                     'rowA': [(1, Hex: '#7100FF'), (2, Hex: '#FC6A03')],
                     'rowB':
@@ -1159,12 +1143,12 @@ class Slop_Orchestrator
                         (
                             Num * 10,
                             Hex:
-                                switch (Num)
-                                {
-                                    0 => '#00E676',
-                                    1 => '#00BFFF',
-                                    _ => '#FF1744'
-                                }
+                            switch (Num)
+                            {
+                                0 => '#00E676',
+                                1 => '#00BFFF',
+                                _ => '#FF1744'
+                            }
                         )
                     ]
                 };
@@ -1174,14 +1158,14 @@ class Slop_Orchestrator
     }
     EndOfMultilineBlock
     '''
-            """
+        """
     DOUBLE_QUOTE_MULTILINE_WITH_EMBEDDED_EXPRESSION: ${
         MutatedStreamOutput.isEmpty ? "EMPTY_#FF1744" : "COUNT_${MutatedStreamOutput.length}_#00E676"
     }
     """;
 
         // 7. Deep Cascade Chain with Detached Multiline Argument Containers
-        final Map<String, dynamic>? CascadeVictim = <String, dynamic>{ 'init': _InstanceTag, 'str': InterpolatedNightmare }
+        final Map <String, dynamic>? CascadeVictim = <String, dynamic> { 'init': _InstanceTag, 'str': InterpolatedNightmare }
             ?..['step1'] =
             ([({
                 'cascadeInner':
@@ -1198,12 +1182,14 @@ class Slop_Orchestrator
                 (
                     'streamDump',
                     await
-                    (() async
-                    {
-                        final Collected = <String>[];
-                        await for (final Chunk in _GenerateTortureStream(OptCode)) { Collected.add(Chunk); }
-                        return Collected;
-                    })()
+                    (
+                        () async
+                        {
+                            final Collected = <String>[];
+                            await for (final Chunk in _GenerateTortureStream(OptCode)) { Collected.add(Chunk); }
+                            return Collected;
+                        }
+                    )()
                 )
             ]);
 
@@ -1211,9 +1197,9 @@ class Slop_Orchestrator
     }
 
     // 8. Sync* and Async* Recursive Generators with Pure LAFS Symmetry
-    Stream<String> _GenerateTortureStream(int Seed) async*
+    Stream <String> _GenerateTortureStream(int Seed) async*
     {
-        Iterable<int> SyncRange(int Start, int Count) sync*
+        Iterable <int> SyncRange(int Start, int Count) sync*
         {
             if (Count <= 0) { return; }
             yield Start;
@@ -1223,13 +1209,13 @@ class Slop_Orchestrator
         for (final Val in SyncRange(Seed, 3))
         {
             yield
-                switch (Val)
-                {
-                    <= 0 => 'NEG_OR_ZERO:#FF1744',
-                    1 || 2 => 'LOW_SEED:#FC6A03',
-                    var OddVal when OddVal.isOdd => 'ODD_SEED_$OddVal:#7100FF',
-                    _ => 'EVEN_SEED:#00E676'
-                };
+            switch (Val)
+            {
+                <= 0 => 'NEG_OR_ZERO:#FF1744',
+                1 || 2 => 'LOW_SEED:#FC6A03',
+                var OddVal when OddVal.isOdd => 'ODD_SEED_$OddVal:#7100FF',
+                _ => 'EVEN_SEED:#00E676'
+            };
         }
     }
 }
@@ -1261,23 +1247,44 @@ In K&R Dart, every opening parenthesis `(` and bracket `[` is glued to the right
 
 ```dart
 // ❌ STANDARD K&R DART: Diagonal Opening Drift + Blind Closing Pyramid
-return Scaffold(                                  // '(' is at Col 15
-  backgroundColor: const Color(0xFF7100FF),
-  body: SafeArea(                                 // '(' is at Col 16
-    child: Padding(                               // '(' is at Col 18
-      padding: const EdgeInsets.all(16),
-      child: Column(                              // '(' is at Col 19
-        children: [                               // '[' is at Col 18
-          Container(                              // '(' is at Col 19
-            decoration: BoxDecoration(            // '(' is at Col 37
-              color: const Color(0xFF3D5AFE),
-            ),                                    // ')' is at Col 12 (Skew: 25 cols!)
-          ),                                      // ')' is at Col 10 (Skew: 9 cols!)
-        ],                                        // ']' is at Col 8  (Skew: 10 cols!)
-      ),                                          // ')' is at Col 6  (Skew: 13 cols!)
-    ),                                            // ')' is at Col 4  (Skew: 14 cols!)
-  ),                                              // ')' is at Col 2  (Skew: 14 cols!)
-);                                                // ')' is at Col 0  (Skew: 15 cols!)
+return Scaffold
+(
+    // '(' is at Col 15
+    backgroundColor: const Color(0xFF7100FF),
+    body: SafeArea
+    (
+        // '(' is at Col 16
+        child: Padding
+        (
+            // '(' is at Col 18
+            padding: const EdgeInsets.all(16),
+            child: Column
+            (
+                // '(' is at Col 19
+                children:
+                [
+                    // '[' is at Col 18
+                    Container
+                    (
+                        // '(' is at Col 19
+                        decoration: BoxDecoration
+                        (
+                            // '(' is at Col 37
+                            color: const Color(0xFF3D5AFE),
+                        ),
+                        // ')' is at Col 12 (Skew: 25 cols!)
+                    ),
+                    // ')' is at Col 10 (Skew: 9 cols!)
+                ],
+                // ']' is at Col 8  (Skew: 10 cols!)
+            ),
+            // ')' is at Col 6  (Skew: 13 cols!)
+        ),
+        // ')' is at Col 4  (Skew: 14 cols!)
+    ),
+    // ')' is at Col 2  (Skew: 14 cols!)
+);
+// ')' is at Col 0  (Skew: 15 cols!)
 ```
 
 Look at the bottom 7 lines of that snippet:
@@ -1341,13 +1348,7 @@ Standard `dart format` combines K&R tail-hugging with a 1970s **80-column punch-
 
 ```dart
 // ❌ K&R + 80-Column Limit: 6 lines for a trivial 2-property box!
-Container(
-  padding: const EdgeInsets.symmetric(
-    horizontal: 24.0,
-    vertical: 12.0,
-  ),
-  color: const Color(0xFF7100FF),
-)
+Container(padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0,), color: const Color(0xFF7100FF),)
 ```
 
 ---
@@ -1365,44 +1366,40 @@ Now compare that exact same Dart/Flutter widget tree when formatted under **LAFS
 Widget BuildDashboardView(Build_Context Context)
 {
     return
-        Scaffold
+    Scaffold
+    (
+        BackgroundColor: const Color(0xFF7100FF),
+        Body:
+        SafeArea
         (
-            BackgroundColor: const Color(0xFF7100FF),
-            Body:
-                SafeArea
+            Child:
+            Padding
+            (
+                Padding: const EdgeInsets.All(16),
+                Child:
+                Column
                 (
-                    Child:
-                        Padding
-                        (
-                            Padding: const EdgeInsets.All(16),
-                            Child:
-                                Column
-                                (
-                                    Children:
-                                    [
-                                        // Fits 160-col Canvas -> Clean 1-line State 1 Monolith!
-                                        Container(Decoration: const BoxDecoration(Color: Color(0xFF3D5AFE)), Child: const Text('Header_#FFFFFF')),
+                    Children:
+                    [
+                        // Fits 160-col Canvas -> Clean 1-line State 1 Monolith!
+                        Container(Decoration: const BoxDecoration(Color: Color(0xFF3D5AFE)), Child: const Text('Header_#FFFFFF')),
 
-                                        // Multiline Sibling -> Pure Vertical Pillar Alignment (X_open == X_close)
-                                        Container
-                                        (
-                                            Padding: const EdgeInsets.Symmetric(Horizontal: 24.0, Vertical: 12.0),
-                                            Decoration: const BoxDecoration(Color: Color(0xFF00E676)),
-                                            Child:
-                                                Row
-                                                (
-                                                    Children:
-                                                    [
-                                                        const Icon(Icons.Verified, Color: Color(0xFF00BFFF)),
-                                                        const Text('Status: Operational (#00E676)')
-                                                    ]
-                                                )
-                                        )
-                                    ]
-                                )
+                        // Multiline Sibling -> Pure Vertical Pillar Alignment (X_open == X_close)
+                        Container
+                        (
+                            Padding: const EdgeInsets.Symmetric(Horizontal: 24.0, Vertical: 12.0),
+                            Decoration: const BoxDecoration(Color: Color(0xFF00E676)),
+                            Child:
+                            Row
+                            (
+                                Children: [const Icon(Icons.Verified, Color: Color(0xFF00BFFF)), const Text('Status: Operational (#00E676)')]
+                            )
                         )
+                    ]
                 )
-        );
+            )
+        )
+    );
 }
 ```
 
@@ -1525,10 +1522,7 @@ To replace legacy formatters (`dart format`, `prettier`, `clang-format`, `rustfm
     "CanvasTier": 160,
     "IndentationWidth": 4,
     "MonolithComplexityBudget":
-    {
-        "MaxStatementsPerBlock": 4,
-        "MaxNestingDepth": 2
-    },
+    { "MaxStatementsPerBlock": 4, "MaxNestingDepth": 2 },
     "ContainerRules":
     {
         "EmptyContainerPolicy": "StrictMonolithZeroPadding",
@@ -1592,325 +1586,276 @@ Below is `lafs_ts_js_torture_test_slop.tsx`—a **horrifically formatted K&R / P
 // ============================================================================
 
 // 1. TORTURE: Deeply Nested Conditional, Mapped, & Template Literal Types with K&R Hugging
-export type Nightmare_Type_Matrix<
-  const T extends readonly Record<
-    string,
-    {
-      readonly id: number;
-      readonly tone: `#${string}`;
-      readonly nested?: readonly [
-        number,
-        ...Array<{
-          tag: string;
-          active: boolean;
-        }>
-      ];
-    }
-  >[],
-  U extends keyof T[number] = keyof T[number]
-> = T extends readonly [
-  infer Head extends Record<string, unknown>,
-  ...infer Tail extends readonly Record<string, unknown>[]
-] ? {
-    readonly [K in keyof Head as K extends string
-      ? `get_${Capitalize<K>}`
-      : never]: Head[K] extends {
-      readonly tone: infer ToneHex extends string;
-    } ? (
-        input: ToneHex,
-        options?: {
-          readonly strict: boolean;
-          readonly fallback: '#7100FF' | '#FC6A03' | '#FF1744';
+export type Nightmare_Type_Matrix
+<
+    const T extends readonly Record
+    <
+        string,
+        {
+            readonly id: number;
+            readonly tone: `#${string}`;
+            readonly nested?: readonly [number, ...Array<{ tag: string; active: boolean; }>];
         }
-      ) => Promise<
-        ReadonlyArray<{
-          readonly resolved: ToneHex;
-          readonly tailMatrix: Nightmare_Type_Matrix<Tail>;
-        }>
-      > : never;
-  } : {
-    readonly emptyMarker: '#00BFFF';
-  };
+    >[],
+    U extends keyof T[number] = keyof T[number]
+> = T extends readonly
+[
+    infer Head extends Record<string, unknown>,
+    ...infer Tail extends readonly Record<string, unknown>[]
+]
+?
+{
+    readonly [K in keyof Head as K extends string ? `get_${Capitalize<K>}` : never]:
+        Head[K] extends { readonly tone: infer ToneHex extends string; }
+        ?
+        (
+            input: ToneHex,
+            options?: { readonly strict: boolean; readonly fallback: '#7100FF' | '#FC6A03' | '#FF1744'; }
+        ) => Promise<ReadonlyArray<{ readonly resolved: ToneHex; readonly tailMatrix: Nightmare_Type_Matrix<Tail>; }>>: never;
+}
+: { readonly emptyMarker: '#00BFFF'; };
 
 // 2. TORTURE: Enum & Freeze Invariants with Mixed K&R Clumping
-export const enum Telemetry_Spectrum_Code {
-  VioletCore = '#7100FF',
-  VioletAlpha = '#7100FF22',
-  DeepOrangeWarn = '#FC6A03',
-  CrimsonFault = '#FF1744',
-  AzureStream = '#00BFFF',
-  EmeraldPass = '#00E676',
-  LavenderToken = '#C77DFF',
-  IndigoAnchor = '#3D5AFE'
+export const enum Telemetry_Spectrum_Code
+{
+    VioletCore = '#7100FF',
+    VioletAlpha = '#7100FF22',
+    DeepOrangeWarn = '#FC6A03',
+    CrimsonFault = '#FF1744',
+    AzureStream = '#00BFFF',
+    EmeraldPass = '#00E676',
+    LavenderToken = '#C77DFF',
+    IndigoAnchor = '#3D5AFE'
 }
 
-export const GLOBAL_SPECTRUM_CONFIG = Object.freeze({
-  maxRetries: 1_000_000,
-  palette: [
-    Telemetry_Spectrum_Code.VioletCore,
-    Telemetry_Spectrum_Code.DeepOrangeWarn,
-    Telemetry_Spectrum_Code.CrimsonFault,
-    Telemetry_Spectrum_Code.EmeraldPass
-  ] as const,
-  thresholds: {
-    low: 0x00_71_00_FF,
-    high: 0x00_FF_17_44
-  }}) satisfies Readonly<{
-  maxRetries: number;
-  palette: readonly Telemetry_Spectrum_Code[];
-  thresholds: {
-    low: number;
-    high: number;
-  };
-}>;
+export const GLOBAL_SPECTRUM_CONFIG = Object.freeze
+({
+    maxRetries: 1_000_000,
+    palette:
+    [
+        Telemetry_Spectrum_Code.VioletCore,
+        Telemetry_Spectrum_Code.DeepOrangeWarn,
+        Telemetry_Spectrum_Code.CrimsonFault,
+        Telemetry_Spectrum_Code.EmeraldPass
+    ]
+    as const,
+    thresholds: { low: 0x00_71_00_FF, high: 0x00_FF_17_44 }
+})
+satisfies Readonly<{ maxRetries: number; palette: readonly Telemetry_Spectrum_Code[]; thresholds: { low: number; high: number; }; }>;
 
 // 3. TORTURE: Stage 3 Decorators, Private `#Fields`, `static {}` Blocks,
 // Prematurely Exploded Constructors, & Single-Line Complexity Budget Breakers
-function traceDecorator<This, Args extends any[], Return>(
-  accentHex: string
-) {
-  return function (
-    target: (this: This, ...args: Args) => Return,
-    context: ClassMethodDecoratorContext<
-      This,
-      (this: This, ...args: Args) => Return
-    >
-  ) {
-    return function (this: This, ...args: Args): Return {
-      console.log(`[TRACE:${String(context.name)}:${accentHex}]`);
-      return target.apply(this, args); }; }; }
-
-export class Slop_Engine_Controller<
-  const TPayload extends {
-    readonly packetId: string;
-    readonly spectrum: Telemetry_Spectrum_Code;
-  }
-> {
-  #internalSecretMask: number = 0xFF_71_00_FF;
-  accessor retryCounter: number = 0;
-
-  static #registryCache = new Map<string, string>();
-  static {
-    try {
-      this.#registryCache.set(
-        'DEFAULT_CORE',
-        Telemetry_Spectrum_Code.VioletCore
-      );
-    } catch {
-      // Empty catch K&R hug
-    }
-  }
-
-  // ILLEGAL PREMATURE EXPLOSION: 8 lines for a trivial 2-parameter empty constructor!
-  constructor(
-    private readonly instanceId: string,
-    private readonly defaultSpectrum: Telemetry_Spectrum_Code = Telemetry_Spectrum_Code.VioletCore
-  ) {
-  }
-
-  // ILLEGAL COMPLEXITY BUDGET BREACH: 6 statements + 3 nested levels crammed on 1 line!
-  public monolithBudgetBreaker(limit: number): number { let a = 1; let b = 2; let c = 3; let d = 4; let e = 5; if (limit > 0) { for (let i = 0; i < limit; i++) { if (i % 2 === 0) { a += i; b -= i; c *= 2; d >>= 1; e ^= a; } } } return a + b + c + d + e; }
-
-  // Prematurely exploded trivial getter & empty method:
-  public get
-  secretMask(
-  ): number {
-    return this.#internalSecretMask;
-  }
-
-  public noopAudit(
-    auditor: string,
-    timestamp: number
-  ): void {
-  }
-
-  // 4. TORTURE: Async Generator with ASI `yield` Hazards, `await using`,
-  // Sole-Child Chains, Interrupted Boundary Runs, & Backtick Clinging
-  @traceDecorator('#7100FF')
-  public async *executeAbyssalPipeline<
-    const U extends readonly TPayload[]
-  >(
-    incomingBatch: U,
-    options: {
-      readonly strictMode: boolean;
-      readonly customHeader?: string;
-      readonly transformFn?: (
-        item: TPayload,
-        idx: number
-      ) => [
-        string,
-        {
-          readonly verified: boolean;
-          readonly hex: string;
-        }
-      ];
-    }
-  ): AsyncGenerator<
+function traceDecorator<This, Args extends any[], Return>(accentHex: string)
+{
+    return function
+    (
+        target: (this: This, ...args: Args) => Return,
+        context: ClassMethodDecoratorContext<This, (this: This, ...args: Args) => Return>
+    )
     {
-      readonly batchId: string;
-      readonly payloadMatrix: unknown;
-      readonly shaderSource: string;
-    },
-    void,
-    unknown
-  > {
-    await using disposableScope = {
-      [Symbol.asyncDispose]: async () => {
-        this.retryCounter = 0; }};
+        return function (this: This, ...args: Args): Return
+        { console.log(`[TRACE:${String(context.name)}:${accentHex}]`); return target.apply(this, args); };
+    };
+}
 
-    // Uninterrupted Sole-Child Chain (Should fuse into `[({` and `)}]` in LAFS State 2!):
-    const groupedSoleChildChain = [({
-      alphaLayer: [({
-        deepPayloadTuple: [
-          1_000_000,
-          '#7100FF',
-          {
-            nestedRecord: [999_999],
-            approvedPalette: [
-              '#7100FF',
-              '#FC6A03',
-              '#FF1744',
-              '#00BFFF',
-              '#00E676'
-            ] as const
-          }
-        ] as const
-      })]
-    })];
+export class Slop_Engine_Controller<const TPayload extends { readonly packetId: string; readonly spectrum: Telemetry_Spectrum_Code; }>
+{
+    #internalSecretMask: number = 0xFF_71_00_FF;
+    accessor retryCounter: number = 0;
 
-    // Interrupted Boundary Run (Tests LAFS Law of Zero Vertical Propagation!):
-    const interruptedBoundaryMatrix = [({
-      // Significant Content (S) comment interrupts the next boundary run
-      interruptedStage: (() => {
-        const computedMask = this.#internalSecretMask ^ 0x00_3D_5A_FE;
-        return [
-          computedMask,
-          [{
-            reGroupedDeepInner: (() => [({
-              coreValue: computedMask * 2,
-              accentHex: '#C77DFF',
-              status: 'ACTIVE_#00E676'
-            })])()
-          }]
-        ]; })()
-    })];
+    static #registryCache = new Map<string, string>();
+    static
+    {
+        try { this.#registryCache.set('DEFAULT_CORE', Telemetry_Spectrum_Code.VioletCore); }
+        catch
+        {
+            // Empty catch K&R hug
+        }
+    }
 
-    // Multiline Template Literal with Backtick Hugging & Nested `${ ... }` Slop:
-    const embeddedGlslShader = `
+    // ILLEGAL PREMATURE EXPLOSION: 8 lines for a trivial 2-parameter empty constructor!
+    constructor(private readonly instanceId: string, private readonly defaultSpectrum: Telemetry_Spectrum_Code = Telemetry_Spectrum_Code.VioletCore) {}
+
+    // ILLEGAL COMPLEXITY BUDGET BREACH: 6 statements + 3 nested levels crammed on 1 line!
+    public monolithBudgetBreaker(limit: number): number
+    {
+        let a = 1;
+        let b = 2;
+        let c = 3;
+        let d = 4;
+        let e = 5;
+        if (limit > 0)
+        {
+            for (let i = 0; i < limit; i++) { if (i % 2 === 0) { a += i; b -= i; c *= 2; d >>= 1; e ^= a; } }
+        }
+        return a + b + c + d + e;
+    }
+
+    // Prematurely exploded trivial getter & empty method:
+    public get
+    secretMask(): number
+    { return this.#internalSecretMask; }
+
+    public noopAudit(auditor: string, timestamp: number): void
+    {}
+
+    // 4. TORTURE: Async Generator with ASI `yield` Hazards, `await using`,
+    // Sole-Child Chains, Interrupted Boundary Runs, & Backtick Clinging
+    @ traceDecorator('#7100FF')
+    public async * executeAbyssalPipeline<const U extends readonly TPayload[]>
+    (
+        incomingBatch: U,
+        options:
+        {
+            readonly strictMode: boolean;
+            readonly customHeader?: string;
+            readonly transformFn?: (item: TPayload, idx: number) => [string, { readonly verified: boolean; readonly hex: string; }];
+        }
+    ): AsyncGenerator<{ readonly batchId: string; readonly payloadMatrix: unknown; readonly shaderSource: string; }, void, unknown>
+    {
+        await using disposableScope = { [Symbol.asyncDispose]: async() => { this.retryCounter = 0; } };
+
+        // Uninterrupted Sole-Child Chain (Should fuse into `[({` and `)}]` in LAFS State 2!):
+        const groupedSoleChildChain =
+        [({
+            alphaLayer:
+            [({
+                deepPayloadTuple:
+                [
+                    1_000_000,
+                    '#7100FF',
+                    { nestedRecord: [999_999], approvedPalette: ['#7100FF', '#FC6A03', '#FF1744', '#00BFFF', '#00E676'] as const }
+                ]
+                as const
+            })]
+        })];
+
+        // Interrupted Boundary Run (Tests LAFS Law of Zero Vertical Propagation!):
+        const interruptedBoundaryMatrix =
+        [({
+            // Significant Content (S) comment interrupts the next boundary run
+            interruptedStage:
+            (
+                () =>
+                {
+                    const computedMask = this.#internalSecretMask ^ 0x00_3D_5A_FE;
+                    return [
+                               computedMask,
+                               [ { reGroupedDeepInner: ( () => [ ( { coreValue: computedMask * 2, accentHex: '#C77DFF', status: 'ACTIVE_#00E676' })])() }]
+                           ];
+                }
+            )()
+        })];
+
+        // Multiline Template Literal with Backtick Hugging & Nested `${ ... }` Slop:
+        const embeddedGlslShader =
+        `
       precision highp float;
       uniform vec4 uPrimaryAccent;
       void main(void) {
         vec4 baseColor = vec4(${
-          (() => {
-            const channelMap = {
-              r: 113.0 / 255.0,
-              g: 0.0,
-              b: 255.0 / 255.0,
-              a: options.strictMode
-                ? 1.0
-                : 0.22
-            };
-            return `${channelMap.r}, ${channelMap.g}, ${channelMap.b}, ${channelMap.a}`; })()
+            (
+                () =>
+                {
+                    const channelMap = { r: 113.0 / 255.0, g: 0.0, b: 255.0 / 255.0, a: options.strictMode ? 1.0 : 0.22 };
+                    return `${channelMap.r}, ${channelMap.g}, ${channelMap.b}, ${channelMap.a}`;
+                }
+            )()
         });
         gl_FragColor = baseColor * uPrimaryAccent;
       }`;
 
-    // Deeply nested Destructuring + Array Pipeline + ASI `yield` Hazard:
-    for (const [
-      batchIndex,
-      {
-        packetId,
-        spectrum = this.defaultSpectrum
-      }
-    ] of incomingBatch.entries()) {
-      if (!packetId) {
-        // ASI Throw Hazard:
-        throw (
-          new Error(
-            `Invalid packet at index ${batchIndex} [Code: #FF1744]`
-          )
-        ); }
+        // Deeply nested Destructuring + Array Pipeline + ASI `yield` Hazard:
+        for (const [batchIndex, { packetId, spectrum = this.defaultSpectrum }] of incomingBatch.entries())
+        {
+            if (!packetId)
+            {
+                // ASI Throw Hazard:
+                throw (new Error(`Invalid packet at index ${batchIndex} [Code: #FF1744]`));
+            }
 
-      const transformedResult = incomingBatch
-        .filter((candidate) => Boolean(candidate.packetId))
-        .map((candidate, idx) => ({
-          key: `${candidate.packetId}_${idx}`,
-          resolvedHex: candidate.spectrum === Telemetry_Spectrum_Code.CrimsonFault
-            ? '#FF1744'
-            : candidate.spectrum === Telemetry_Spectrum_Code.DeepOrangeWarn
-              ? '#FC6A03'
-              : '#7100FF',
-          diagnosticDump: (() => {
-            try {
-              switch (candidate.spectrum) {
-                case Telemetry_Spectrum_Code.VioletCore:
-                  return {
-                    tier: 'PRIMARY',
-                    code: '#7100FF',
-                    grouped: groupedSoleChildChain
-                  };
-                case Telemetry_Spectrum_Code.CrimsonFault:
-                  return {
-                    tier: 'CRITICAL',
-                    code: '#FF1744',
-                    interrupted: interruptedBoundaryMatrix
-                  };
-                default:
-                  return {
-                    tier: 'STANDARD',
-                    code: '#00E676',
-                    interrupted: null
-                  }; }
-            } catch (err) {
-              return {
-                tier: 'FAULT',
-                code: '#FF1744',
-                error: String(err)
-              }; }
-          })()}));
+            const transformedResult = incomingBatch
+            .filter( (candidate) => Boolean(candidate.packetId))
+            .map
+            (
+                (candidate, idx) =>
+                ({
+                    key: `${candidate.packetId}_${idx}`,
+                    resolvedHex: candidate.spectrum === Telemetry_Spectrum_Code.CrimsonFault
+                    ? '#FF1744'
+                    : candidate.spectrum === Telemetry_Spectrum_Code.DeepOrangeWarn
+                    ? '#FC6A03'
+                    : '#7100FF',
+                    diagnosticDump:
+                    (
+                        () =>
+                        {
+                            try
+                            {
+                                switch (candidate.spectrum)
+                                {
+                                    case Telemetry_Spectrum_Code.VioletCore:
+                                    return { tier: 'PRIMARY', code: '#7100FF', grouped: groupedSoleChildChain };
+                                    case Telemetry_Spectrum_Code.CrimsonFault:
+                                    return { tier: 'CRITICAL', code: '#FF1744', interrupted: interruptedBoundaryMatrix };
+                                    default:
+                                    return { tier: 'STANDARD', code: '#00E676', interrupted: null };
+                                }
+                            }
+                            catch (err) { return { tier: 'FAULT', code: '#FF1744', error: String(err) }; }
+                        }
+                    )()
+                })
+            );
 
-      // ASI Yield Hazard with K&R Clumping:
-      yield ({
-        batchId: `${this.instanceId}_${packetId}_${spectrum}`,
-        payloadMatrix: transformedResult,
-        shaderSource: embeddedGlslShader
-      }); } }
-
-  // 5. TORTURE: JSX / TSX Component with ASI `return (` Hazard, Misaligned `=`
-  // Attributes, Ternary Pyramids, & Closing Tag Clumping
-  public renderDiagnosticsPanel(
-    props: {
-      readonly title: string;
-      readonly isOnline: boolean;
-      readonly items: ReadonlyArray<{
-        readonly id: string;
-        readonly label: string;
-        readonly hex: string;
-      }>;
+            // ASI Yield Hazard with K&R Clumping:
+            yield ( { batchId: `${this.instanceId}_${packetId}_${spectrum}`, payloadMatrix: transformedResult, shaderSource: embeddedGlslShader });
+        }
     }
-  ) {
-    // ASI Return Hazard + JSX Misaligned Attributes + Closing Clump
-    return (
-      <section className="DiagnosticsContainer"
-        data-engine-id={this.instanceId}
-        data-theme-primary="#7100FF"
-        data-theme-warning="#FC6A03"
-        data-online-status={props.isOnline ? "ONLINE_#00E676" : "OFFLINE_#FF1744"}>
-        <header className="HeaderBar" title="System Telemetry Header"
-          data-count={props.items.length}
-          data-mask={this.#internalSecretMask}>
-          <h1>{props.title}</h1>
-        </header>
-        <div className="ContentGrid">
-          {props.items.map((item, idx) => (
-            <article key={item.id}
-              data-item-index={idx}
-              data-item-hex={item.hex}
-              data-item-label={item.label}>
-              <span>{item.label}</span>
-            </article>))}
-        </div>
-      </section>); }
+
+    // 5. TORTURE: JSX / TSX Component with ASI `return (` Hazard, Misaligned `=`
+    // Attributes, Ternary Pyramids, & Closing Tag Clumping
+    public renderDiagnosticsPanel
+    (
+        props:
+        {
+            readonly title: string;
+            readonly isOnline: boolean;
+            readonly items: ReadonlyArray<{ readonly id: string; readonly label: string; readonly hex: string; }>;
+        }
+    )
+    {
+        // ASI Return Hazard + JSX Misaligned Attributes + Closing Clump
+        return (
+                   <section className = "DiagnosticsContainer"
+                       data-engine-id     = { this.instanceId }
+                       data-theme-primary = "#7100FF"
+                       data-theme-warning = "#FC6A03"
+                       data-online-status = { props.isOnline ? "ONLINE_#00E676" : "OFFLINE_#FF1744" }>
+                       <header className = "HeaderBar" title = "System Telemetry Header"
+                           data-count = { props.items.length }
+                           data-mask  = { this.#internalSecretMask }>
+                           <h1>{ props.title }</h1>
+                       </header>
+                       <div className = "ContentGrid">
+                           {
+                               props.items.map
+                               (
+                                   (item, idx) =>
+                                   (
+                                       <article key = { item.id }
+                                           data-item-index = { idx }
+                                           data-item-hex   = { item.hex }
+                                           data-item-label = { item.label }>
+                                           <span>{ item.label }</span>
+                                       </article>
+                                   )
+                               )
+                           }
+                       </div>
+                   </section>
+               );
+    }
 }
 ```
 
@@ -1946,19 +1891,23 @@ export type Nightmare_Type_Matrix
     >[],
     U extends keyof T[number] = keyof T[number]
 > =
-    T extends readonly [infer Head extends Record<string, unknown>, ...infer Tail extends readonly Record<string, unknown>[]]
-    ?
-    {
-        readonly [K in keyof Head as K extends string ? `Get_${Capitalize<K>}` : never]:
-            Head[K] extends { readonly Tone: infer ToneHex extends string }
-            ?
-                (
-                    Input: ToneHex,
-                    Options?: { readonly Strict: boolean; readonly Fallback: '#7100FF' | '#FC6A03' | '#FF1744' }
-                ) => Promise<ReadonlyArray<{ readonly Resolved: ToneHex; readonly TailMatrix: Nightmare_Type_Matrix<Tail> }>>
-            : never;
-    }
-    : { readonly EmptyMarker: '#00BFFF' };
+T extends readonly
+[
+    infer Head extends Record<string, unknown>,
+    ...infer Tail extends readonly Record<string, unknown>[]
+]
+?
+{
+    readonly [K in keyof Head as K extends string ? `Get_${Capitalize<K>}` : never]:
+        Head[K] extends { readonly Tone: infer ToneHex extends string }
+        ?
+        (
+            Input: ToneHex,
+            Options?: { readonly Strict: boolean; readonly Fallback: '#7100FF' | '#FC6A03' | '#FF1744' }
+        ) => Promise<ReadonlyArray<{ readonly Resolved: ToneHex; readonly TailMatrix: Nightmare_Type_Matrix<Tail> }>>
+        : never;
+}
+: { readonly EmptyMarker: '#00BFFF' };
 
 // 2. Enum & Frozen Constant Invariants
 export const enum Telemetry_Spectrum_Code
@@ -1975,37 +1924,34 @@ export const enum Telemetry_Spectrum_Code
 
 // State 2 Alloyed Boundaries `({` and `})` on `Object.freeze`:
 export const GLOBAL_SPECTRUM_CONFIG =
-    Object.freeze
-    ({
-        MaxRetries: 1_000_000,
-        Palette:
-        [
-            Telemetry_Spectrum_Code.VioletCore,
-            Telemetry_Spectrum_Code.DeepOrangeWarn,
-            Telemetry_Spectrum_Code.CrimsonFault,
-            Telemetry_Spectrum_Code.EmeraldPass
-        ] as const,
-        Thresholds: { Low: 0x00_71_00_FF, High: 0x00_FF_17_44 }
-    })
-    satisfies Readonly
-    <{
-        MaxRetries: number;
-        Palette: readonly Telemetry_Spectrum_Code[];
-        Thresholds: { Low: number; High: number };
-    }>;
+Object.freeze
+({
+    MaxRetries: 1_000_000,
+    Palette:
+    [
+        Telemetry_Spectrum_Code.VioletCore,
+        Telemetry_Spectrum_Code.DeepOrangeWarn,
+        Telemetry_Spectrum_Code.CrimsonFault,
+        Telemetry_Spectrum_Code.EmeraldPass
+    ]
+    as const,
+    Thresholds: { Low: 0x00_71_00_FF, High: 0x00_FF_17_44 }
+})
+satisfies Readonly<{ MaxRetries: number; Palette: readonly Telemetry_Spectrum_Code[]; Thresholds: { Low: number; High: number }; }>;
 
 // 3. Stage 3 Decorator with LAFS Section 6.1 Column-Anchored Hybrid for `return`
 function TraceDecorator<This, Args extends any[], Return>(AccentHex: string)
 {
     return (
-               function(Target: (this: This, ...Args: Args) => Return, Context: ClassMethodDecoratorContext<This, (this: This, ...Args: Args) => Return>)
+               function
+               (
+                   Target: (this: This, ...Args: Args) => Return,
+                   Context: ClassMethodDecoratorContext<This, (this: This, ...Args: Args) => Return>
+               )
                {
                    return (
-                              function(this: This, ...Args: Args): Return
-                              {
-                                  console.log(`[TRACE:${String(Context.name)}:${AccentHex}]`);
-                                  return Target.apply(this, Args);
-                              }
+                              function (this: This, ...Args: Args): Return
+                              { console.log(`[TRACE:${String(Context.name)}:${AccentHex}]`); return Target.apply(this, Args); }
                           );
                }
            );
@@ -2018,11 +1964,7 @@ export class Slop_Engine_Controller<const TPayload extends { readonly PacketId: 
 
     static #RegistryCache = new Map<string, string>();
 
-    static
-    {
-        try { this.#RegistryCache.set('DEFAULT_CORE', Telemetry_Spectrum_Code.VioletCore); }
-        catch {}
-    }
+    static { try { this.#RegistryCache.set('DEFAULT_CORE', Telemetry_Spectrum_Code.VioletCore); } catch {} }
 
     // STATE 1 MONOLITH: Fits 160-col Canvas & Empty Container Rule `{}`!
     constructor(private readonly InstanceId: string, private readonly DefaultSpectrum: Telemetry_Spectrum_Code = Telemetry_Spectrum_Code.VioletCore) {}
@@ -2038,29 +1980,21 @@ export class Slop_Engine_Controller<const TPayload extends { readonly PacketId: 
 
         if (Limit > 0)
         {
-            for (let Index = 0; Index < Limit; Index++)
-            {
-                if (Index % 2 === 0)
-                {
-                    Alpha += Index;
-                    Beta -= Index;
-                    Gamma *= 2;
-                    Delta >>= 1;
-                    Epsilon ^= Alpha;
-                }
-            }
+            for (let Index = 0; Index <Limit; Index++) { if (Index % 2 === 0) { Alpha += Index; Beta -= Index; Gamma *= 2; Delta >>= 1; Epsilon ^= Alpha; } }
         }
 
         return Alpha + Beta + Gamma + Delta + Epsilon;
     }
 
     // STATE 1 MONOLITHS: Trivial getter and empty method stay on 1 line!
-    public get SecretMask(): number { return this.#InternalSecretMask; }
-    public NoopAudit(Auditor: string, Timestamp: number): void {}
+    public get SecretMask(): number
+    { return this.#InternalSecretMask; }
+    public NoopAudit(Auditor: string, Timestamp: number): void
+    {}
 
     // 4. Async Generator with Alloyed Boundaries, Detached Backticks, & ASI Hybrid `yield`
-    @TraceDecorator('#7100FF')
-    public async *ExecuteAbyssalPipeline<const U extends readonly TPayload[]>
+    @ TraceDecorator('#7100FF')
+    public async * ExecuteAbyssalPipeline<const U extends readonly TPayload[]>
     (
         IncomingBatch: U,
         Options:
@@ -2072,7 +2006,7 @@ export class Slop_Engine_Controller<const TPayload extends { readonly PacketId: 
     ): AsyncGenerator<{ readonly BatchId: string; readonly PayloadMatrix: unknown; readonly ShaderSource: string }, void, unknown>
     {
         // Fits 160-col Canvas -> State 1 Monolith:
-        await using DisposableScope = { [Symbol.asyncDispose]: async () => { this.RetryCounter = 0; } };
+        await using DisposableScope = { [Symbol.asyncDispose]: async() => { this.RetryCounter = 0; } };
 
         // STATE 2 — Uninterrupted Sole-Child Chain fuses into `[({` and `)}]`:
         const GroupedSoleChildChain =
@@ -2083,11 +2017,9 @@ export class Slop_Engine_Controller<const TPayload extends { readonly PacketId: 
                 [
                     1_000_000,
                     '#7100FF',
-                    {
-                        NestedRecord: [999_999],
-                        ApprovedPalette: ['#7100FF', '#FC6A03', '#FF1744', '#00BFFF', '#00E676'] as const
-                    }
-                ] as const
+                    { NestedRecord: [999_999], ApprovedPalette: ['#7100FF', '#FC6A03', '#FF1744', '#00BFFF', '#00E676'] as const }
+                ]
+                as const
             })]
         })];
 
@@ -2097,24 +2029,16 @@ export class Slop_Engine_Controller<const TPayload extends { readonly PacketId: 
         [({
             // Significant Content (S) comment interrupts the next boundary run
             InterruptedStage:
-            (() =>
-            {
-                const ComputedMask = this.#InternalSecretMask ^ 0x00_3D_5A_FE;
-                return (
-                           [
+            (
+                () =>
+                {
+                    const ComputedMask = this.#InternalSecretMask ^ 0x00_3D_5A_FE;
+                    return ([
                                ComputedMask,
-                               [{
-                                   ReGroupedDeepInner:
-                                   (() =>
-                                   [({
-                                       CoreValue: ComputedMask * 2,
-                                       AccentHex: '#C77DFF',
-                                       Status: 'ACTIVE_#00E676'
-                                   })])()
-                               }]
-                           ]
-                       );
-            })()
+                               [ { ReGroupedDeepInner: ( () => [ ( { CoreValue: ComputedMask * 2, AccentHex: '#C77DFF', Status: 'ACTIVE_#00E676' })])() }]
+                           ]);
+                }
+            )()
         })];
 
         // SECTION 6.2.2 — Detached Backticks (`) on Dedicated Lines + Internal `${ ... }` Symmetry:
@@ -2128,11 +2052,13 @@ export class Slop_Engine_Controller<const TPayload extends { readonly PacketId: 
                 vec4 baseColor = vec4
                 (
                     ${
-                        (() =>
-                        {
-                            const ChannelMap = { R: 113.0 / 255.0, G: 0.0, B: 255.0 / 255.0, A: Options.StrictMode ? 1.0 : 0.22 };
-                            return `${ChannelMap.R}, ${ChannelMap.G}, ${ChannelMap.B}, ${ChannelMap.A}`;
-                        })()
+                        (
+                            () =>
+                            {
+                                const ChannelMap = { R: 113.0 / 255.0, G: 0.0, B: 255.0 / 255.0, A: Options.StrictMode ? 1.0 : 0.22 };
+                                return `${ChannelMap.R}, ${ChannelMap.G}, ${ChannelMap.B}, ${ChannelMap.A}`;
+                            }
+                        )()
                     }
                 );
                 gl_FragColor = baseColor * uPrimaryAccent;
@@ -2144,51 +2070,47 @@ export class Slop_Engine_Controller<const TPayload extends { readonly PacketId: 
             if (!PacketId)
             {
                 // SECTION 6.1 — Column-Anchored Hybrid for JS/TS `throw`:
-                throw (
-                          new Error(`Invalid packet at index ${BatchIndex} [Code: #FF1744]`)
-                      );
+                throw (new Error(`Invalid packet at index ${BatchIndex} [Code: #FF1744]`));
             }
 
             const TransformedResult =
-                IncomingBatch
-                    .filter((Candidate) => Boolean(Candidate.PacketId))
-                    .map
+            IncomingBatch
+            .filter( (Candidate) => Boolean(Candidate.PacketId))
+            .map
+            (
+                (Candidate, Idx) =>
+                ({
+                    Key: `${Candidate.PacketId}_${Idx}`,
+                    ResolvedHex:
+                    Candidate.Spectrum === Telemetry_Spectrum_Code.CrimsonFault
+                    ? '#FF1744'
+                    : Candidate.Spectrum === Telemetry_Spectrum_Code.DeepOrangeWarn
+                    ? '#FC6A03'
+                    : '#7100FF',
+                    DiagnosticDump:
                     (
-                        (Candidate, Idx) =>
-                        ({
-                            Key: `${Candidate.PacketId}_${Idx}`,
-                            ResolvedHex:
-                                Candidate.Spectrum === Telemetry_Spectrum_Code.CrimsonFault
-                                ? '#FF1744'
-                                : Candidate.Spectrum === Telemetry_Spectrum_Code.DeepOrangeWarn
-                                  ? '#FC6A03'
-                                  : '#7100FF',
-                            DiagnosticDump:
-                            (() =>
+                        () =>
+                        {
+                            try
                             {
-                                try
+                                switch (Candidate.Spectrum)
                                 {
-                                    switch (Candidate.Spectrum)
-                                    {
-                                        case Telemetry_Spectrum_Code.VioletCore:
-                                            return { Tier: 'PRIMARY', Code: '#7100FF', Grouped: GroupedSoleChildChain };
-                                        case Telemetry_Spectrum_Code.CrimsonFault:
-                                            return { Tier: 'CRITICAL', Code: '#FF1744', Interrupted: InterruptedBoundaryMatrix };
-                                        default:
-                                            return { Tier: 'STANDARD', Code: '#00E676', Interrupted: null };
-                                    }
+                                    case Telemetry_Spectrum_Code.VioletCore:
+                                    return { Tier: 'PRIMARY', Code: '#7100FF', Grouped: GroupedSoleChildChain };
+                                    case Telemetry_Spectrum_Code.CrimsonFault:
+                                    return { Tier: 'CRITICAL', Code: '#FF1744', Interrupted: InterruptedBoundaryMatrix };
+                                    default:
+                                    return { Tier: 'STANDARD', Code: '#00E676', Interrupted: null };
                                 }
-                                catch (Fault) { return { Tier: 'FAULT', Code: '#FF1744', Error: String(Fault) }; }
-                            })()
-                        })
-                    );
+                            }
+                            catch (Fault) { return { Tier: 'FAULT', Code: '#FF1744', Error: String(Fault) }; }
+                        }
+                    )()
+                })
+            );
 
             // SECTION 6.1 — Column-Anchored Hybrid for JS/TS `yield`:
-            yield ({
-                       BatchId: `${this.InstanceId}_${PacketId}_${Spectrum}`,
-                       PayloadMatrix: TransformedResult,
-                       ShaderSource: EmbeddedGlslShader
-                  });
+            yield ( { BatchId: `${this.InstanceId}_${PacketId}_${Spectrum}`, PayloadMatrix: TransformedResult, ShaderSource: EmbeddedGlslShader });
         }
     }
 
@@ -2208,27 +2130,27 @@ export class Slop_Engine_Controller<const TPayload extends { readonly PacketId: 
                        DataEngineId     = { this.InstanceId }
                        DataThemePrimary = "#7100FF"
                        DataThemeWarning = "#FC6A03"
-                       DataOnlineStatus = { Props.IsOnline ? "ONLINE_#00E676" : "OFFLINE_#FF1744" } >
+                       DataOnlineStatus = { Props.IsOnline ? "ONLINE_#00E676" : "OFFLINE_#FF1744" }>
                        <header ClassName = "HeaderBar" Title = "System Telemetry Header"
                            DataCount = { Props.Items.length }
-                           DataMask  = { this.#InternalSecretMask } >
+                           DataMask  = { this.#InternalSecretMask }>
                            <h1>{ Props.Title }</h1>
                        </header>
                        <div ClassName = "ContentGrid">
-                       {
-                           Props.Items.map
-                           (
-                               (Item, Idx) =>
+                           {
+                               Props.Items.map
                                (
-                                   <article Key = { Item.Id }
-                                       DataItemIndex = { Idx }
-                                       DataItemHex   = { Item.Hex }
-                                       DataItemLabel = { Item.Label } >
-                                       <span>{ Item.Label }</span>
-                                   </article>
+                                   (Item, Idx) =>
+                                   (
+                                       <article Key = { Item.Id }
+                                           DataItemIndex = { Idx }
+                                           DataItemHex   = { Item.Hex }
+                                           DataItemLabel = { Item.Label }>
+                                           <span>{ Item.Label }</span>
+                                       </article>
+                                   )
                                )
-                           )
-                       }
+                           }
                        </div>
                    </section>
                );
@@ -2292,18 +2214,10 @@ Formatting JavaScript, TypeScript, and JSX/TSX under **LAFS** introduces unique 
 
 ```typescript
 // ✔️ STATE 1 — LAFS MONOLITH (Fits 160-col Canvas):
-const CreateThemeToken = (Id: string) => ({ Id, PrimaryHex: '#7100FF', SuccessHex: '#00E676' });
+const CreateThemeToken = (Id: string) => ( { Id, PrimaryHex: '#7100FF', SuccessHex: '#00E676' });
 
 // ✔️ STATE 2 — LAFS ALLOYED BOUNDARY `({ ... })` (Over 160-col Canvas):
-const BuildEnterpriseTelemetryConfig =
-    (ClusterIdentifier: string, EnvironmentTier: string) =>
-    ({
-        ClusterIdentifier,
-        EnvironmentTier,
-        PrimaryAccentHex: '#7100FF',
-        WarningAlertHex: '#FC6A03',
-        CriticalFaultHex: '#FF1744'
-    });
+const BuildEnterpriseTelemetryConfig = (ClusterIdentifier: string, EnvironmentTier: string) => ( { ClusterIdentifier, EnvironmentTier, PrimaryAccentHex: '#7100FF', WarningAlertHex: '#FC6A03', CriticalFaultHex: '#FF1744' });
 ```
 
 ---
@@ -2323,10 +2237,10 @@ const BuildEnterpriseTelemetryConfig =
   Unlike Rust or Ruby (where `|A, B|` is a closure parameter container), TypeScript uses single pipes `|` and ampersands `&` as **Union and Intersection type operators**, and permits an optional leading `|` or `&` before the first member of a multiline union/intersection type:
   ```typescript
   type Allowed_Spectrum_Hex =
-      | '#7100FF'
-      | '#FC6A03'
-      | '#FF1744'
-      | '#00E676';
+  | '#7100FF'
+  | '#FC6A03'
+  | '#FF1744'
+  | '#00E676';
   ```
 * **Mandatory LAFS Formatter Rule (Section 7.1 CST Disambiguation):**
   In a Concrete Syntax Tree (Tree-Sitter / TypeScript Compiler API), a TypeScript union `|` is parsed as a binary/prefix separator token inside `TSUnionType`—**not** as a `closure_parameters` container pair `|...|`.

@@ -283,12 +283,7 @@ fn SafelyWriteFile(FilePath: & Path, Content: & str) -> std::io::Result < () >
 {
     use std::io::Write;
     if let Some(Parent) = FilePath.parent()
-    {
-        if ! Parent.as_os_str().is_empty() && ! Parent.exists()
-        {
-            fs::create_dir_all(Parent)?;
-        }
-    }
+    { if ! Parent.as_os_str().is_empty() && ! Parent.exists() { fs::create_dir_all(Parent)?; } }
     let mut File = fs::OpenOptions:: new ()
    .write(true)
    .create(true)
@@ -302,9 +297,7 @@ fn SafelyWriteFile(FilePath: & Path, Content: & str) -> std::io::Result < () >
 fn TransformFileName(FileName: & str, Prefix: Option< & str>, Suffix: Option< & str>) -> String
 {
     if Prefix.is_none() && Suffix.is_none()
-    {
-        return FileName.to_string();
-    }
+    { return FileName.to_string(); }
 
     let PathObj = Path:: new (FileName);
     let FileStem = PathObj.file_stem().and_then( | S | S.to_str()).unwrap_or(FileName);
@@ -314,16 +307,7 @@ fn TransformFileName(FileName: & str, Prefix: Option< & str>, Suffix: Option< & 
     let Sfx = Suffix.unwrap_or("");
 
     match Extension
-    {
-        Some(Ext) =>
-        {
-            format ! ("{}{}{}.{}", Pfx, FileStem, Sfx, Ext)
-        }
-        None =>
-        {
-            format ! ("{}{}{}", Pfx, FileStem, Sfx)
-        }
-    }
+    { Some(Ext) => { format ! ("{}{}{}.{}", Pfx, FileStem, Sfx, Ext) } None => { format ! ("{}{}{}", Pfx, FileStem, Sfx) } }
 }
 
 fn ComputeRelativeSubPath(SourceFilePath: & Path, BaseDirs: & [String]) -> PathBuf
@@ -338,18 +322,11 @@ fn ComputeRelativeSubPath(SourceFilePath: & Path, BaseDirs: & [String]) -> PathB
         let TrimmedBase = CleanBaseStr.trim_start_matches("./");
         if ! TrimmedBase.is_empty() && TrimmedBase != "."
         {
-            let PrefixWithSlash = format ! ("{}/", TrimmedBase);
+            let PrefixWithSlash = format!("{}/", TrimmedBase);
             if CleanSource.starts_with( & PrefixWithSlash)
-            {
-                return PathBuf::from( & CleanSource[PrefixWithSlash.len()..]);
-            }
+            { return PathBuf::from( & CleanSource[PrefixWithSlash.len()..]); }
             if CleanSource == TrimmedBase
-            {
-                if let Some(Name) = SourceFilePath.file_name()
-                {
-                    return PathBuf::from(Name);
-                }
-            }
+            { if let Some(Name) = SourceFilePath.file_name() { return PathBuf::from(Name); } }
         }
     }
 
@@ -364,7 +341,8 @@ fn ComputeOutputPath
     Suffix: Option< & str>,
     BaseDirs: & [String],
     IsSingleFileTarget: bool,
-) -> PathBuf
+)
+-> PathBuf
 {
     let OrigFileName = SourceFilePath.file_name().and_then( | N | N.to_str()).unwrap_or_default();
     let NewFileName = TransformFileName(OrigFileName, Prefix, Suffix);
@@ -372,10 +350,7 @@ fn ComputeOutputPath
     match OutputDest
     {
         None =>
-        {
-            let Parent = SourceFilePath.parent().unwrap_or(Path::new (""));
-            Parent.join(NewFileName)
-        }
+        { let Parent = SourceFilePath.parent().unwrap_or(Path::new ("")); Parent.join(NewFileName) }
         Some(DestStr) =>
         {
             let (CleanDest, HadTrailingSlash) = NormalizePathSpec(DestStr);
@@ -396,16 +371,12 @@ fn ComputeOutputPath
                     DestParent.join(TransformedDest)
                 }
                 else
-                {
-                    DestPath.to_path_buf()
-                }
+                { DestPath.to_path_buf() }
             }
             else
             {
                 if IsSingleFileTarget
-                {
-                    DestPath.join(NewFileName)
-                }
+                { DestPath.join(NewFileName) }
                 else
                 {
                     let RelSubPath = ComputeRelativeSubPath(SourceFilePath, BaseDirs);
@@ -419,9 +390,7 @@ fn ComputeOutputPath
                 let FallbackSuffix = Some(".formatted");
                 let SafeFileName = TransformFileName(OrigFileName, Prefix, FallbackSuffix);
                 if let Some(Parent) = FinalPath.parent()
-                {
-                    FinalPath = Parent.join(SafeFileName);
-                }
+                { FinalPath = Parent.join(SafeFileName); }
             }
 
             FinalPath
@@ -694,11 +663,7 @@ fn Main()
     if Args.len() > 1 && (Args[1] == "changelog" || Args[1] == "--changelog" || Args[1] == "--generate-changelog")
     {
         let ExitCode = Changelog_Generator::Run
-        (
-            & Args[2..],
-            | Msg | Logger.Println(Msg),
-            | ErrMsg | Logger.Eprintln(ErrMsg),
-        );
+        ( & Args[2..], | Msg | Logger.Println(Msg), | ErrMsg | Logger.Eprintln(ErrMsg),);
         std::process::exit(ExitCode);
     }
 
@@ -792,44 +757,32 @@ fn Main()
             "-o" | "--output" | "--out" | "--out-dir" | "--output-dir" =>
             {
                 I += 1;
-                if I < Args.len() && ! Args[I].starts_with('-') && ! matches ! (Args[I].as_str(), "format" | "apply" | "run" | "failed" | "all" | "check")
+                if I < Args.len() && ! Args[I].starts_with('-') && ! matches!(Args[I].as_str(), "format" | "apply" | "run" | "failed" | "all" | "check")
                 {
                     OutputDest = Some(Args[I].clone());
                 }
                 else
-                {
-                    if OutputSuffix.is_none() && OutputPrefix.is_none()
-                    {
-                        OutputSuffix = Some(".formatted".to_string());
-                    }
-                    I -= 1;
-                }
+                { if OutputSuffix.is_none() && OutputPrefix.is_none() { OutputSuffix = Some(".formatted".to_string()); } I -= 1; }
             }
             "--prefix" =>
             {
                 I += 1;
-                if I < Args.len() && ! Args[I].starts_with('-') && ! matches ! (Args[I].as_str(), "format" | "apply" | "run" | "failed" | "all" | "check")
+                if I < Args.len() && ! Args[I].starts_with('-') && ! matches!(Args[I].as_str(), "format" | "apply" | "run" | "failed" | "all" | "check")
                 {
                     OutputPrefix = Some(Args[I].clone());
                 }
                 else
-                {
-                    OutputPrefix = Some("formatted_".to_string());
-                    I -= 1;
-                }
+                { OutputPrefix = Some("formatted_".to_string()); I -= 1; }
             }
             "--suffix" =>
             {
                 I += 1;
-                if I < Args.len() && ! Args[I].starts_with('-') && ! matches ! (Args[I].as_str(), "format" | "apply" | "run" | "failed" | "all" | "check")
+                if I < Args.len() && ! Args[I].starts_with('-') && ! matches!(Args[I].as_str(), "format" | "apply" | "run" | "failed" | "all" | "check")
                 {
                     OutputSuffix = Some(Args[I].clone());
                 }
                 else
-                {
-                    OutputSuffix = Some(".formatted".to_string());
-                    I -= 1;
-                }
+                { OutputSuffix = Some(".formatted".to_string()); I -= 1; }
             }
             "--stdout" => { OutputToStdout = true; }
             "--output-failed" | "-of" => { I += 1; if I < Args.len() { OutputFailedPath = Some(Args[I].clone()); } }
@@ -859,9 +812,7 @@ fn Main()
                 }
             }
             "--no-unwrap-paragraphs" =>
-            {
-                Config.Unwrap_Markdown_Paragraphs = false;
-            }
+            { Config.Unwrap_Markdown_Paragraphs = false; }
             "-i" | "--indent" =>
             {
                 I += 1;
@@ -924,19 +875,12 @@ fn Main()
                         Config.Column_Anchored_Hybrid = false;
                     }
                     else if Val == "1" || Val.eq_ignore_ascii_case("true") || Val.eq_ignore_ascii_case("on")
-                    {
-                        Config.Column_Anchored_Hybrid = true;
-                    }
+                    { Config.Column_Anchored_Hybrid = true; }
                     else
-                    {
-                        Config.Column_Anchored_Hybrid = true;
-                        I -= 1;
-                    }
+                    { Config.Column_Anchored_Hybrid = true; I -= 1; }
                 }
                 else
-                {
-                    Config.Column_Anchored_Hybrid = true;
-                }
+                { Config.Column_Anchored_Hybrid = true; }
             }
             "--preserve-empty-lines" =>
             {
@@ -946,10 +890,7 @@ fn Main()
                     Config.Preserve_Empty_Lines = Args[I] != "0" && ! Args[I].eq_ignore_ascii_case("false");
                 }
                 else
-                {
-                    Config.Preserve_Empty_Lines = true;
-                    I -= 1;
-                }
+                { Config.Preserve_Empty_Lines = true; I -= 1; }
             }
             "--no-preserve-empty-lines" =>
             { Config.Preserve_Empty_Lines = false; }
@@ -957,10 +898,7 @@ fn Main()
             {
                 I += 1;
                 if I < Args.len()
-                {
-                    if let Ok(Val) = Args[I].parse::<usize>()
-                    { Config.Max_Blank_Lines = Val; }
-                }
+                { if let Ok(Val) = Args[I].parse::<usize>() { Config.Max_Blank_Lines = Val; } }
             }
             "--stdin-filepath" => { I += 1; if I < Args.len() { StdinVirtualPath = Some(Args[I].clone()); } }
             "-" => { ReadFromStdin = true; }
@@ -1034,17 +972,11 @@ fn Main()
                     }
                 }
                 else if Arg.starts_with("--preserve-empty-lines=")
-                {
-                    if let Some((_, Value)) = Arg.split_once('=')
-                    { Config.Preserve_Empty_Lines = Value != "0" && ! Value.eq_ignore_ascii_case("false"); }
-                }
+                { if let Some((_, Value)) = Arg.split_once('=') { Config.Preserve_Empty_Lines = Value != "0" && ! Value.eq_ignore_ascii_case("false"); } }
                 else if Arg.starts_with("--max-blank-lines=") || Arg.starts_with("-mbl=")
                 {
                     if let Some((_, Value)) = Arg.split_once('=')
-                    {
-                        if let Ok(Val) = Value.parse::<usize>()
-                        { Config.Max_Blank_Lines = Val; }
-                    }
+                    { if let Ok(Val) = Value.parse::<usize>() { Config.Max_Blank_Lines = Val; } }
                 }
                 else if Arg.starts_with("--output=") || Arg.starts_with("--out=") || Arg.starts_with("--out-dir=") || Arg.starts_with("--output-dir=") || Arg.starts_with("-o=")
                 {
@@ -1052,13 +984,9 @@ fn Main()
                     {
                         let Trimmed = Value.trim();
                         if ! Trimmed.is_empty()
-                        {
-                            OutputDest = Some(Trimmed.to_string());
-                        }
+                        { OutputDest = Some(Trimmed.to_string()); }
                         else if OutputSuffix.is_none() && OutputPrefix.is_none()
-                        {
-                            OutputSuffix = Some(".formatted".to_string());
-                        }
+                        { OutputSuffix = Some(".formatted".to_string()); }
                     }
                 }
                 else if Arg.starts_with("--prefix=")
@@ -1078,12 +1006,7 @@ fn Main()
                     }
                 }
                 else if Arg.starts_with("--unwrap-paragraphs=") || Arg.starts_with("--no-abrupt-breaks=")
-                {
-                    if let Some((_, Value)) = Arg.split_once('=')
-                    {
-                        Config.Unwrap_Markdown_Paragraphs = Value != "0" && ! Value.eq_ignore_ascii_case("false");
-                    }
-                }
+                { if let Some((_, Value)) = Arg.split_once('=') { Config.Unwrap_Markdown_Paragraphs = Value != "0" && ! Value.eq_ignore_ascii_case("false"); } }
                 else if ! Arg.starts_with('-') { RawTargets.push(Arg.clone()); }
             }
         }
@@ -1383,14 +1306,7 @@ fn Main()
             };
 
             let DestPath = ComputeOutputPath
-            (
-                FilePath,
-                OutputDest.as_deref(),
-                OutputPrefix.as_deref(),
-                OutputSuffix.as_deref(),
-                & EffectiveBaseDirs,
-                IsSingleFile,
-            );
+            (FilePath, OutputDest.as_deref(), OutputPrefix.as_deref(), OutputSuffix.as_deref(), & EffectiveBaseDirs, IsSingleFile,);
 
             let mut FileConfig = Config.clone();
             if FileConfig.Language == Source_Language::Generic { FileConfig.Language = DetectLanguageForFile(FilePathStr, & FileContent); }
@@ -1431,9 +1347,7 @@ fn Main()
                                 Logger.Println( & format ! ("Clean (Written to output): {} -> {}", FilePathStr, DestPath.display()));
                             }
                             else
-                            {
-                                Logger.Println( & format ! ("Formatted & Saved: {} -> {}", FilePathStr, DestPath.display()));
-                            }
+                            { Logger.Println( & format ! ("Formatted & Saved: {} -> {}", FilePathStr, DestPath.display())); }
                             FormattedCount.fetch_add(1, Ordering::Relaxed);
                         }
                     }
@@ -1519,14 +1433,7 @@ fn Main()
                             if FileConfig.Language == Source_Language::Generic { FileConfig.Language = DetectLanguageForFile(FilePathStr, & FileContent); }
 
                             let DestPath = ComputeOutputPath
-                            (
-                                FilePath,
-                                WorkerOutputDest.as_deref(),
-                                WorkerOutputPrefix.as_deref(),
-                                WorkerOutputSuffix.as_deref(),
-                                & WorkerBaseDirs,
-                                WorkerIsSingleFile,
-                            );
+                            (FilePath, WorkerOutputDest.as_deref(), WorkerOutputPrefix.as_deref(), WorkerOutputSuffix.as_deref(), & WorkerBaseDirs, WorkerIsSingleFile,);
 
                             match Source_Formatter::Format( & FileContent, & FileConfig)
                             {

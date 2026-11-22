@@ -252,22 +252,11 @@ LAFS strictly forbids "hugging" and "clumping" across multiple lines:
 ###### ❌ FORBIDDEN: Premature Signature Explosion (Excessive Vertical Waste)
 
 ```typescript
-// ILLEGAL: 6 lines consumed for a flat dependency declaration  
-Constructor  
-(  
-    Private FormConstructor: FormBuilder,  
-    Private DataService: AccountService  
-)  
-{
-}
+// ILLEGAL: 6 lines consumed for a flat dependency declaration
+Constructor(Private FormConstructor: FormBuilder, Private DataService: AccountService) {}
 
-// ILLEGAL: Over-expansion of simple method invocation  
-ExecuteQuery  
-(  
-    UserIdentifier,  
-    TargetPartitionKey,  
-    SecurityScopeToken  
-);
+// ILLEGAL: Over-expansion of simple method invocation
+ExecuteQuery(UserIdentifier, TargetPartitionKey, SecurityScopeToken);
 ```
 
 ###### ✔️ MANDATORY LAFS: The Monolith Signature
@@ -276,7 +265,7 @@ ExecuteQuery
 // An empty container is always a Monolith and never detaches: `Constructor(A, B) {}`.
 Constructor(Private FormConstructor: FormBuilder, Private DataService: AccountService) {}
 
-// CORRECT: Flat invocation under modern canvas width  
+// CORRECT: Flat invocation under modern canvas width
 ExecuteQuery(UserIdentifier, TargetPartitionKey, SecurityScopeToken);
 ```
 
@@ -302,15 +291,9 @@ ExecuteQuery(UserIdentifier, TargetPartitionKey, SecurityScopeToken);
     "IsCompliant": true,
     "WhitelistedIPs": ["192.168.1.1", "10.0.0.5"],
     "ModuleRegistry":
-    [
-        "FormattingEngine",
-        "ParserIntegration"
-    ],
+    ["FormattingEngine", "ParserIntegration"],
     "AllocationProfile":
-    {
-        "PrimaryMemory": "Dynamic",
-        "StorageQuota": "StandardAllocation"
-    }
+    { "PrimaryMemory": "Dynamic", "StorageQuota": "StandardAllocation" }
 }
 ```
 
@@ -318,7 +301,7 @@ ExecuteQuery(UserIdentifier, TargetPartitionKey, SecurityScopeToken);
 
 ```csharp
 // Acceptable when fully within viewport bounds and within the Complexity Budget
-LoadData(Configuration.Get("URL"), (Data) => { if (Data) { Parse(Data); Save(Data); } }, true);
+LoadData(Configuration.Get("URL"),(Data) => { if (Data) { Parse(Data); Save(Data); } }, true);
 ```
 
 **Complex Invocation (Symmetrical Expansion State):**
@@ -329,15 +312,8 @@ LoadData
 (
     Configuration.Get("URL"),
     function(Data)
-    {
-        if (Data)
-        {
-            ArrayCollection[Alpha, Beta, Gamma];
-            Parse(Data);
-            Save(Data);
-            LogErrorToServerAndRetry(Data);
-        }
-    },
+    { if (Data) { ArrayCollection[Alpha, Beta, Gamma]; Parse(Data); Save(Data); LogErrorToServerAndRetry(Data); } },
+
     true
 );
 ```
@@ -889,55 +865,44 @@ In standard K&R, the closing delimiter is thrown arbitrarily back to Column 0 or
 **Scope A: JavaScript / TypeScript `return` (JSX / Complex Expressions)**
 
 ```jsx
-// ❌ FATAL RUNTIME BUG: Pure Allman triggers JS ASI (Returns undefined)  
-return  
-(  
-    <UserDashboardLayout />  
-);  
+// ❌ FATAL RUNTIME BUG: Pure Allman triggers JS ASI (Returns undefined)
+return (
+           <UserDashboardLayout />
+       );
 
-// ❌ UGLY K&R HYBRID: Closing paren loses vertical alignment  
-return (  
-    <UserDashboardLayout />  
-);  
+// ❌ UGLY K&R HYBRID: Closing paren loses vertical alignment
+return (
+           <UserDashboardLayout />
+       );
 
-// ✔️ MANDATORY LAFS HYBRID: Load-Bearing Column Alignment  
-function RenderView()  
-{  
-    return (  
-               <UserDashboardLayout>  
-                   <NavigationHeader ThemeTone = "#7100FF" />  
-                   <MainContentSection />  
-               </UserDashboardLayout>  
-           );  
+// ✔️ MANDATORY LAFS HYBRID: Load-Bearing Column Alignment
+function RenderView()
+{
+    return (
+               <UserDashboardLayout>
+                   <NavigationHeader ThemeTone = "#7100FF" />
+                   <MainContentSection />
+               </UserDashboardLayout>
+           );
 }
 ```
 
 **Scope B: JavaScript / TypeScript `throw` and `yield`**
 
 ```javascript
-function* GenerateEventStream()  
-{  
-    // Yield with multiline payload  
-    yield ({  
-               EventIdentifier: "PayloadTransferred",  
-               PayloadTimestamp: Date.now(),  
-               AlertColor: "#FF4081"  
-          });  
-}  
+function * GenerateEventStream()
+{
+    // Yield with multiline payload
+    yield ( { EventIdentifier: "PayloadTransferred", PayloadTimestamp: Date.now(), AlertColor: "#FF4081" });
+}
 
-function ValidateSession(UserSession)  
-{  
-    if (!UserSession.IsValid)  
-    {  
-        // Throw with multiline error structure  
-        throw (  
-                  new AuthenticationException  
-                  ({  
-                      ErrorCode: "InvalidSessionCredentials",  
-                      TraceCode: "#FF1744"  
-                  })  
-              );  
-    }  
+function ValidateSession(UserSession)
+{
+    if (!UserSession.IsValid)
+    {
+        // Throw with multiline error structure
+        throw (new AuthenticationException( { ErrorCode: "InvalidSessionCredentials", TraceCode: "#FF1744" }));
+    }
 }
 ```
 
@@ -946,14 +911,8 @@ function ValidateSession(UserSession)
 Because the Go compiler strictly prohibits `{` on a newline for control blocks, LAFS applies the Column-Anchored Hybrid to preserve structural geometry without breaking `go build` (while always preferring **Monolith First** whenever the logic fits on a single line):
 
 ```go
-// In Go, where 'if' and 'func' reject a pure Allman newline:  
-func ProcessAccountData(AccountID string) {  
-                                              Account, FetchFault := QueryDatabase(AccountID)  
-                                              if FetchFault != nil {  
-                                                                       return nil, FetchFault  
-                                                                   }  
-                                              return Account, nil  
-                                          }
+// In Go, where 'if' and 'func' reject a pure Allman newline:
+func ProcessAccountData(AccountID string) { Account, FetchFault: = QueryDatabase(AccountID) if FetchFault != nil { return nil, FetchFault } return Account, nil }
 ```
 
 ###### 6.1.4 Specification Matrix for Language Exceptions
@@ -985,9 +944,7 @@ To ensure 100% interoperability across standard language toolchains, package man
    [[package]]
    name = "Language-Agnostic-Formatting-Style"
    version = "0.1.0"
-   dependencies = [
-                      "chrono",
-                  ]
+   dependencies = ["chrono",]
    ```
 3. **Strict Prohibition:** Detached Allman brackets (`key =\n[\n`) are permanently forbidden in `.lock` and TOML key-value pairs.
 
@@ -1015,14 +972,14 @@ const Msg =
 `
 	Hello
 	${
-	    User.IsAdmin
-	    ? "Admin"
-	    : "User"
-	}
+    User.IsAdmin
+    ? "Admin"
+    : "User"
+}
 	Welcome to
 	${
-	    GetPlatformName()
-	}
+    GetPlatformName()
+}
 `;
 ```
 
@@ -1035,7 +992,7 @@ PlayerWrap.style.cssText =
     --ytd-watch-flexy-chat-max-height: 460px;
 `;
 
-const FragmentShader =  
+const FragmentShader =
 `  
     precision mediump float;  
     varying vec2 vTextureCoord;  
@@ -1055,18 +1012,16 @@ Because identical boundary characters lack intrinsic directional shape, their st
 **Rust / Ruby Closure Pipes (`|...|`):**
 
 ```rust
-// ✔️ LAFS MONOLITH (Fits canvas):  
-let ProcessItem = |Item, Index| { Execute(Item); };  
+// ✔️ LAFS MONOLITH (Fits canvas):
+let ProcessItem = | Item, Index | { Execute(Item); };
 
-// ✔️ LAFS EXPANDED SYMMETRY (Long signature / logic breach):  
-let ProcessItem =  
-|  
-    ItemIdentifier: &SecurityContext,  
-    PipelineConfigurationIndex: usize  
-|  
-{  
-    Execute(ItemIdentifier);  
-};
+// ✔️ LAFS EXPANDED SYMMETRY (Long signature / logic breach):
+let ProcessItem =
+|
+ItemIdentifier: & SecurityContext,
+PipelineConfigurationIndex: usize
+|
+{ Execute(ItemIdentifier); };
 ```
 
 **Database Procedural Blocks (`$$...$$` or `BEGIN ... END`):**
@@ -1142,6 +1097,7 @@ When an HTML, XML, SVG, or template tag (e.g., PHP, JSX, Blade) expands across m
     DataRepoName       = "<?php echo htmlspecialchars($Repo['Name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
     DataOwnerID        = "<?php echo $Repo['Owner']; ?>"
     DataRepositoryID   = "<?php echo $Repo['RID']; ?>" >
+</div>
 ```
 
 ```html
@@ -1171,12 +1127,7 @@ When an HTML, XML, SVG, or template tag (e.g., PHP, JSX, Blade) expands across m
   ProcessTransactions(UserAccountIdentification, TransactionPayloadData, SecurityPermissionToken);
 
   // Expanded Symmetry (Over Canvas Limit)
-  ProcessUserData
-  (
-      UserAccountNameFromDatabase,
-      GlobalSystemIdentificationNumber,
-      ListOfSpecificSecurityPermissions
-  );
+  ProcessUserData(UserAccountNameFromDatabase, GlobalSystemIdentificationNumber, ListOfSpecificSecurityPermissions);
   ```
 * **Control Flow (`if` / `else`, `switch`, `try` / `catch`):**
   ```csharp
@@ -1195,10 +1146,11 @@ When an HTML, XML, SVG, or template tag (e.g., PHP, JSX, Blade) expands across m
   Button.AddEventListener
   (
       'Change',
-      function(ArgumentsThatAreNotTooLongAndCanComfortablyFitInASingleLine)
+      function (ArgumentsThatAreNotTooLongAndCanComfortablyFitInASingleLine)
       {
           UpdateActionButtonsVisibility();
-          DefineArray A = [A, B, C, D]; // <- MONOLITH
+          DefineArray A = [A, B, C, D];
+          // <- MONOLITH
           DefineVeryLongArray B =
           [
               ASingleUndoRevertedMultipleChangesAfterMacroExecution,
@@ -1210,11 +1162,11 @@ When an HTML, XML, SVG, or template tag (e.g., PHP, JSX, Blade) expands across m
   ```
 * **JSX/TSX Logical AND (`&&`) & Ternaries (`? :`):**
   ```jsx
-  { IsUserLoggedIn ? (<UserProfileCard User = { CurrentUser } />) : (<LoginPromptModal OnClose = { HandleCloseModal } />) }
+  { IsUserLoggedIn ? (<UserProfileCard User = { CurrentUser }/>) : (<LoginPromptModal OnClose = { HandleCloseModal }/>) }
   ```
 * **Array Mapping & Callbacks:**
   ```javascript
-  DatabaseRecords.Map((Record) => (TransformRecordToDTO(Record)));
+  DatabaseRecords.Map( (Record) =>(TransformRecordToDTO(Record)));
   ```
 
 ###### C. Scripting & Data-Centric Languages (Python, Ruby, PHP, Shell, PowerShell)
@@ -1272,39 +1224,27 @@ Whether the delimiters are asymmetrical `( ... )`, `{ ... }` or identical `| ...
 ##### 7.2 Automated Formatter Decision Logic
 
 ```javascript
-function EvaluateStatementLayout(SyntaxTreeNode, EditorViewportWidth, RuntimeLanguage)  
-{  
+function EvaluateStatementLayout(SyntaxTreeNode, EditorViewportWidth, RuntimeLanguage)
+{
     // 1. Empty Container Check: Always Monolith
-    if (SyntaxTreeNode.IsEmptyContainer())
+    if (SyntaxTreeNode.IsEmptyContainer()) { return FormatAsMonolith(SyntaxTreeNode); }
+
+    // 2. State 1: The Monolith Check
+    const SingleLineWidth = SyntaxTreeNode.CalculateHorizontalSpan();
+
+    if (SingleLineWidth < = EditorViewportWidth && !SyntaxTreeNode.ContainsForcedBreak())
     {
-        return FormatAsMonolith(SyntaxTreeNode);
+        if (SyntaxTreeNode.MeetsComplexityBudget(4, 2)) { return FormatAsMonolith(SyntaxTreeNode); }
     }
-
-    // 2. State 1: The Monolith Check  
-    const SingleLineWidth = SyntaxTreeNode.CalculateHorizontalSpan();  
-
-    if (SingleLineWidth <= EditorViewportWidth && !SyntaxTreeNode.ContainsForcedBreak())  
-    {  
-        if (SyntaxTreeNode.MeetsComplexityBudget(4, 2))  
-        {  
-            return FormatAsMonolith(SyntaxTreeNode);  
-        }  
-    }  
 
     // 3. Parser Sovereignty Check: Column-Anchored Hybrid Exception
-    if (RuntimeLanguage.ThrowsErrorOnDetachedDelimiter(SyntaxTreeNode.KeywordToken))
-    {
-        return FormatAsColumnAnchoredHybrid(SyntaxTreeNode);
-    }
+    if (RuntimeLanguage.ThrowsErrorOnDetachedDelimiter(SyntaxTreeNode.KeywordToken)) { return FormatAsColumnAnchoredHybrid(SyntaxTreeNode); }
 
-    // 4. State 2: Local Structural Boundary Run Check (Container Grouping)  
-    if (SyntaxTreeNode.FormsContinuousStructuralBoundaryRun())  
-    {  
-        return FormatAsContainerGrouping(SyntaxTreeNode);  
-    }  
+    // 4. State 2: Local Structural Boundary Run Check (Container Grouping)
+    if (SyntaxTreeNode.FormsContinuousStructuralBoundaryRun()) { return FormatAsContainerGrouping(SyntaxTreeNode); }
 
     // 5. State 3: Full Symmetry Escalation (Hierarchical)
-    return FormatAsExpandedSymmetry(SyntaxTreeNode);  
+    return FormatAsExpandedSymmetry(SyntaxTreeNode);
 }
 ```
 

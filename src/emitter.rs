@@ -42,9 +42,7 @@ impl <'a> Code_Emitter<'a>
         {
             if ! self.Config.Preserve_Empty_Lines
             && (self.Output.ends_with("{\n") || self.Output.ends_with("[\n") || self.Output.ends_with("(\n"))
-            {
-                return ;
-            }
+            { return ; }
             self.Output.push('\n');
             self.Current_Line_Len = 0;
             self.Line_Has_Content = false;
@@ -717,13 +715,9 @@ impl <'a> Code_Emitter<'a>
             self.EnsureNewline();
             let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
             if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
-            {
-                self.EnsureBlankLine();
-            }
+            { self.EnsureBlankLine(); }
             else if self.Output.ends_with("\n\n")
-            {
-                self.Output.pop();
-            }
+            { self.Output.pop(); }
             // 4. Compound closing run sits on its own line at Level indent (Load-bearing pillar)
             self.EmitIndent(Level);
             self.EmitRaw( & CloseRun);
@@ -748,13 +742,9 @@ impl <'a> Code_Emitter<'a>
             self.EnsureNewline();
             let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
             if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
-            {
-                self.EnsureBlankLine();
-            }
+            { self.EnsureBlankLine(); }
             else if self.Output.ends_with("\n\n")
-            {
-                self.Output.pop();
-            }
+            { self.Output.pop(); }
             // 4. Closing delimiter sits on its own line at Level indent (Translational symmetry)
             self.EmitIndent(Level);
             self.EmitRaw(Container.Kind.CloseGlyph());

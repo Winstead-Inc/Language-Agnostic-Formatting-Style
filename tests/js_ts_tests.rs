@@ -317,35 +317,35 @@ fn Test_JS_Torture_Test_Slop_And_Idempotence()
 #[test]
 fn Test_TSX_Brainrot_Format()
 {
-    let Path = std::path::Path::new("J-TS K&R BRAINROT.TSX");
-    if !Path.exists() { return; }
+    let Path = std::path::Path:: new ("J-TS K&R BRAINROT.TSX");
+    if ! Path.exists() { return ; }
     let Source = std::fs::read_to_string(Path).expect("Failed to read");
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Tsx;
     Config.Canvas_Width = 160;
 
-    let FormattedPass1 = Source_Formatter::Format(&Source, &Config).expect("Pass 1 of TSX torture test formatting failed");
-    let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config).expect("Pass 2 of TSX torture test formatting failed");
+    let FormattedPass1 = Source_Formatter::Format( & Source, & Config).expect("Pass 1 of TSX torture test formatting failed");
+    let FormattedPass2 = Source_Formatter::Format( & FormattedPass1, & Config).expect("Pass 2 of TSX torture test formatting failed");
 
     assert_eq!(FormattedPass1, FormattedPass2, "TSX formatting must be 100% idempotent");
 
     // Invariant verifications
-    assert!(FormattedPass1.contains("data-node-name  = { row.nodeName }"), "Hyphenated JSX attribute intact: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("data-latency-ms = { row.latencyMs }"), "Hyphenated JSX attribute intact");
-    assert!(FormattedPass1.contains("data-tag-idx     = { tagIdx }"), "Hyphenated JSX attribute intact");
-    assert!(FormattedPass1.contains("data-parent-idx  = { rowIdx }"), "Hyphenated JSX attribute intact");
-    assert!(FormattedPass1.contains("data-badge-color = \"#C77DFF\""), "Hyphenated JSX attribute intact");
-    assert!(FormattedPass1.contains("i < count"), "Relational < spaced intact");
-    assert!(FormattedPass1.contains("count > 0"), "Relational > spaced intact");
-    assert!(FormattedPass1.contains("i++"), "Postfix ++ attached without space");
-    assert!(!FormattedPass1.contains("i ++"), "No spaced postfix i ++");
-    assert!(!FormattedPass1.contains("\n=>"), "Arrow operator => must never be on its own line");
-    assert!(FormattedPass1.contains(")()"), "IIFE call invocation must remain attached as )()");
-    assert!(!FormattedPass1.contains(")\n()"), "No detached IIFE call invocation");
-    assert!(FormattedPass1.contains("): JSX.Element\n{"), "Return type attached as suffix glue to )");
-    assert!(FormattedPass1.contains("criticalIds: [selectedRow.id]"), "Array after property colon has space");
-    assert!(FormattedPass1.contains("? '#FF1744' : '#FC6A03'"), "Ternary colon has space");
-    assert!(FormattedPass1.contains("label = { `OK: ${groupedCount.ok}` }"), "Template literal has symmetric space padding inside braces");
+    assert!(FormattedPass1 .contains("data-node-name  = { row.nodeName }"), "Hyphenated JSX attribute intact: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("data-latency-ms = { row.latencyMs }"), "Hyphenated JSX attribute intact");
+    assert!(FormattedPass1 .contains("data-tag-idx     = { tagIdx }"), "Hyphenated JSX attribute intact");
+    assert!(FormattedPass1 .contains("data-parent-idx  = { rowIdx }"), "Hyphenated JSX attribute intact");
+    assert!(FormattedPass1 .contains("data-badge-color = \"#C77DFF\""), "Hyphenated JSX attribute intact");
+    assert!(FormattedPass1 .contains("i < count"), "Relational < spaced intact");
+    assert!(FormattedPass1 .contains("count > 0"), "Relational > spaced intact");
+    assert!(FormattedPass1 .contains("i++"), "Postfix ++ attached without space");
+    assert!( ! FormattedPass1 .contains("i ++"), "No spaced postfix i ++");
+    assert!( ! FormattedPass1 .contains("\n=>"), "Arrow operator => must never be on its own line");
+    assert!(FormattedPass1 .contains(")()"), "IIFE call invocation must remain attached as )()");
+    assert!( ! FormattedPass1 .contains(")\n()"), "No detached IIFE call invocation");
+    assert!(FormattedPass1 .contains("): JSX.Element\n{"), "Return type attached as suffix glue to )");
+    assert!(FormattedPass1 .contains("criticalIds: [selectedRow.id]"), "Array after property colon has space");
+    assert!(FormattedPass1 .contains("? '#FF1744' : '#FC6A03'"), "Ternary colon has space");
+    assert!(FormattedPass1 .contains("label = { `OK: ${groupedCount.ok}` }"), "Template literal has symmetric space padding inside braces");
 }
 
 #[test]
@@ -462,66 +462,75 @@ U extends keyof T[number] = keyof T[number]
 fn Test_TS_Generic_Type_Monolith_Only()
 {
     let Input = "type Result = Promise<{ error?: Error; results: Record<string, unknown>; }>;\n";
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::TypeScript;
     Config.Canvas_Width = 160;
 
-    let FormattedMonolith = Source_Formatter::Format(Input, &Config).expect("Monolith format failed");
+    let FormattedMonolith = Source_Formatter::Format(Input, & Config).expect("Monolith format failed");
     assert_eq!(FormattedMonolith.trim(), "type Result = Promise<{ error?: Error; results: Record<string, unknown>; }>;");
 
     // User requirement: Switch to Monolith only for (<{, <) generic type definitions to prevent syntax errors, even on narrow canvas
     Config.Canvas_Width = 40;
-    let FormattedNarrow = Source_Formatter::Format(Input, &Config).expect("Narrow format failed");
+    let FormattedNarrow = Source_Formatter::Format(Input, & Config).expect("Narrow format failed");
     assert_eq!(FormattedNarrow.trim(), "type Result = Promise<{ error?: Error; results: Record<string, unknown>; }>;");
 
     // Test <( with function type / parameter list (Monolith only)
     let InputFn = "type Fn = Promise<(input: string) => void>;\n";
     Config.Canvas_Width = 40;
-    let FormattedFnMonolith = Source_Formatter::Format(InputFn, &Config).expect("Fn monolith failed");
+    let FormattedFnMonolith = Source_Formatter::Format(InputFn, & Config).expect("Fn monolith failed");
     assert_eq!(FormattedFnMonolith.trim(), "type Fn = Promise<(input: string) => void>;");
 
     // Idempotence verification
-    let SecondPass = Source_Formatter::Format(&FormattedNarrow, &Config).expect("Idempotence failed");
+    let SecondPass = Source_Formatter::Format( & FormattedNarrow, & Config).expect("Idempotence failed");
     assert_eq!(FormattedNarrow, SecondPass);
 }
 
 #[test]
 fn Test_TS_Const_Arrow_Function_Monolith_Only()
 {
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::TypeScript;
     Config.Canvas_Width = 160;
 
     // Test 1: Exact line 7 from user screenshot
     let Input1 = "const isFindQuery = (query: CursorConstructionOptionsWithChains,): query is CursorConstructionOptionsWithChains & { options: { method: 'find' }; } => { return query.options.method === 'find'; };\n";
-    let Formatted1 = Source_Formatter::Format(Input1, &Config).expect("Format 1 failed");
-    assert_eq!(Formatted1.trim(), "const isFindQuery = (query: CursorConstructionOptionsWithChains,): query is CursorConstructionOptionsWithChains & { options: { method: 'find' }; } => { return query.options.method === 'find'; };");
-    assert!(!Formatted1.contains("\n=>"), "Arrow operator => must never be placed on its own line: {}", Formatted1);
+    let Formatted1 = Source_Formatter::Format(Input1, & Config).expect("Format 1 failed");
+    assert_eq!
+    (
+        Formatted1 .trim(), "const isFindQuery = (query: CursorConstructionOptionsWithChains,): query is CursorConstructionOptionsWithChains & { options: { method: 'find' }; } => { return query.options.method === 'find'; };"
+    );
+    assert!( ! Formatted1 .contains("\n=>"), "Arrow operator => must never be placed on its own line: {}", Formatted1);
 
     // Test 2: Exact line 9 from user screenshot (where options had method: 'aggregate')
     let Input2 = "const isAggregateQuery = (query: CursorConstructionOptionsWithChains,): query is CursorConstructionOptionsWithChains & { options: {\nmethod: 'aggregate' }; }\n=> { return query.options.method === 'aggregate'; };\n";
-    let Formatted2 = Source_Formatter::Format(Input2, &Config).expect("Format 2 failed");
-    assert_eq!(Formatted2.trim(), "const isAggregateQuery = (query: CursorConstructionOptionsWithChains,): query is CursorConstructionOptionsWithChains & { options: { method: 'aggregate' }; } => { return query.options.method === 'aggregate'; };");
-    assert!(!Formatted2.contains("\n=>"), "Arrow operator => must never be placed on its own line: {}", Formatted2);
+    let Formatted2 = Source_Formatter::Format(Input2, & Config).expect("Format 2 failed");
+    assert_eq!
+    (
+        Formatted2 .trim(), "const isAggregateQuery = (query: CursorConstructionOptionsWithChains,): query is CursorConstructionOptionsWithChains & { options: { method: 'aggregate' }; } => { return query.options.method === 'aggregate'; };"
+    );
+    assert!( ! Formatted2 .contains("\n=>"), "Arrow operator => must never be placed on its own line: {}", Formatted2);
 
     // Test 3: Exact line 12 from user screenshot
     let Input3 = "const isFindParsedQuery = (query: ParsedQuery,): query is ParsedQuery & { find: FindQuery }\n=> { return 'find' in query; };\n";
-    let Formatted3 = Source_Formatter::Format(Input3, &Config).expect("Format 3 failed");
-    assert_eq!(Formatted3.trim(), "const isFindParsedQuery = (query: ParsedQuery,): query is ParsedQuery & { find: FindQuery } => { return 'find' in query; };");
-    assert!(!Formatted3.contains("\n=>"), "Arrow operator => must never be placed on its own line: {}", Formatted3);
+    let Formatted3 = Source_Formatter::Format(Input3, & Config).expect("Format 3 failed");
+    assert_eq!(Formatted3 .trim(), "const isFindParsedQuery = (query: ParsedQuery,): query is ParsedQuery & { find: FindQuery } => { return 'find' in query; };");
+    assert!( ! Formatted3 .contains("\n=>"), "Arrow operator => must never be placed on its own line: {}", Formatted3);
 
     // Test 4: Exact line 15 from user screenshot
     let Input4 = "const isAggregateParsedQuery = (query: ParsedQuery,): query is ParsedQuery & { aggregate: AggregateQuery }\n=> { return 'aggregate' in query; };\n";
-    let Formatted4 = Source_Formatter::Format(Input4, &Config).expect("Format 4 failed");
-    assert_eq!(Formatted4.trim(), "const isAggregateParsedQuery = (query: ParsedQuery,): query is ParsedQuery & { aggregate: AggregateQuery } => { return 'aggregate' in query; };");
-    assert!(!Formatted4.contains("\n=>"), "Arrow operator => must never be placed on its own line: {}", Formatted4);
+    let Formatted4 = Source_Formatter::Format(Input4, & Config).expect("Format 4 failed");
+    assert_eq!
+    (
+        Formatted4 .trim(), "const isAggregateParsedQuery = (query: ParsedQuery,): query is ParsedQuery & { aggregate: AggregateQuery } => { return 'aggregate' in query; };"
+    );
+    assert!( ! Formatted4 .contains("\n=>"), "Arrow operator => must never be placed on its own line: {}", Formatted4);
 
     // Test 5: Arrow function with multiple statements retains attached => and detached body
     let InputMulti = "const handler = (event: Event) => {\n    log(event);\n    return true;\n};\n";
     Config.Canvas_Width = 40;
-    let FormattedMulti = Source_Formatter::Format(InputMulti, &Config).expect("Format multi failed");
+    let FormattedMulti = Source_Formatter::Format(InputMulti, & Config).expect("Format multi failed");
     assert!(FormattedMulti.contains("const handler = (event: Event) =>\n{\n"), "Body must expand with detached brace while => remains attached: {}", FormattedMulti);
-    assert!(!FormattedMulti.contains("\n=>"), "Arrow operator => must never be on its own line: {}", FormattedMulti);
+    assert!( ! FormattedMulti.contains("\n=>"), "Arrow operator => must never be on its own line: {}", FormattedMulti);
 }
 
 #[test]
@@ -540,99 +549,99 @@ fn Test_JS_Preserve_Empty_Lines()
 
 }
 "#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::JavaScript;
     Config.Canvas_Width = 40;
     Config.Preserve_Empty_Lines = true;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("{\n\n    const x = 1;"), "Empty line after opener preserved: {}", Formatted);
     assert!(Formatted.contains("};\n\n}"), "Empty line before closer preserved: {}", Formatted);
 
     Config.Preserve_Empty_Lines = false;
-    let Formatted_Stripped = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
-    assert!(!Formatted_Stripped.contains("{\n\n"), "Empty line after opener stripped: {}", Formatted_Stripped);
-    assert!(!Formatted_Stripped.contains("};\n\n}"), "Empty line before closer stripped: {}", Formatted_Stripped);
+    let Formatted_Stripped = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!( ! Formatted_Stripped.contains("{\n\n"), "Empty line after opener stripped: {}", Formatted_Stripped);
+    assert!( ! Formatted_Stripped.contains("};\n\n}"), "Empty line before closer stripped: {}", Formatted_Stripped);
 }
 
 #[test]
 fn Test_JSX_Self_Closing_And_Props()
 {
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Jsx;
     Config.Canvas_Width = 160;
 
     // Self-closing component with space before />
     let Input1 = "const elem = <Component />;\n";
-    let Formatted1 = Source_Formatter::Format(Input1, &Config).expect("Format 1 failed");
-    assert_eq!(Formatted1.trim(), "const elem = <Component />;");
+    let Formatted1 = Source_Formatter::Format(Input1, & Config).expect("Format 1 failed");
+    assert_eq!(Formatted1 .trim(), "const elem = <Component />;");
 
     // Single-line component with prop
     let Input2 = "const elem = <Component prop={value} />;\n";
-    let Formatted2 = Source_Formatter::Format(Input2, &Config).expect("Format 2 failed");
-    assert_eq!(Formatted2.trim(), "const elem = <Component prop = { value } />;");
+    let Formatted2 = Source_Formatter::Format(Input2, & Config).expect("Format 2 failed");
+    assert_eq!(Formatted2 .trim(), "const elem = <Component prop = { value } />;");
 
     // Single-line component with multiple props
     let Input3 = "const elem = <Component a={1} b={2} title=\"Hello\" />;\n";
-    let Formatted3 = Source_Formatter::Format(Input3, &Config).expect("Format 3 failed");
-    assert_eq!(Formatted3.trim(), "const elem = <Component a = { 1 } b = { 2 } title = \"Hello\" />;");
+    let Formatted3 = Source_Formatter::Format(Input3, & Config).expect("Format 3 failed");
+    assert_eq!(Formatted3 .trim(), "const elem = <Component a = { 1 } b = { 2 } title = \"Hello\" />;");
 
     // Button with onClick prop
     let Input4 = "const elem = <button onClick={handleClick}>Click Me</button>;\n";
-    let Formatted4 = Source_Formatter::Format(Input4, &Config).expect("Format 4 failed");
-    assert_eq!(Formatted4.trim(), "const elem = <button onClick = { handleClick }>Click Me</button>;");
+    let Formatted4 = Source_Formatter::Format(Input4, & Config).expect("Format 4 failed");
+    assert_eq!(Formatted4 .trim(), "const elem = <button onClick = { handleClick }>Click Me</button>;");
 }
 
 #[test]
 fn Test_JSX_Text_Mode_And_Apostrophe()
 {
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Jsx;
     Config.Canvas_Width = 160;
 
     // Text with apostrophe (L6c)
     let Input1 = "const elem = <p>Don't touch that</p>;\n";
-    let Formatted1 = Source_Formatter::Format(Input1, &Config).expect("Format 1 failed");
-    assert_eq!(Formatted1.trim(), "const elem = <p>Don't touch that</p>;");
+    let Formatted1 = Source_Formatter::Format(Input1, & Config).expect("Format 1 failed");
+    assert_eq!(Formatted1 .trim(), "const elem = <p>Don't touch that</p>;");
 
     // Text with embedded expression and trailing apostrophe
     let Input2 = "const elem = <p>It's {name}'s birthday!</p>;\n";
-    let Formatted2 = Source_Formatter::Format(Input2, &Config).expect("Format 2 failed");
-    assert_eq!(Formatted2.trim(), "const elem = <p>It's { name }'s birthday!</p>;");
+    let Formatted2 = Source_Formatter::Format(Input2, & Config).expect("Format 2 failed");
+    assert_eq!(Formatted2 .trim(), "const elem = <p>It's { name }'s birthday!</p>;");
 
     // Nested inline elements
     let Input3 = "const elem = <div><span>Hello World</span></div>;\n";
-    let Formatted3 = Source_Formatter::Format(Input3, &Config).expect("Format 3 failed");
-    assert_eq!(Formatted3.trim(), "const elem = <div><span>Hello World</span></div>;");
+    let Formatted3 = Source_Formatter::Format(Input3, & Config).expect("Format 3 failed");
+    assert_eq!(Formatted3 .trim(), "const elem = <div><span>Hello World</span></div>;");
 
     // Fragment
     let Input4 = "const elem = <><span>Fragment Content</span></>;\n";
-    let Formatted4 = Source_Formatter::Format(Input4, &Config).expect("Format 4 failed");
-    assert_eq!(Formatted4.trim(), "const elem = <><span>Fragment Content</span></>;");
+    let Formatted4 = Source_Formatter::Format(Input4, & Config).expect("Format 4 failed");
+    assert_eq!(Formatted4 .trim(), "const elem = <><span>Fragment Content</span></>;");
 }
 
 #[test]
 fn Test_TSX_Generic_Arrow_Function()
 {
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Tsx;
     Config.Canvas_Width = 160;
 
     // Generic arrow function with trailing comma in TSX
     let Input = "const identity = <T,>(x: T): T => x;\n";
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Format failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Format failed");
     assert_eq!(Formatted.trim(), "const identity = <T,>(x: T): T => x;");
 
     // TSX component with generic prop
     let InputComp = "const elem = <List<string> items={items} />;\n";
-    let FormattedComp = Source_Formatter::Format(InputComp, &Config).expect("Format comp failed");
+    let FormattedComp = Source_Formatter::Format(InputComp, & Config).expect("Format comp failed");
     assert_eq!(FormattedComp.trim(), "const elem = <List<string> items = { items } />;");
 }
 
 #[test]
 fn Test_JSX_Multiline_HTML_Tree_Indentation()
 {
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Tsx;
     Config.Canvas_Width = 160;
 
@@ -645,23 +654,23 @@ fn Test_JSX_Multiline_HTML_Tree_Indentation()
     </div>
 );
 "#;
-    let FormattedPass1 = Source_Formatter::Format(Input, &Config).expect("Pass 1 failed");
-    assert!(FormattedPass1.contains("    <div>"), "div must be indented 4 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("        <h1>Title</h1>"), "h1 monolith must be indented 8 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("        <p>"), "p opener must be indented 8 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("            Paragraph"), "text inside p must be indented 12 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("        </p>"), "p closer must align with <p> at 8 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("    </div>"), "div closer must align with <div> at 4 spaces: {}", FormattedPass1);
+    let FormattedPass1 = Source_Formatter::Format(Input, & Config).expect("Pass 1 failed");
+    assert!(FormattedPass1 .contains("    <div>"), "div must be indented 4 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("        <h1>Title</h1>"), "h1 monolith must be indented 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("        <p>"), "p opener must be indented 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("            Paragraph"), "text inside p must be indented 12 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("        </p>"), "p closer must align with <p> at 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("    </div>"), "div closer must align with <div> at 4 spaces: {}", FormattedPass1);
 
     // Idempotence
-    let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config).expect("Pass 2 failed");
+    let FormattedPass2 = Source_Formatter::Format( & FormattedPass1, & Config).expect("Pass 2 failed");
     assert_eq!(FormattedPass1, FormattedPass2, "Multiline JSX formatting must be 100% idempotent");
 }
 
 #[test]
 fn Test_JSX_Multiline_Props()
 {
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Jsx;
     Config.Canvas_Width = 160;
 
@@ -677,26 +686,26 @@ fn Test_JSX_Multiline_Props()
     </div>
 );
 "#;
-    let FormattedPass1 = Source_Formatter::Format(Input, &Config).expect("Pass 1 failed");
-    assert!(FormattedPass1.contains("    <div"), "div header must be at 4 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("        className = \"card-container\""), "prop must be indented 8 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("        id        = \"main-card\""), "prop must be indented 8 spaces with aligned =: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("    >"), "header > must align with <div at 4 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("        <Component"), "Component must be at 8 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("            propA = \"val1\""), "Component prop must be at 12 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("            propB = \"val2\""), "Component prop must be at 12 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("        />"), "Component closer /> must align at 8 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("    </div>"), "div closer must align at 4 spaces: {}", FormattedPass1);
+    let FormattedPass1 = Source_Formatter::Format(Input, & Config).expect("Pass 1 failed");
+    assert!(FormattedPass1 .contains("    <div"), "div header must be at 4 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("        className = \"card-container\""), "prop must be indented 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("        id        = \"main-card\""), "prop must be indented 8 spaces with aligned =: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("    >"), "header > must align with <div at 4 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("        <Component"), "Component must be at 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("            propA = \"val1\""), "Component prop must be at 12 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("            propB = \"val2\""), "Component prop must be at 12 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("        />"), "Component closer /> must align at 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("    </div>"), "div closer must align at 4 spaces: {}", FormattedPass1);
 
     // Idempotence
-    let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config).expect("Pass 2 failed");
+    let FormattedPass2 = Source_Formatter::Format( & FormattedPass1, & Config).expect("Pass 2 failed");
     assert_eq!(FormattedPass1, FormattedPass2, "Multiline JSX with props must be 100% idempotent");
 }
 
 #[test]
 fn Test_JSX_Embedded_Expression_Indentation()
 {
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Tsx;
     Config.Canvas_Width = 160;
 
@@ -710,21 +719,21 @@ fn Test_JSX_Embedded_Expression_Indentation()
     </ul>
 );
 "#;
-    let FormattedPass1 = Source_Formatter::Format(Input, &Config).expect("Pass 1 failed");
-    assert!(FormattedPass1.contains("    <ul>"), "ul must be at 4 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("        {"), "expression opener must be at 8 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("        }"), "expression closer must be at 8 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("    </ul>"), "ul closer must be at 4 spaces: {}", FormattedPass1);
+    let FormattedPass1 = Source_Formatter::Format(Input, & Config).expect("Pass 1 failed");
+    assert!(FormattedPass1 .contains("    <ul>"), "ul must be at 4 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("        {"), "expression opener must be at 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("        }"), "expression closer must be at 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1 .contains("    </ul>"), "ul closer must be at 4 spaces: {}", FormattedPass1);
 
     // Idempotence
-    let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config).expect("Pass 2 failed");
+    let FormattedPass2 = Source_Formatter::Format( & FormattedPass1, & Config).expect("Pass 2 failed");
     assert_eq!(FormattedPass1, FormattedPass2, "JSX embedded expression must be 100% idempotent");
 }
 
 #[test]
 fn Test_JSX_Text_Adjacent_Expressions()
 {
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Tsx;
     Config.Canvas_Width = 160;
 
@@ -734,11 +743,11 @@ fn Test_JSX_Text_Adjacent_Expressions()
     </span>
 );
 "#;
-    let FormattedPass1 = Source_Formatter::Format(Input, &Config).expect("Pass 1 failed");
-    assert!(FormattedPass1.contains("{ startItem }-{ endItem }"), "Adjacent hyphen expression must not have extra spaces around hyphen: {}", FormattedPass1);
+    let FormattedPass1 = Source_Formatter::Format(Input, & Config).expect("Pass 1 failed");
+    assert!(FormattedPass1 .contains("{ startItem }-{ endItem }"), "Adjacent hyphen expression must not have extra spaces around hyphen: {}", FormattedPass1);
 
     // Idempotence
-    let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config).expect("Pass 2 failed");
+    let FormattedPass2 = Source_Formatter::Format( & FormattedPass1, & Config).expect("Pass 2 failed");
     assert_eq!(FormattedPass1, FormattedPass2, "JSX text adjacent expressions must be 100% idempotent");
 }
 
@@ -824,14 +833,11 @@ export const TelemetryGrid = <T extends TelemetryRecord>(props: TelemetryGridPro
 };
 "#;
 
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Tsx;
     Config.Canvas_Width = 160;
 
-    let Formatted = Source_Formatter::Format(Input, &Config);
+    let Formatted = Source_Formatter::Format(Input, & Config);
     match Formatted
-    {
-        Ok(res) => println!("Formatted:\n{}", res),
-        Err(e) => panic!("Error: {}", e),
-    }
+    { Ok(res) => println ! ("Formatted:\n{}", res), Err(e) => panic ! ("Error: {}", e), }
 }

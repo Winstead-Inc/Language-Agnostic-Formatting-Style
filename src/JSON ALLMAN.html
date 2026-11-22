@@ -65,7 +65,7 @@
 
                 PushFrame(Input, 0);
 
-                while (Stack.length> 0)
+                while (Stack.length > 0)
                 {
                     const Frame = Stack[Stack.length - 1];
                     const Value = Frame.Value;
@@ -106,7 +106,7 @@
                         {
                             if (Frame.Index >= Value.length)
                             {
-                                Output.push(Indent(Depth) + "]" + (Frame.IsLast ? "": ","));
+                                Output.push(Indent(Depth) + "]" + (Frame.IsLast ? "" : ","));
                                 Stack.pop();
                                 continue;
                             }
@@ -115,7 +115,7 @@
 
                             PushFrame(Item, Depth + 1, null, Frame.Index === Value.length - 1);
 
-                            Frame.Index ++;
+                            Frame.Index++;
                             continue;
                         }
                     }
@@ -141,7 +141,7 @@
                     {
                         if (Frame.Index >= Frame.Keys.length)
                         {
-                            Output.push(Indent(Depth) + "}" + (Frame.IsLast ? "": ","));
+                            Output.push(Indent(Depth) + "}" + (Frame.IsLast ? "" : ","));
                             Stack.pop();
                             continue;
                         }
@@ -151,7 +151,7 @@
 
                         PushFrame(Val, Depth + 1, Key, Frame.Index === Frame.Keys.length - 1);
 
-                        Frame.Index ++;
+                        Frame.Index++;
                         continue;
                     }
                 }
@@ -167,7 +167,7 @@
                 try
                 {
                     // Size protection (prevents browser freeze)
-                    if (Raw.length> 5_000_000) { throw new Error("Input too large (5MB limit)"); }
+                    if (Raw.length > 5_000_000) { throw new Error("Input too large (5MB limit)"); }
 
                     const Json = JSON.parse(Raw);
 

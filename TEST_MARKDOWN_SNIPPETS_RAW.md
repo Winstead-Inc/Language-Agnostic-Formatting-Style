@@ -22,61 +22,37 @@ The following snippet implements a multi-producer asynchronous buffer manager wr
 
 ```rust
 use std::collections::VecDeque;
-use std::sync::{Arc, Mutex, Condvar};
-use std::time::{Duration, Instant};
+use std::sync:: { Arc, Mutex, Condvar };
+use std::time:: { Duration, Instant };
 
-pub enum BufferStatus {
-    Ready(usize),
-    Pending { queue_depth: usize, estimated_ms: u64 },
-    Exhausted,
-}
+pub enum BufferStatus { Ready(usize), Pending { queue_depth: usize, estimated_ms: u64 }, Exhausted, }
 
-pub struct RingBuffer<T> {
-    storage: VecDeque<T>,
-    capacity: usize,
-    lock: Mutex<usize>,
-    notifier: Condvar,
-}
+pub struct RingBuffer<T> { storage: VecDeque<T>, capacity: usize, lock: Mutex<usize>, notifier: Condvar, }
 
-impl<T: Clone + Send + 'static> RingBuffer<T> {
-    pub fn new(capacity: usize) -> Self {
-        RingBuffer {
-            storage: VecDeque::with_capacity(capacity),
-            capacity,
-            lock: Mutex::new(0),
-            notifier: Condvar::new(),
-        }
-    }
+impl <T: Clone + Send + 'static> RingBuffer<T>
+{
+    pub fn new (capacity: usize) -> Self { RingBuffer { storage: VecDeque::with_capacity(capacity), capacity, lock: Mutex::new (0), notifier: Condvar::new (), } }
 
-    pub fn push(&mut self, item: T) -> Result<(), &'static str> {
-        if self.storage.len() >= self.capacity {
-            return Err("Capacity overflow encountered");
-        }
+    pub fn push( & mut self, item: T) -> Result < (), & 'static str >
+    {
+        if self.storage.len() >= self.capacity { return Err("Capacity overflow encountered"); }
         self.storage.push_back(item);
         Ok(())
     }
 
-    pub fn process_batch<F>(&mut self, mut handler: F) -> usize where F: FnMut(&T) -> bool {
+    pub fn process_batch<F>( & mut self, mut handler: F) -> usize where F: FnMut( & T) -> bool
+    {
         let mut processed = 0;
-        for item in &self.storage {
-            if handler(item) {
-                processed += 1;
-            } else {
-                break;
-            }
-        }
+        for item in & self.storage { if handler(item) { processed += 1; } else { break ; } }
         processed
     }
 
-    pub fn inspect(&self) -> BufferStatus {
-        match self.storage.len() {
+    pub fn inspect( & self) -> BufferStatus
+    {
+        match self.storage.len()
+        {
             0 => BufferStatus::Exhausted,
-            len if len < self.capacity => {
-                BufferStatus::Pending {
-                    queue_depth: len,
-                    estimated_ms: (len as u64) * 12,
-                }
-            }
+            len if len < self.capacity => { BufferStatus::Pending { queue_depth: len, estimated_ms: (len as u64) * 12, } }
             len => BufferStatus::Ready(len),
         }
     }
@@ -90,9 +66,11 @@ impl<T: Clone + Send + 'static> RingBuffer<T> {
 This section exercises the TypeScript and TSX formatting subsystem. It contains generic type parameters, Column-Anchored Hybrid `return (` statements, multiline JSX attributes, and arrow functions with trailing K&R braces.
 
 ```tsx
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback }
+from 'react';
 
-export interface TelemetryRecord {
+export interface TelemetryRecord
+{
     readonly id: string;
     readonly label: string;
     readonly latencyMs: number;
@@ -100,7 +78,8 @@ export interface TelemetryRecord {
     readonly tags: readonly string[];
 }
 
-export interface TelemetryGridProps<T extends TelemetryRecord> {
+export interface TelemetryGridProps<T extends TelemetryRecord>
+{
     readonly clusterId: string;
     readonly records: readonly T[];
     readonly refreshIntervalMs?: number;
@@ -108,64 +87,76 @@ export interface TelemetryGridProps<T extends TelemetryRecord> {
     readonly renderBadge?: (record: T) => React.ReactNode;
 }
 
-export const TelemetryGrid = <T extends TelemetryRecord>(props: TelemetryGridProps<T>): React.ReactElement => {
+export const TelemetryGrid = <T extends TelemetryRecord>(props: TelemetryGridProps<T>): React.ReactElement =>
+{
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [sortAscending, setSortAscending] = useState<boolean>(true);
 
-    const sortedRecords = useMemo(() => {
-        return [...props.records].sort((a, b) => {
-            if (sortAscending) {
-                return a.latencyMs - b.latencyMs;
-            } else {
-                return b.latencyMs - a.latencyMs;
-            }
-        });
-    }, [props.records, sortAscending]);
+    const sortedRecords = useMemo
+    (
+        () =>
+        {
+            return [...props.records].sort
+            (
+                (a, b) => { if (sortAscending) { return a.latencyMs - b.latencyMs; } else { return b.latencyMs - a.latencyMs; } }
+            );
+        },
 
-    const handleSelect = useCallback((item: T) => {
-        setSelectedId(item.id);
-        if (props.onSelectRecord) {
-            props.onSelectRecord(item);
-        }
-    }, [props.onSelectRecord]);
+        [props.records, sortAscending]
+    );
+
+    const handleSelect = useCallback
+    (
+        (item: T) => { setSelectedId(item.id); if (props.onSelectRecord) { props.onSelectRecord(item); } },
+        [props.onSelectRecord]
+    );
 
     return (
-        <section
-            className="TelemetryGridContainer"
-            data-cluster-id={props.clusterId}
-            data-record-count={props.records.length}>
-            <header className="TelemetryGridHeader">
-                <h2>Cluster Telemetry: {props.clusterId}</h2>
-                <button
-                    type="button"
-                    className="SortToggleBtn"
-                    onClick={() => { setSortAscending(!sortAscending); }}>
-                    Toggle Direction ({sortAscending ? 'ASC' : 'DESC'})
-                </button>
-            </header>
-            <div className="TelemetryCardList">
-                {sortedRecords.map((item, index) => {
-                    const isSelected = item.id === selectedId;
-                    return (
-                        <article
-                            key={item.id}
-                            className={`RecordCard ${isSelected ? 'selected' : ''}`}
-                            data-index={index}
-                            data-latency={item.latencyMs}
-                            onClick={() => { handleSelect(item); }}>
-                            <span className="RecordTitle">{item.label}</span>
-                            <span className="RecordLatency">{item.latencyMs}ms</span>
-                            {props.renderBadge ? props.renderBadge(item) : (
-                                <span className={`StatusPill ${item.isDegraded ? 'crit' : 'ok'}`}>
-                                    {item.isDegraded ? 'WARN' : 'NOMINAL'}
-                                </span>
-                            )}
-                        </article>
-                    );
-                })}
-            </div>
-        </section>
-    );
+               <section
+                   className         = "TelemetryGridContainer"
+                   data-cluster-id   = { props.clusterId }
+                   data-record-count = { props.records.length }>
+                   <header className = "TelemetryGridHeader">
+                       <h2>Cluster Telemetry: { props.clusterId }</h2>
+                       <button
+                           type      = "button"
+                           className = "SortToggleBtn"
+                           onClick   = { () => { setSortAscending(!sortAscending); } }>
+                           Toggle Direction ({ sortAscending ? 'ASC' : 'DESC' })
+                       </button>
+                   </header>
+                   <div className = "TelemetryCardList">
+                       {
+                           sortedRecords.map
+                           (
+                               (item, index) =>
+                               {
+                                   const isSelected = item.id === selectedId;
+                                   return (
+                                              <article
+                                                  key          = { item.id }
+                                                  className    = { `RecordCard ${isSelected ? 'selected' : ''}` }
+                                                  data-index   = { index }
+                                                  data-latency = { item.latencyMs }
+                                                  onClick      = { () => { handleSelect(item); } }>
+                                                  <span className = "RecordTitle">{ item.label }</span>
+                                                  <span className = "RecordLatency">{ item.latencyMs } ms</span>
+                                                  {
+                                                      props.renderBadge ? props.renderBadge(item) :
+                                                      (
+                                                          <span className = { `StatusPill ${item.isDegraded ? 'crit' : 'ok'}` }>
+                                                              { item.isDegraded ? 'WARN' : 'NOMINAL' }
+                                                          </span>
+                                                      )
+                                                  }
+                                              </article>
+                                          );
+                               }
+                           )
+                       }
+                   </div>
+               </section>
+           );
 };
 ```
 
@@ -181,76 +172,55 @@ import 'dart:collection';
 
 enum ConnectionState { disconnected, connecting, connected, faulted }
 
-class TelemetryPacket {
+class TelemetryPacket
+{
     final String packetId;
     final double metricValue;
     final DateTime recordedAt;
 
-    const TelemetryPacket({
-        required this.packetId,
-        required this.metricValue,
-        required this.recordedAt,
-    });
+    const TelemetryPacket({ required this.packetId, required this.metricValue, required this.recordedAt, });
 }
 
-class TelemetryOrchestrator {
+class TelemetryOrchestrator
+{
     final String gatewayUrl;
     final Duration timeoutDuration;
-    final StreamController<TelemetryPacket> _packetStream;
+    final StreamController <TelemetryPacket> _packetStream;
     ConnectionState _currentState = ConnectionState.disconnected;
 
-    TelemetryOrchestrator({
-        required this.gatewayUrl,
-        this.timeoutDuration = const Duration(seconds: 15),
-    }) : _packetStream = StreamController<TelemetryPacket>.broadcast();
+    TelemetryOrchestrator({ required this.gatewayUrl, this.timeoutDuration = const Duration(seconds: 15), }) : _packetStream = StreamController <TelemetryPacket>.broadcast();
 
-    Stream<TelemetryPacket> get packets => _packetStream.stream;
+    Stream <TelemetryPacket> get packets => _packetStream.stream;
     ConnectionState get state => _currentState;
 
-    Future<void> initializeConnection() async {
-        if (_currentState == ConnectionState.connected) {
-            return;
-        }
+    Future <void> initializeConnection() async
+    {
+        if (_currentState == ConnectionState.connected) { return; }
 
         _currentState = ConnectionState.connecting;
-        try {
-            await Future.delayed(const Duration(milliseconds: 250));
-            _currentState = ConnectionState.connected;
-            _scheduleHeartbeat();
-        } catch (error) {
-            _currentState = ConnectionState.faulted;
-            rethrow;
-        }
+        try { await Future.delayed(const Duration(milliseconds: 250)); _currentState = ConnectionState.connected; _scheduleHeartbeat(); }
+        catch (error) { _currentState = ConnectionState.faulted; rethrow; }
     }
 
-    void dispatchPacket(String id, double value) {
-        if (_currentState != ConnectionState.connected) {
-            throw StateError('Cannot dispatch packet when orchestrator is disconnected');
-        }
+    void dispatchPacket(String id, double value)
+    {
+        if (_currentState != ConnectionState.connected) { throw StateError('Cannot dispatch packet when orchestrator is disconnected'); }
 
-        final packet = TelemetryPacket(
-            packetId: id,
-            metricValue: value,
-            recordedAt: DateTime.now(),
-        );
+        final packet = TelemetryPacket(packetId: id, metricValue: value, recordedAt: DateTime.now(),);
 
         _packetStream.add(packet);
     }
 
-    void _scheduleHeartbeat() {
-        Timer.periodic(const Duration(seconds: 5), (timer) {
-            if (_currentState != ConnectionState.connected) {
-                timer.cancel();
-            } else {
-                dispatchPacket('heartbeat', 1.0);
-            }
-        });
+    void _scheduleHeartbeat()
+    {
+        Timer.periodic
+        (
+            const Duration(seconds: 5),
+            (timer) { if (_currentState != ConnectionState.connected) { timer.cancel(); } else { dispatchPacket('heartbeat', 1.0); } }
+        );
     }
 
-    void dispose() {
-        _packetStream.close();
-        _currentState = ConnectionState.disconnected;
-    }
+    void dispose() { _packetStream.close(); _currentState = ConnectionState.disconnected; }
 }
 ```
 
@@ -263,76 +233,37 @@ This Go snippet models worker pool orchestration with channels, select statement
 ```go
 package pipeline
 
-import (
-    "context"
-    "errors"
-    "sync"
-    "time"
-)
+import("context" "errors" "sync" "time")
 
-type Job struct {
-    ID       string
-    Payload  []byte
-    Attempts int
-}
+type Job struct { ID string Payload[] byte Attempts int }
 
-type Result struct {
-    JobID     string
-    Output    string
-    Error     error
-    Duration  time.Duration
-}
+type Result struct { JobID string Output string Error error Duration time.Duration }
 
-type WorkerPool struct {
-    concurrency int
-    jobsChan    chan Job
-    resultsChan chan Result
-    wg          sync.WaitGroup
-}
+type WorkerPool struct { concurrency int jobsChan chan Job resultsChan chan Result wg sync.WaitGroup }
 
-func NewWorkerPool(concurrency int, queueCap int) *WorkerPool {
-    return &WorkerPool{
-        concurrency: concurrency,
-        jobsChan:    make(chan Job, queueCap),
-        resultsChan: make(chan Result, queueCap),
-    }
-}
+func NewWorkerPool(concurrency int , queueCap int) * WorkerPool { return & WorkerPool { concurrency: concurrency, jobsChan: make(chan Job, queueCap), resultsChan: make(chan Result, queueCap), } }
 
-func (wp *WorkerPool) Start(ctx context.Context) {
-    for i := 0; i < wp.concurrency; i++ {
-        wp.wg.Add(1)
-        go wp.workerLoop(ctx, i)
-    }
-}
+func(wp * WorkerPool) Start(ctx context.Context) { for i: = 0; i < wp.concurrency; i ++ { wp.wg.Add(1) go wp.workerLoop(ctx, i) } }
 
-func (wp *WorkerPool) workerLoop(ctx context.Context, workerID int) {
+func(wp * WorkerPool) workerLoop(ctx context.Context, workerID int)
+{
     defer wp.wg.Done()
-    for {
-        select {
-        case <-ctx.Done():
+    for
+    {
+        select
+        {
+            case <- ctx.Done():
             return
-        case job, ok := <-wp.jobsChan:
-            if !ok {
-                return
-            }
-            start := time.Now()
-            out, err := wp.process(job)
-            wp.resultsChan <- Result{
-                JobID:    job.ID,
-                Output:   out,
-                Error:    err,
-                Duration: time.Since(start),
-            }
+            case job, ok: = <- wp.jobsChan:
+            if ! ok { return }
+            start: = time.Now()
+            out, err: = wp.process(job)
+            wp.resultsChan <- Result { JobID: job.ID, Output: out, Error: err, Duration: time.Since(start), }
         }
     }
 }
 
-func (wp *WorkerPool) process(j Job) (string, error) {
-    if len(j.Payload) == 0 {
-        return "", errors.New("empty payload")
-    }
-    return "PROCESSED: " + j.ID, nil
-}
+func(wp * WorkerPool) process(j Job)(string, error) { if len(j.Payload) == 0 { return "", errors.New("empty payload") } return "PROCESSED: " + j.ID, nil }
 ```
 
 ---
@@ -344,50 +275,67 @@ The following Kotlin code includes data classes, when expressions with branch lo
 ```kotlin
 package com.lafs.telemetry
 
-import kotlinx.coroutines.flow.MutableStateFlow
+import
+
+kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-sealed interface DeviceState {
-    data object Idle : DeviceState
+sealed interface DeviceState
+{
+    data object Idle: DeviceState
     data class Calibrating(val progressPercent: Int) : DeviceState
     data class Operational(val activeChannels: List<String>) : DeviceState
     data class Error(val reason: String, val recoveryCode: Int) : DeviceState
 }
 
-data class TelemetrySnapshot(
+data class TelemetrySnapshot
+(
     val deviceId: String,
     val timestampUtc: Long,
     val state: DeviceState
 )
 
-class DeviceController(private val deviceId: String) {
-    private val _stateFlow = MutableStateFlow<DeviceState>(DeviceState.Idle)
-    val stateFlow: StateFlow<DeviceState> = _stateFlow.asStateFlow()
+class DeviceController(private val deviceId: String)
+{
+    private val _stateFlow = MutableStateFlow<DeviceState> (DeviceState.Idle)
+    val stateFlow: StateFlow < DeviceState > = _stateFlow.asStateFlow()
 
-    fun transition(next: DeviceState): Boolean {
-        return when (val current = _stateFlow.value) {
-            is DeviceState.Idle -> {
+    fun transition(next: DeviceState): Boolean
+    {
+        return when (val current = _stateFlow.value)
+        {
+            is DeviceState.Idle ->
+            {
                 _stateFlow.value = next
                 true
             }
-            is DeviceState.Calibrating -> {
-                if (next is DeviceState.Operational || next is DeviceState.Error) {
+            is DeviceState.Calibrating ->
+            {
+                if (next is DeviceState.Operational || next is DeviceState.Error)
+                {
                     _stateFlow.value = next
                     true
-                } else {
+                }
+                else
+                {
                     false
                 }
             }
-            is DeviceState.Operational -> {
+            is DeviceState.Operational ->
+            {
                 _stateFlow.value = next
                 true
             }
-            is DeviceState.Error -> {
-                if (next is DeviceState.Idle) {
+            is DeviceState.Error ->
+            {
+                if (next is DeviceState.Idle)
+                {
                     _stateFlow.value = next
                     true
-                } else {
+                }
+                else
+                {
                     false
                 }
             }
@@ -405,24 +353,12 @@ Under LAFS, code blocks located inside Markdown blockquotes (`>`) must have thei
 > [!NOTE]
 > Here is an embedded TypeScript snippet inside an alert callout:
 > ```typescript
-> export function ValidateCredentials(apiKey: string, secretHash: string): boolean {
->     if (apiKey.length < 32) {
->         return false;
->     }
->     if (secretHash.length !== 64) {
->         return false;
->     }
->     return true;
-> }
+> export function ValidateCredentials(apiKey: string, secretHash: string): boolean
+> { if (apiKey.length < 32) { return false; } if (secretHash.length !== 64) { return false; } return true; }
 > ```
 > And here is a Rust error handling routine within the same blockquote:
 > ```rust
-> pub fn safe_divide(numerator: f64, denominator: f64) -> Result<f64, &'static str> {
->     if denominator.abs() < f64::EPSILON {
->         return Err("Division by zero");
->     }
->     Ok(numerator / denominator)
-> }
+> pub fn safe_divide(numerator: f64, denominator: f64) -> Result<f64, & 'static str> { if denominator.abs() < f64::EPSILON { return Err("Division by zero"); } Ok(numerator / denominator) }
 > ```
 
 ---
@@ -435,21 +371,26 @@ Code fences inside ordered and unordered list items carry indentation whitespace
    ```javascript
    const http = require('http');
 
-   const server = http.createServer((req, res) => {
-       if (req.url === '/health') {
-           res.writeHead(200, { 'Content-Type': 'application/json' });
-           res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
-       } else {
-           res.writeHead(404);
-           res.end();
+   const server = http.createServer
+   (
+       (req, res) =>
+       {
+           if (req.url === '/health')
+           {
+               res.writeHead(200, { 'Content-Type': 'application/json' });
+               res.end(JSON.stringify( { status: 'ok', uptime: process.uptime() }));
+           }
+           else { res.writeHead(404); res.end(); }
        }
-   });
+   );
    ```
 2. Next, launch the service using a shell wrapper script:
    ```bash
-   deploy_cluster() {
+   deploy_cluster()
+   {
        local target_env="${1:-production}"
-       if [ -z "$DEPLOY_KEY" ]; then
+       if [ -z "$DEPLOY_KEY" ];
+       then
            echo "Fatal: Missing DEPLOY_KEY environment variable"
            exit 1
        fi
@@ -500,17 +441,10 @@ sequenceDiagram
 
 ```json
 {
-  "service": "lafs-telemetry-engine",
-  "version": "1.0.0",
-  "capabilities": [
-    "multi-language",
-    "markdown-extraction",
-    "pure-allman-symmetry"
-  ],
-  "runtime": {
-    "threads": 16,
-    "canvasWidth": 160
-  }
+    "service": "lafs-telemetry-engine",
+    "version": "1.0.0",
+    "capabilities": ["multi-language", "markdown-extraction", "pure-allman-symmetry"],
+    "runtime": { "threads": 16, "canvasWidth": 160 }
 }
 ```
 

@@ -66,9 +66,11 @@ impl <T: Clone + Send + 'static> RingBuffer<T>
 This section exercises the TypeScript and TSX formatting subsystem. It contains generic type parameters, Column-Anchored Hybrid `return (` statements, multiline JSX attributes, and arrow functions with trailing K&R braces.
 
 ```tsx
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback }
+from 'react';
 
-export interface TelemetryRecord {
+export interface TelemetryRecord
+{
     readonly id: string;
     readonly label: string;
     readonly latencyMs: number;
@@ -76,7 +78,8 @@ export interface TelemetryRecord {
     readonly tags: readonly string[];
 }
 
-export interface TelemetryGridProps<T extends TelemetryRecord> {
+export interface TelemetryGridProps<T extends TelemetryRecord>
+{
     readonly clusterId: string;
     readonly records: readonly T[];
     readonly refreshIntervalMs?: number;
@@ -84,64 +87,76 @@ export interface TelemetryGridProps<T extends TelemetryRecord> {
     readonly renderBadge?: (record: T) => React.ReactNode;
 }
 
-export const TelemetryGrid = <T extends TelemetryRecord>(props: TelemetryGridProps<T>): React.ReactElement => {
+export const TelemetryGrid = <T extends TelemetryRecord>(props: TelemetryGridProps<T>): React.ReactElement =>
+{
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [sortAscending, setSortAscending] = useState<boolean>(true);
 
-    const sortedRecords = useMemo(() => {
-        return [...props.records].sort((a, b) => {
-            if (sortAscending) {
-                return a.latencyMs - b.latencyMs;
-            } else {
-                return b.latencyMs - a.latencyMs;
-            }
-        });
-    }, [props.records, sortAscending]);
+    const sortedRecords = useMemo
+    (
+        () =>
+        {
+            return [...props.records].sort
+            (
+                (a, b) => { if (sortAscending) { return a.latencyMs - b.latencyMs; } else { return b.latencyMs - a.latencyMs; } }
+            );
+        },
 
-    const handleSelect = useCallback((item: T) => {
-        setSelectedId(item.id);
-        if (props.onSelectRecord) {
-            props.onSelectRecord(item);
-        }
-    }, [props.onSelectRecord]);
+        [props.records, sortAscending]
+    );
+
+    const handleSelect = useCallback
+    (
+        (item: T) => { setSelectedId(item.id); if (props.onSelectRecord) { props.onSelectRecord(item); } },
+        [props.onSelectRecord]
+    );
 
     return (
-        <section
-            className="TelemetryGridContainer"
-            data-cluster-id={props.clusterId}
-            data-record-count={props.records.length}>
-            <header className="TelemetryGridHeader">
-                <h2>Cluster Telemetry: {props.clusterId}</h2>
-                <button
-                    type="button"
-                    className="SortToggleBtn"
-                    onClick={() => { setSortAscending(!sortAscending); }}>
-                    Toggle Direction ({sortAscending ? 'ASC' : 'DESC'})
-                </button>
-            </header>
-            <div className="TelemetryCardList">
-                {sortedRecords.map((item, index) => {
-                    const isSelected = item.id === selectedId;
-                    return (
-                        <article
-                            key={item.id}
-                            className={`RecordCard ${isSelected ? 'selected' : ''}`}
-                            data-index={index}
-                            data-latency={item.latencyMs}
-                            onClick={() => { handleSelect(item); }}>
-                            <span className="RecordTitle">{item.label}</span>
-                            <span className="RecordLatency">{item.latencyMs}ms</span>
-                            {props.renderBadge ? props.renderBadge(item) : (
-                                <span className={`StatusPill ${item.isDegraded ? 'crit' : 'ok'}`}>
-                                    {item.isDegraded ? 'WARN' : 'NOMINAL'}
-                                </span>
-                            )}
-                        </article>
-                    );
-                })}
-            </div>
-        </section>
-    );
+               <section
+                   className         = "TelemetryGridContainer"
+                   data-cluster-id   = { props.clusterId }
+                   data-record-count = { props.records.length }>
+                   <header className = "TelemetryGridHeader">
+                       <h2>Cluster Telemetry: { props.clusterId }</h2>
+                       <button
+                           type      = "button"
+                           className = "SortToggleBtn"
+                           onClick   = { () => { setSortAscending(!sortAscending); } }>
+                           Toggle Direction ({ sortAscending ? 'ASC' : 'DESC' })
+                       </button>
+                   </header>
+                   <div className = "TelemetryCardList">
+                       {
+                           sortedRecords.map
+                           (
+                               (item, index) =>
+                               {
+                                   const isSelected = item.id === selectedId;
+                                   return (
+                                              <article
+                                                  key          = { item.id }
+                                                  className    = { `RecordCard ${isSelected ? 'selected' : ''}` }
+                                                  data-index   = { index }
+                                                  data-latency = { item.latencyMs }
+                                                  onClick      = { () => { handleSelect(item); } }>
+                                                  <span className = "RecordTitle">{ item.label }</span>
+                                                  <span className = "RecordLatency">{ item.latencyMs } ms</span>
+                                                  {
+                                                      props.renderBadge ? props.renderBadge(item) :
+                                                      (
+                                                          <span className = { `StatusPill ${item.isDegraded ? 'crit' : 'ok'}` }>
+                                                              { item.isDegraded ? 'WARN' : 'NOMINAL' }
+                                                          </span>
+                                                      )
+                                                  }
+                                              </article>
+                                          );
+                               }
+                           )
+                       }
+                   </div>
+               </section>
+           );
 };
 ```
 

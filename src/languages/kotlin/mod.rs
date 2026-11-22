@@ -1119,9 +1119,7 @@ impl <'a> Kotlin_Emitter<'a>
         {
             if ! self.Config.Preserve_Empty_Lines
             && (self.Output.ends_with("{\n") || self.Output.ends_with("[\n") || self.Output.ends_with("(\n"))
-            {
-                return ;
-            }
+            { return ; }
             self.Output.push('\n');
             self.Current_Line_Len = 0;
             self.Line_Has_Content = false;
@@ -1236,13 +1234,7 @@ impl <'a> Kotlin_Emitter<'a>
         if Token.IsTrivia() { return ; }
 
         if Token.Preceding_Newlines > 0
-        {
-            self.EnsureNewline();
-            if Token.Preceding_Newlines >= 2
-            {
-                self.EnsureBlankLine();
-            }
-        }
+        { self.EnsureNewline(); if Token.Preceding_Newlines >= 2 { self.EnsureBlankLine(); } }
 
         if ! self.Line_Has_Content { self.EmitIndent(Level); }
         else { self.EmitSpaceBeforeToken(Token); }
@@ -1404,13 +1396,9 @@ impl <'a> Kotlin_Emitter<'a>
         self.EnsureNewline();
         let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
         if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
-        {
-            if ! self.Output.ends_with("\n\n") { self.WriteNewline(); }
-        }
+        { if ! self.Output.ends_with("\n\n") { self.WriteNewline(); } }
         else if self.Output.ends_with("\n\n")
-        {
-            self.Output.pop();
-        }
+        { self.Output.pop(); }
         self.EmitIndent(Level);
         self.EmitRaw( & CloseRun);
 
@@ -1434,13 +1422,9 @@ impl <'a> Kotlin_Emitter<'a>
             self.EnsureNewline();
             let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
             if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
-            {
-                if ! self.Output.ends_with("\n\n") { self.WriteNewline(); }
-            }
+            { if ! self.Output.ends_with("\n\n") { self.WriteNewline(); } }
             else if self.Output.ends_with("\n\n")
-            {
-                self.Output.pop();
-            }
+            { self.Output.pop(); }
             self.EmitIndent(Level);
             self.EmitRaw(Container.Kind.CloseGlyph());
             for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
@@ -1458,13 +1442,9 @@ impl <'a> Kotlin_Emitter<'a>
         self.EnsureNewline();
         let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
         if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
-        {
-            if ! self.Output.ends_with("\n\n") { self.WriteNewline(); }
-        }
+        { if ! self.Output.ends_with("\n\n") { self.WriteNewline(); } }
         else if self.Output.ends_with("\n\n")
-        {
-            self.Output.pop();
-        }
+        { self.Output.pop(); }
         self.EmitIndent(Level);
         self.EmitRaw(Container.Kind.CloseGlyph());
         for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
@@ -1535,7 +1515,10 @@ pub fn VerifyKotlinTokenEquivalence(OriginalSource: & str, FormattedSource: & st
 
     if OrigSignificant.len() != FormSignificant.len()
     {
-        return Err(format ! ("E_VERIFY(V1): Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
+        return Err
+        (
+            format!("E_VERIFY(V1): Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len())
+        );
     }
 
     for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate() { if Orig != Form { return Err(format ! ("E_VERIFY(V1): Safety Gate Failed: Token #{} mismatch! (Expected '{}', Got '{}')", Index, Orig, Form)); } }

@@ -1115,9 +1115,7 @@ impl <'a> Dart_Emitter<'a>
         {
             if ! self.Config.Preserve_Empty_Lines
             && (self.Output.ends_with("{\n") || self.Output.ends_with("[\n") || self.Output.ends_with("(\n"))
-            {
-                return ;
-            }
+            { return ; }
             self.Output.push('\n');
             self.Current_Line_Len = 0;
             self.Line_Has_Content = false;
@@ -1903,13 +1901,9 @@ impl <'a> Dart_Emitter<'a>
             self.EnsureNewline();
             let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
             if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
-            {
-                self.EnsureBlankLine();
-            }
+            { self.EnsureBlankLine(); }
             else if self.Output.ends_with("\n\n")
-            {
-                self.Output.pop();
-            }
+            { self.Output.pop(); }
 
             // 4. Compound closing run at Level indent
             self.EmitIndent(Level);
@@ -1949,13 +1943,9 @@ impl <'a> Dart_Emitter<'a>
             self.EnsureNewline();
             let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
             if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
-            {
-                self.EnsureBlankLine();
-            }
+            { self.EnsureBlankLine(); }
             else if self.Output.ends_with("\n\n")
-            {
-                self.Output.pop();
-            }
+            { self.Output.pop(); }
 
             // 4. Closing delimiter on its own line at Level indent
             self.EmitIndent(Level);
@@ -2014,13 +2004,9 @@ impl <'a> Dart_Emitter<'a>
                         self.EnsureNewline();
                         let HasPrecedingBlank = BodyC.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
                         if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
-                        {
-                            self.EnsureBlankLine();
-                        }
+                        { self.EnsureBlankLine(); }
                         else if self.Output.ends_with("\n\n")
-                        {
-                            self.Output.pop();
-                        }
+                        { self.Output.pop(); }
                         self.EmitIndent(Level + 1);
                         self.EmitRaw("}");
                         self.WriteNewline();
@@ -2074,13 +2060,9 @@ impl <'a> Dart_Emitter<'a>
             self.EnsureNewline();
             let HasPrecedingBlank = Container.Close_Token.as_ref().map_or(false, | T | T.Preceding_Newlines >= 2);
             if HasPrecedingBlank && self.Config.Preserve_Empty_Lines
-            {
-                self.EnsureBlankLine();
-            }
+            { self.EnsureBlankLine(); }
             else if ! HasPrecedingBlank && self.Output.ends_with("\n\n")
-            {
-                self.Output.pop();
-            }
+            { self.Output.pop(); }
             self.EmitIndent(BaseLevel);
             self.EmitRaw("}");
         }
@@ -2123,7 +2105,10 @@ pub fn VerifyDartTokenEquivalence(OriginalSource: & str, FormattedSource: & str)
                 break;
             }
         }
-        return Err(format ! ("E_VERIFY(V1): Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len()));
+        return Err
+        (
+            format!("E_VERIFY(V1): Safety Gate Failed: Significant token count mismatch! (Original: {}, Formatted: {})", OrigSignificant.len(), FormSignificant.len())
+        );
     }
 
     for (Index, (Orig, Form)) in OrigSignificant.iter().zip(FormSignificant.iter()).enumerate()

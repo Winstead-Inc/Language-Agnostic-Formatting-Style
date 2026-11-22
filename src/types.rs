@@ -1,6 +1,9 @@
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Source_Language { C, Cpp, CSharp, JavaScript, TypeScript, Jsx, Tsx, Shell, Go, Php, Html, Css, Rust, Kotlin, KotlinOfficial, Batch, Toml, CargoLock, Dart, Markdown, Typst, Generic, }
+pub enum Source_Language
+{
+    C, Cpp, CSharp, JavaScript, TypeScript, Jsx, Tsx, Shell, Go, Php, Html, Css, Rust, Kotlin, KotlinOfficial, Batch, Toml, CargoLock, Dart, Markdown, Typst, Generic,
+}
 
 impl Source_Language
 {

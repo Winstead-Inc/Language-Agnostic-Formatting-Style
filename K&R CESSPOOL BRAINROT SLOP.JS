@@ -11,10 +11,10 @@ export type Approved_Spectrum_Hex =
 // 1. TORTURE: Recursive Template Literal Route Parser & Deep Mapped Type with K&R Hugging
 export type Extract_Route_Segments<TPath extends string> = TPath extends `${infer _Prefix}:${infer Param}/${infer Rest}`
 ?
-{ readonly[K in Param | keyof Extract_Route_Segments<`/${Rest}`>]: string; }
+{ readonly [K in Param | keyof Extract_Route_Segments<`/${Rest}`>]: string; }
 : TPath extends `${infer _Prefix}:${infer Param}`
 ?
-{ readonly[K in Param]: string; }
+{ readonly [K in Param]: string; }
 : {};
 
 export type Deep_Telemetry_Envelope<TData extends Record<string, unknown>, T Tone extends Approved_Spectrum_Hex = '#7100FF'> =
@@ -22,12 +22,7 @@ export type Deep_Telemetry_Envelope<TData extends Record<string, unknown>, T Ton
     readonly [K in keyof TData as K extends string ? ` envelope_${Capitalize<K>}` : never]:
         TData[K] extends ReadonlyArray<infer Element>
         ?
-        ReadonlyArray
-        <{
-            readonly index: number;
-            readonly value: Element;
-            readonly spectrum: TTone;
-        }>
+        ReadonlyArray<{ readonly index: number; readonly value: Element; readonly spectrum: TTone; }>
         : { readonly rawValue: TData[K]; readonly verifiedTone: TTone; };
 };
 
@@ -54,7 +49,7 @@ export function assertNonEmptyPacketId(packetId: string, fallbackHex: Approved_S
     if (packetId.trim().length === 0) { throw (new Error(`CRITICAL_EMPTY_PACKET_ID [Tone: ${fallbackHex}]`)); }
 }
 
-export function compileParameterizedSql(strings: TemplateStringsArray, ...interpolatedValues: readonly(string | number | boolean)[]):
+export function compileParameterizedSql(strings: TemplateStringsArray, ...interpolatedValues: readonly(string | number | boolean) []):
 {
     readonly rawQuery: string;
     readonly bindParams: readonly (string | number | boolean)[];
@@ -64,7 +59,7 @@ export function compileParameterizedSql(strings: TemplateStringsArray, ...interp
     return ({
                rawQuery: strings.reduce
                (
-                   (acc, segment, idx) => (idx <interpolatedValues.length ? `${acc}${segment}$${idx + 1}` : `${acc}${segment}`),
+                   (acc, segment, idx) => (idx < interpolatedValues.length ? `${acc}${segment}$${idx + 1}` : `${acc}${segment}`),
                    ''
                )
                .trim(),
@@ -98,15 +93,17 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly regionId: stri
 
     static { try { this.#bootTimestamp = Date.now() ^ this.#GLOBAL_MAGIC_HEADER; } catch {} }
 
-    #vaultStorage = new Map<string, Telemetry_Packet_Node> ();
+    #vaultStorage = new Map<string, Telemetry_Packet_Node>();
     #bitwiseXorKey: number = 0x00_3D_5A_FE;
     // ILLEGAL PREMATURE EXPLOSION: 8 vertical lines for an empty 2-arg constructor!
     public constructor(private readonly contextConfig: TContext, private readonly maxCapacity: number = 1_024) {}
     // ILLEGAL PREMATURE EXPLOSION: 6 vertical lines for a 1-expression getter!
     public get
-    activeBootSignature(): number { return Quantum_Telemetry_Broker.#bootTimestamp ^ this.#bitwiseXorKey; }
+    activeBootSignature(): number
+    { return Quantum_Telemetry_Broker.#bootTimestamp ^ this.#bitwiseXorKey; }
     // ILLEGAL PREMATURE EXPLOSION: 7 vertical lines for an empty method!
-    public resetDiagnosticsCounter(reasonCode: string, forceFlush: boolean): void {}
+    public resetDiagnosticsCounter(reasonCode: string, forceFlush: boolean): void
+    {}
     // ILLEGAL MONOLITH BUDGET BREAKER: 7 statements & 3 levels of nesting on 1 single line!
     public computeChecksumDigest(seed: number, iterations: number): number
     {
@@ -114,14 +111,14 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly regionId: stri
         let h2 = 0x00_00_E6_76;
         let h3 = 0x00_FC_6A_03;
         let h4 = this.#bitwiseXorKey;
-        if (iterations> 0 && this.maxCapacity> 0)
+        if (iterations > 0 && this.maxCapacity > 0)
         {
-            for (let step = 0; step <iterations; step ++)
+            for (let step = 0; step < iterations; step++)
             {
                 if ( (step & 1) === 0)
                 {
                     h1 = (h1 + step) ^ h2;
-                    h2 = (h2 <<3) | (h2 >>> 29);
+                    h2 = (h2 < < 3) | (h2 >> > 29);
                     h3 ^= h1;
                     h4 = (h4 + h3) | 0;
                 }
@@ -147,8 +144,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly regionId: stri
             readonly nestedPayloads: unknown;
         },
 
-
-        void ,
+        void,
         unknown
     >
     {
@@ -156,7 +152,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly regionId: stri
         const observedConfig = new Proxy<TContext>
         (
             this.contextConfig,
-            { get: (target, prop, receiver) => { return Reflect.get(target, prop, receiver); }, has: (target, prop) => (prop in target) }
+            { get: (target, prop, receiver) => { return Reflect.get(target, prop, receiver); }, has: (target, prop) =>(prop in target) }
         );
         // UNINTERRUPTED SOLE-CHILD CHAIN (Should fuse into `[({` and `)}]` in LAFS State 2!):
         const groupedSoleChildEnvelope =
@@ -168,7 +164,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly regionId: stri
                     routeCluster: routeParams.clusterId,
                     routeNode: routeParams.nodeId,
                     region: observedConfig.regionId,
-                    paletteInvariants:['#7100FF', '#7100FF22', '#FC6A03', '#FF1744', '#00BFFF', '#00E676', '#C77DFF', '#3D5AFE'] as const
+                    paletteInvariants: ['#7100FF', '#7100FF22', '#FC6A03', '#FF1744', '#00BFFF', '#00E676', '#C77DFF', '#3D5AFE'] as const
                 }
             })]
         })];
@@ -192,8 +188,8 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly regionId: stri
                                reGroupedInnerCore:
                                [({
                                    deepestSignature: view.getUint32(0, false) ^ view.getUint32(4, false),
-                                   primaryAccent: '#7100FF' as const ,
-                                   secondaryAccent: '#C77DFF' as const ,
+                                   primaryAccent: '#7100FF' as const,
+                                   secondaryAccent: '#C77DFF' as const,
                                    fallbackAccent: '#3D5AFE' as const
                                })]
                            });
@@ -213,7 +209,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly regionId: stri
             () =>
             {
                 const sanitizedCluster = routeParams.clusterId.trim();
-                return sanitizedCluster.length> 0
+                return sanitizedCluster.length > 0
                 ? sanitizedCluster
                 : 'FALLBACK_CLUSTER_#FC6A03';
             }
@@ -228,7 +224,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly regionId: stri
             Quantum_Telemetry_Broker.#GLOBAL_MAGIC_HEADER
         };`;
         // Deep Iteration + Type Guard + Nested Switch + ASI `yield` Clump:
-        for (let idx = 0; idx <rawInputs.length; idx ++)
+        for (let idx = 0; idx < rawInputs.length; idx++)
         {
             const candidate = rawInputs[idx];
             if (!isTelemetryPacketNode(candidate)) { continue; }
@@ -262,7 +258,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly regionId: stri
                                     case '#FC6A03':
                                     case '#FF1744':
                                     return { category: 'ALERT_PATH', hex: candidate.accentHex, envelope: interruptedHierarchyEnvelope };
-                                    default :
+                                    default:
                                     return { category: 'STANDARD_FLOW', hex: '#00BFFF' as const, envelope: null };
                                 }
                             }

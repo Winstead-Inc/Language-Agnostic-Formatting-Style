@@ -8,10 +8,10 @@ export type Approved_Spectrum_Hex = '#7100FF' | '#7100FF22' | '#FC6A03' | '#FF17
 export type Extract_Route_Segments<TPath extends string> =
 TPath extends `${infer _Prefix}:${infer Param}/${infer Rest}`
 ?
-{ readonly[K in Param | keyof Extract_Route_Segments<`/${Rest}`>]: string }
+{ readonly [K in Param | keyof Extract_Route_Segments<`/${Rest}`>]: string }
 : TPath extends `${infer _Prefix}:${infer Param}`
 ?
-{ readonly[K in Param]: string }
+{ readonly [K in Param]: string }
 : {};
 
 export type Deep_Telemetry_Envelope<TData extends Record<string, unknown>, TTone extends Approved_Spectrum_Hex = '#7100FF'> =
@@ -19,12 +19,7 @@ export type Deep_Telemetry_Envelope<TData extends Record<string, unknown>, TTone
     readonly [K in keyof TData as K extends string ? `envelope_${Capitalize<K>}` : never]:
         TData[K] extends ReadonlyArray<infer Element>
         ?
-        ReadonlyArray
-        <{
-            readonly Index: number;
-            readonly Value: Element;
-            readonly Spectrum: TTone
-        }>
+        ReadonlyArray<{ readonly Index: number; readonly Value: Element; readonly Spectrum: TTone }>
         : { readonly RawValue: TData[K]; readonly VerifiedTone: TTone };
 };
 
@@ -57,7 +52,7 @@ export function AssertNonEmptyPacketId(PacketId: string, FallbackHex: Approved_S
     }
 }
 
-export function CompileParameterizedSql(Strings: TemplateStringsArray, ...InterpolatedValues: readonly(string | number | boolean)[]):
+export function CompileParameterizedSql(Strings: TemplateStringsArray, ...InterpolatedValues: readonly(string | number | boolean) []):
 {
     readonly RawQuery: string;
     readonly BindParams: readonly (string | number | boolean)[];
@@ -67,7 +62,7 @@ export function CompileParameterizedSql(Strings: TemplateStringsArray, ...Interp
     // SECTION 6.1 — Column-Anchored Hybrid for JS/TS `return ({`:
     return ({
                RawQuery:
-               Strings.reduce( (Acc, Segment, Idx) => (Idx <InterpolatedValues.length ? `${Acc}${Segment}$${Idx + 1}` : `${Acc}${Segment}`), '').trim(),
+               Strings.reduce( (Acc, Segment, Idx) =>(Idx <InterpolatedValues.length ? `${Acc}${Segment}$${Idx + 1}` : `${Acc}${Segment}`), '').trim(),
                BindParams: InterpolatedValues,
                BadgeColor: '#00BFFF'
            });
@@ -76,7 +71,7 @@ export function CompileParameterizedSql(Strings: TemplateStringsArray, ...Interp
 export function BindTelemetryAudit(BadgeHex: Approved_Spectrum_Hex)
 {
     return (
-               function <This,
+               function < This,
                Args extends any[],
                Return>
                (
@@ -103,12 +98,14 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly RegionId: stri
 
     static { try { this.#BootTimestamp = Date.now() ^ this.#GLOBAL_MAGIC_HEADER; } catch {} }
 
-    #VaultStorage = new Map<string, Telemetry_Packet_Node> ();
+    #VaultStorage = new Map<string, Telemetry_Packet_Node>();
     #BitwiseXorKey: number = 0x00_3D_5A_FE;
     // STATE 1 MONOLITHS: 21 lines of K&R vertical waste collapsed into 3 crisp lines!
     public constructor(private readonly ContextConfig: TContext, private readonly MaxCapacity: number = 1_024) {}
-    public get ActiveBootSignature(): number { return Quantum_Telemetry_Broker.#BootTimestamp ^ this.#BitwiseXorKey; }
-    public ResetDiagnosticsCounter(ReasonCode: string, ForceFlush: boolean): void { void ReasonCode; void ForceFlush; }
+    public get ActiveBootSignature(): number
+    { return Quantum_Telemetry_Broker.#BootTimestamp ^ this.#BitwiseXorKey; }
+    public ResetDiagnosticsCounter(ReasonCode: string, ForceFlush: boolean): void
+    { void ReasonCode; void ForceFlush; }
     // Complexity Budget Breaker (> 4 statements and > 2 nesting depth forces full symmetry):
     public ComputeChecksumDigest(Seed: number, Iterations: number): number
     {
@@ -117,14 +114,14 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly RegionId: stri
         let HashC = 0x00_FC_6A_03;
         let HashD = this.#BitwiseXorKey;
 
-        if (Iterations> 0 && this.MaxCapacity> 0)
+        if (Iterations > 0 && this.MaxCapacity > 0)
         {
-            for (let Step = 0; Step <Iterations; Step ++)
+            for (let Step = 0; Step <Iterations; Step++)
             {
                 if ( (Step & 1) === 0)
                 {
                     HashA = (HashA + Step) ^ HashB;
-                    HashB = (HashB <<3) | (HashB >>> 29);
+                    HashB = (HashB < < 3) | (HashB >> > 29);
                     HashC ^= HashA;
                     HashD = (HashD + HashC) | 0;
                 }
@@ -150,8 +147,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly RegionId: stri
             readonly NestedPayloads: unknown;
         },
 
-
-        void ,
+        void,
         unknown
     >
     {
@@ -172,7 +168,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly RegionId: stri
                     RouteCluster: RouteParams.ClusterId,
                     RouteNode: RouteParams.NodeId,
                     Region: ObservedConfig.RegionId,
-                    PaletteInvariants:['#7100FF', '#7100FF22', '#FC6A03', '#FF1744', '#00BFFF', '#00E676', '#C77DFF', '#3D5AFE'] as const
+                    PaletteInvariants: ['#7100FF', '#7100FF22', '#FC6A03', '#FF1744', '#00BFFF', '#00E676', '#C77DFF', '#3D5AFE'] as const
                 }
             })]
         })];
@@ -196,8 +192,8 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly RegionId: stri
                                ReGroupedInnerCore:
                                [({
                                    DeepestSignature: View.getUint32(0, false) ^ View.getUint32(4, false),
-                                   PrimaryAccent: '#7100FF' as const ,
-                                   SecondaryAccent: '#C77DFF' as const ,
+                                   PrimaryAccent: '#7100FF' as const,
+                                   SecondaryAccent: '#C77DFF' as const,
                                    FallbackAccent: '#3D5AFE' as const
                                })]
                            });
@@ -219,7 +215,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly RegionId: stri
                     () =>
                     {
                         const SanitizedCluster = RouteParams.ClusterId.trim();
-                        return SanitizedCluster.length> 0 ? SanitizedCluster: 'FALLBACK_CLUSTER_#FC6A03';
+                        return SanitizedCluster.length > 0 ? SanitizedCluster : 'FALLBACK_CLUSTER_#FC6A03';
                     }
                 )
                 ()
@@ -229,7 +225,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly RegionId: stri
             AND magic_mask = ${Quantum_Telemetry_Broker.#GLOBAL_MAGIC_HEADER};
         `;
 
-        for (let Idx = 0; Idx <RawInputs.length; Idx ++)
+        for (let Idx = 0; Idx <RawInputs.length; Idx++)
         {
             const Candidate = RawInputs[Idx];
             if (!IsTelemetryPacketNode(Candidate)) { continue; }
@@ -247,7 +243,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly RegionId: stri
                     ScaledValue: MetricVal * (Idx + 1),
                     Tone: IsHealthy
                     ?
-                    ('#00E676' as const): ('#FF1744' as const),
+                    ('#00E676' as const) : ('#FF1744' as const),
                     DiagnosticBranch:
                     (
                         () =>
@@ -262,7 +258,7 @@ export class Quantum_Telemetry_Broker<TContext extends { readonly RegionId: stri
                                     case '#FC6A03':
                                     case '#FF1744':
                                     return { Category: 'ALERT_PATH', Hex: Candidate.AccentHex, Envelope: InterruptedHierarchyEnvelope };
-                                    default :
+                                    default:
                                     return { Category: 'STANDARD_FLOW', Hex: '#00BFFF' as const, Envelope: null };
                                 }
                             }

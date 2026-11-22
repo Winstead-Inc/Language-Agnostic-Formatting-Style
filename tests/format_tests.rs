@@ -234,40 +234,40 @@ fn Test_Blank_Line_After_Import_Block()
 fn Test_Preserve_Empty_Lines_After_Opening_Delimiter()
 {
     let Input = "void ExecuteTask(int A, int B)\n{\n\n    DoFirst();\n    DoSecond();\n}\n";
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Canvas_Width = 50;
     Config.Preserve_Empty_Lines = true;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("{\n\n    DoFirst();"), "Empty line after opening brace must be preserved when Preserve_Empty_Lines is true: {}", Formatted);
 
     Config.Preserve_Empty_Lines = false;
-    let Formatted_Stripped = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
-    assert!(!Formatted_Stripped.contains("{\n\n"), "Empty line after opening brace must be stripped when Preserve_Empty_Lines is false: {}", Formatted_Stripped);
+    let Formatted_Stripped = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!( ! Formatted_Stripped.contains("{\n\n"), "Empty line after opening brace must be stripped when Preserve_Empty_Lines is false: {}", Formatted_Stripped);
 }
 
 #[test]
 fn Test_Preserve_Empty_Lines_Before_Closing_Delimiter()
 {
     let Input = "void ExecuteTask(int A, int B)\n{\n    DoFirst();\n    DoSecond();\n\n}\n";
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Canvas_Width = 50;
     Config.Preserve_Empty_Lines = true;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("DoSecond();\n\n}"), "Empty line before closing brace must be preserved when Preserve_Empty_Lines is true: {}", Formatted);
 
     Config.Preserve_Empty_Lines = false;
-    let Formatted_Stripped = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
-    assert!(!Formatted_Stripped.contains("\n\n}"), "Empty line before closing brace must be stripped when Preserve_Empty_Lines is false: {}", Formatted_Stripped);
+    let Formatted_Stripped = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
+    assert!( ! Formatted_Stripped.contains("\n\n}"), "Empty line before closing brace must be stripped when Preserve_Empty_Lines is false: {}", Formatted_Stripped);
 }
 
 #[test]
 fn Test_Preserve_Empty_Lines_Before_Container_Nodes()
 {
     let Input = "int X = 1;\n\n[1, 2, 3];\n";
-    let Config = Config_Settings::default();
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    let Config = Config_Settings:: default();
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Formatting failed");
     assert!(Formatted.contains("int X = 1;\n\n[1, 2, 3];"), "Empty line before container node must be preserved: {}", Formatted);
 }
 
@@ -627,7 +627,7 @@ fn Test_Diagnostics_Error_Codes_Verify_V2()
 fn Test_Diagnostics_Error_Codes_Verify_V3()
 {
     let Formatted = "int X = 1;";
-    let NonIdempotentFormatFn = | S: & str | format ! ("{} ", S);
+    let NonIdempotentFormatFn = | S: & str | format!("{} ", S);
 
     let Result = lafs::Safety_Verifier::VerifyIdempotence(Formatted, NonIdempotentFormatFn);
     assert!(Result.is_err());

@@ -39,17 +39,13 @@ impl Source_Formatter
         }
 
         if Config.Language.IsMarkdown()
-        {
-            return crate::languages::markdown::Markdown_Formatter::Format(Source, Config);
-        }
+        { return crate::languages::markdown::Markdown_Formatter::Format(Source, Config); }
 
         if Config.Language == crate::types::Source_Language::Css
         { return crate::languages::css::CSS_Formatter::Format(Source, Config); }
 
         if Config.Language.IsTypst()
-        {
-            return crate::languages::typst::Typst_Formatter::Format(Source, Config);
-        }
+        { return crate::languages::typst::Typst_Formatter::Format(Source, Config); }
 
         let mut Scanner = Lexer_Scanner::New(Source, Config.Language);
         let Tokens = Scanner.TokenizeAll();
