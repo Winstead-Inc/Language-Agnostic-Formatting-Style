@@ -465,7 +465,51 @@ impl <'a> JS_Lexer<'a>
                             }
                             while let Some(Ws) = self.PeekAhead(CheckOff)
                             { if Ws == ' ' || Ws == '\t' { CheckOff += 1; } else { break; } }
-                            let is_arrow = self.PeekAhead(CheckOff) == Some(',') || (Name == "const" && self.PeekAhead(CheckOff).map_or(false, |c| c.is_alphabetic()));
+
+                            let mut NextWord = String::new();
+                            let mut WordOff = CheckOff;
+                            while let Some(C) = self.PeekAhead(WordOff)
+                            {
+                                if C.is_alphanumeric() || C == '_' || C == '$' {
+                                    NextWord.push(C);
+                                    WordOff += 1;
+                                } else { break; }
+                            }
+
+                            let mut is_arrow = self.PeekAhead(CheckOff) == Some(',')
+                                || self.PeekAhead(CheckOff) == Some('=')
+                                || NextWord == "extends"
+                                || (Name == "const" && self.PeekAhead(CheckOff).map_or(false, |c| c.is_alphabetic()));
+
+                            if !is_arrow
+                            {
+                                let mut ScanOff = Offset;
+                                let mut Depth = 1;
+                                while let Some(C) = self.PeekAhead(ScanOff)
+                                {
+                                    if C == '\n' || ScanOff > Offset + 200 { break; }
+                                    if C == '<' { Depth += 1; }
+                                    else if C == '>'
+                                    {
+                                        Depth -= 1;
+                                        if Depth == 0
+                                        {
+                                            let mut AfterGt = ScanOff + 1;
+                                            while let Some(Ws) = self.PeekAhead(AfterGt)
+                                            {
+                                                if Ws == ' ' || Ws == '\t' { AfterGt += 1; } else { break; }
+                                            }
+                                            if self.PeekAhead(AfterGt) == Some('(')
+                                            {
+                                                is_arrow = true;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                    ScanOff += 1;
+                                }
+                            }
+
                             let is_kw = IsJSKeyword(&Name);
                             (is_arrow, is_kw)
                         };
@@ -1229,7 +1273,50 @@ impl JS_Container_Builder
                                 _ => false,
                             }
                         );
-                        if !PrecededByIdOrNum && !NextIsKw && NextIsTagName
+                        let IsGenericArrow = {
+                            let mut found = false;
+                            if Idx + 2 < self.Tokens.len()
+                            {
+                                let T2 = &self.Tokens[Idx + 2].Text;
+                                if T2 == "extends" || T2 == "," || T2 == "="
+                                {
+                                    found = true;
+                                }
+                            }
+                            if !found && Idx + 1 < self.Tokens.len() && self.Tokens[Idx + 1].Text == "const"
+                            {
+                                found = true;
+                            }
+                            if !found
+                            {
+                                let mut depth = 1;
+                                let mut j = Idx + 1;
+                                while j < self.Tokens.len() && j - Idx < 60
+                                {
+                                    if self.Tokens[j].Text == "<" { depth += 1; }
+                                    else if self.Tokens[j].Text == ">"
+                                    {
+                                        depth -= 1;
+                                        if depth == 0
+                                        {
+                                            if j + 1 < self.Tokens.len() && self.Tokens[j + 1].Text == "("
+                                            {
+                                                found = true;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                    else if self.Tokens[j].Text == "extends"
+                                    {
+                                        found = true;
+                                        break;
+                                    }
+                                    j += 1;
+                                }
+                            }
+                            found
+                        };
+                        if !PrecededByIdOrNum && !NextIsKw && NextIsTagName && !IsGenericArrow
                         {
                             self.In_JSX_Tag_Header += 1;
                         }
@@ -1400,6 +1487,42 @@ fn IsInArrowHead(Nodes: &[JS_Syntax_Node], Index: usize) -> bool
     false
 }
 
+fn IsNextTokenTernaryColon(Nodes: &[JS_Syntax_Node], Index: usize) -> bool
+{
+    if Index + 1 >= Nodes.len() { return false; }
+    match &Nodes[Index + 1] {
+        JS_Syntax_Node::Token(t) if t.Text == ":" => {}
+        _ => return false,
+    }
+    let mut Depth: usize = 0;
+    for k in (0..=Index).rev() {
+        match &Nodes[k] {
+            JS_Syntax_Node::Token(t) => {
+                if t.Text == ";" || t.Text == "{" || t.Text == "}" {
+                    break;
+                }
+                if t.Text == ":" {
+                    Depth += 1;
+                } else if t.Text == "?" {
+                    let NextIsColon = k + 1 < Nodes.len() && match &Nodes[k + 1] {
+                        JS_Syntax_Node::Token(nt) => nt.Text == ":",
+                        _ => false,
+                    };
+                    if !NextIsColon {
+                        if Depth == 0 {
+                            return true;
+                        } else {
+                            Depth -= 1;
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    false
+}
+
 fn IsConstArrowFunction(Nodes: &[JS_Syntax_Node], Index: usize) -> bool
 {
     let mut Start = Index;
@@ -1496,6 +1619,9 @@ pub struct JS_Emitter<'a>
     In_JSX_Tag_Header: bool,
     In_JSX_Closing_Tag: bool,
     Pending_Multiline_Tag_Open: bool,
+    In_Function_Return_Type: bool,
+    Current_JSX_Attr_Align_Max: Option<usize>,
+    Current_JSX_Attr_Name_Len: Option<usize>,
 }
 
 impl <'a> JS_Emitter<'a>
@@ -1515,6 +1641,9 @@ impl <'a> JS_Emitter<'a>
             In_JSX_Tag_Header: false,
             In_JSX_Closing_Tag: false,
             Pending_Multiline_Tag_Open: false,
+            In_Function_Return_Type: false,
+            Current_JSX_Attr_Align_Max: None,
+            Current_JSX_Attr_Name_Len: None,
         }
     }
 
@@ -1678,6 +1807,23 @@ impl <'a> JS_Emitter<'a>
 
         let HeaderEnd = HeaderEndIndex?;
 
+        // A JSX tag header cannot contain the `extends` keyword
+        for n in &Nodes[Index..=HeaderEnd] {
+            if let JS_Syntax_Node::Token(t) = n {
+                if t.Text == "extends" {
+                    return None;
+                }
+            }
+        }
+        // A JSX tag header closed by `>` cannot be immediately followed by `(` (e.g. `<T>(props) =>`)
+        if !IsSelfClosing && HeaderEnd + 1 < Nodes.len() {
+            match &Nodes[HeaderEnd + 1] {
+                JS_Syntax_Node::Token(t) if t.Text == "(" => return None,
+                JS_Syntax_Node::Container(c) if c.Kind == Container_Kind::Paren => return None,
+                _ => {}
+            }
+        }
+
         let mut HeaderTokenLen: usize = 0;
         let mut HeaderHasComment = false;
         for n in &Nodes[Index..=HeaderEnd] {
@@ -1812,7 +1958,14 @@ impl <'a> JS_Emitter<'a>
             {
                 JS_Syntax_Node::Token(T) =>
                 {
-                    if T.Text == "?" &&
+                    if self.In_Function_Return_Type && T.Text == ":" && self.Output.ends_with(')')
+                    {
+                        self.EmitRaw(":");
+                        self.EmitSpace();
+                        Index += 1;
+                        continue ;
+                    }
+                    else if T.Text == "?" &&
                     (
                         InPropertyValue ||
                         (
@@ -1836,11 +1989,6 @@ impl <'a> JS_Emitter<'a>
                     if C.Open_Token.Text == "${"
                     { self.EmitStringInterpolation(C, EffectiveLevel); Index += 1; continue ; }
 
-                    if C.Kind != Container_Kind::Angle && C.Open_Token.Preceding_Newlines >= 2
-                    {
-                        self.EnsureBlankLine();
-                    }
-
                     let NextTokenText: Option< & str> = if Index + 1 < Total
                     {
                         match & Nodes[Index + 1]
@@ -1848,6 +1996,24 @@ impl <'a> JS_Emitter<'a>
                     }
                     else
                     { None };
+
+                    if (C.Kind == Container_Kind::Bracket || C.Kind == Container_Kind::Brace) && self.Output.ends_with(':')
+                    {
+                        self.EmitSpace();
+                    }
+                    if self.In_Function_Return_Type && ! self.Output.ends_with(':') && ! self.Output.ends_with(": ")
+                    {
+                        if C.Kind == Container_Kind::Brace && NextTokenText != Some("=>")
+                        {
+                            self.In_Function_Return_Type = false;
+                            self.EnsureNewline();
+                        }
+                    }
+
+                    if C.Kind != Container_Kind::Angle && C.Open_Token.Preceding_Newlines >= 2
+                    {
+                        self.EnsureBlankLine();
+                    }
 
                     let InArrowHead = IsInArrowHead(Nodes, Index);
                     let IsArrowBody = IsArrowFunctionBody(Nodes, Index);
@@ -1886,7 +2052,15 @@ impl <'a> JS_Emitter<'a>
                     self.In_JSX_Tag_Header = false;
                     self.Pending_Multiline_Tag_Open = false;
 
-                    self.EmitContainerNodeWithLayout(C, EffectiveContainerLevel, Layout, NextTokenText);
+                    let NextIsTernary = IsNextTokenTernaryColon(Nodes, Index);
+                    let NextIsReturnTypeColon = C.Kind == Container_Kind::Paren && NextTokenText == Some(":") && ! NextIsTernary;
+
+                    self.EmitContainerNodeWithLayout(C, EffectiveContainerLevel, Layout, NextTokenText, NextIsReturnTypeColon);
+
+                    if NextIsReturnTypeColon
+                    {
+                        self.In_Function_Return_Type = true;
+                    }
 
                     self.JSX_Depth = Saved_JSX_Depth;
                     self.In_JSX_Tag_Header = Saved_In_Header;
@@ -2042,14 +2216,33 @@ impl <'a> JS_Emitter<'a>
             self.In_JSX_Tag_Header = true;
             if Multiline_Open_Indices.contains(& Index)
             {
-                let IsSelfClosing = match Self::InspectJsxTag(Nodes, Index)
+                if let Some(info) = Self::InspectJsxTag(Nodes, Index)
                 {
-                    Some(info) => info.IsSelfClosing,
-                    None => false,
-                };
-                if ! IsSelfClosing
-                {
-                    self.Pending_Multiline_Tag_Open = true;
+                    let mut max_attr_len = 0;
+                    for k in (Index + 1)..info.HeaderEndIndex
+                    {
+                        if let JS_Syntax_Node::Token(at) = &Nodes[k]
+                        {
+                            if at.Preceding_Newlines > 0 && k + 1 < Nodes.len()
+                            {
+                                if let JS_Syntax_Node::Token(next_t) = &Nodes[k + 1]
+                                {
+                                    if next_t.Text == "="
+                                    {
+                                        max_attr_len = max_attr_len.max(at.Text.len());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if max_attr_len > 0
+                    {
+                        self.Current_JSX_Attr_Align_Max = Some(max_attr_len);
+                    }
+                    if ! info.IsSelfClosing
+                    {
+                        self.Pending_Multiline_Tag_Open = true;
+                    }
                 }
             }
         }
@@ -2060,6 +2253,17 @@ impl <'a> JS_Emitter<'a>
             {
                 self.JSX_Depth = self.JSX_Depth.saturating_sub(1);
                 self.EnsureNewline();
+            }
+        }
+
+        if self.In_JSX_Tag_Header && Token.Preceding_Newlines > 0 && Index + 1 < Nodes.len()
+        {
+            if let JS_Syntax_Node::Token(next_t) = &Nodes[Index + 1]
+            {
+                if next_t.Text == "="
+                {
+                    self.Current_JSX_Attr_Name_Len = Some(Token.Text.len());
+                }
             }
         }
 
@@ -2091,11 +2295,25 @@ impl <'a> JS_Emitter<'a>
             Level + self.JSX_Depth
         };
 
+        if self.In_Function_Return_Type
+        {
+            if Token.Text == ":" && self.Output.ends_with(')')
+            {
+                self.EmitRaw(":");
+                self.EmitSpace();
+                return;
+            }
+            if Token.Text == "=>" || Token.Text == ";"
+            {
+                self.In_Function_Return_Type = false;
+            }
+        }
+
         if Token.Text == "=>"
         {
             if ! self.Output.ends_with(' ') { self.EmitSpace(); }
         }
-        else if Token.Preceding_Newlines > 0
+        else if Token.Preceding_Newlines > 0 && ! self.In_Function_Return_Type
         {
             self.EnsureNewline();
             if Token.Preceding_Newlines >= 2
@@ -2116,11 +2334,26 @@ impl <'a> JS_Emitter<'a>
         let WasInHeader = self.In_JSX_Tag_Header;
         let WasInClosing = self.In_JSX_Closing_Tag;
 
+        if Token.Text == "=" && self.In_JSX_Tag_Header
+        {
+            if let (Some(max), Some(attr_len)) = (self.Current_JSX_Attr_Align_Max, self.Current_JSX_Attr_Name_Len)
+            {
+                if attr_len < max
+                {
+                    let extra = max - attr_len;
+                    for _ in 0..extra { self.EmitRaw(" "); }
+                }
+            }
+            self.Current_JSX_Attr_Name_Len = None;
+        }
+
         self.EmitRaw( & Token.Text);
 
         if Token.Text == ">" && self.In_JSX_Tag_Header
         {
             self.In_JSX_Tag_Header = false;
+            self.Current_JSX_Attr_Align_Max = None;
+            self.Current_JSX_Attr_Name_Len = None;
             if self.Pending_Multiline_Tag_Open
             {
                 self.Pending_Multiline_Tag_Open = false;
@@ -2131,6 +2364,8 @@ impl <'a> JS_Emitter<'a>
         else if Token.Text == "/>" && self.In_JSX_Tag_Header
         {
             self.In_JSX_Tag_Header = false;
+            self.Current_JSX_Attr_Align_Max = None;
+            self.Current_JSX_Attr_Name_Len = None;
             self.Pending_Multiline_Tag_Open = false;
             if Index + 1 < Nodes.len()
             {
@@ -2244,29 +2479,35 @@ impl <'a> JS_Emitter<'a>
         if Token.Text == ":"
         {
             let IsTernaryColon = {
-                let mut QuestionCount = 0;
-                let mut ColonCount = 0;
+                let mut Depth: usize = 0;
+                let mut Found = false;
                 for k in (0..Index).rev() {
                     match &Nodes[k] {
                         JS_Syntax_Node::Token(t) => {
-                            if t.Text == ";" || t.Text == "{" || t.Text == "}" { break; }
-                            if t.Text == "?" {
+                            if t.Text == ";" || t.Text == "," || t.Text == "{" || t.Text == "}" {
+                                break;
+                            }
+                            if t.Text == ":" {
+                                Depth += 1;
+                            } else if t.Text == "?" {
                                 let NextIsColon = k + 1 < Nodes.len() && match &Nodes[k + 1] {
                                     JS_Syntax_Node::Token(nt) => nt.Text == ":",
                                     _ => false,
                                 };
                                 if !NextIsColon {
-                                    QuestionCount += 1;
+                                    if Depth == 0 {
+                                        Found = true;
+                                        break;
+                                    } else {
+                                        Depth -= 1;
+                                    }
                                 }
-                            }
-                            else if t.Text == ":" {
-                                ColonCount += 1;
                             }
                         }
                         _ => {}
                     }
                 }
-                QuestionCount > ColonCount
+                Found
             };
             if (IsTernaryColon && !self.Output.ends_with('>')) || self.Output.ends_with('`') {
                 self.EmitSpace();
@@ -2276,7 +2517,7 @@ impl <'a> JS_Emitter<'a>
         self.EmitSpace();
     }
 
-    fn EmitContainerNodeWithLayout( & mut self, Container: & JS_Container, Level: usize, Layout: Layout_State, NextTokenText: Option< & str>)
+    fn EmitContainerNodeWithLayout( & mut self, Container: & JS_Container, Level: usize, Layout: Layout_State, NextTokenText: Option< & str>, NextIsReturnTypeColon: bool)
     {
         if Container.Open_Token.Text == "${"
         { self.EmitStringInterpolation(Container, Level); return ; }
@@ -2284,8 +2525,8 @@ impl <'a> JS_Emitter<'a>
         match Layout
         {
             Layout_State::Monolith => { self.EmitMonolith(Container, Level); }
-            Layout_State::Grouped => { self.EmitGrouped(Container, Level, NextTokenText); }
-            Layout_State::Expanded => { self.EmitExpanded(Container, Level, NextTokenText); }
+            Layout_State::Grouped => { self.EmitGrouped(Container, Level, NextTokenText, NextIsReturnTypeColon); }
+            Layout_State::Expanded => { self.EmitExpanded(Container, Level, NextTokenText, NextIsReturnTypeColon); }
         }
     }
 
@@ -2337,26 +2578,35 @@ impl <'a> JS_Emitter<'a>
                     let IsTemplateLit = matches!(T.Kind, Token_Kind::Template_Lit(_));
 
                     let IsTernaryColon = if T.Text == ":" && !self.Output.ends_with('>') {
-                        let mut QuestionCount = 0;
-                        let mut ColonCount = 0;
+                        let mut Depth: usize = 0;
+                        let mut Found = false;
                         for k in (0..ChildIdx).rev() {
                             match &Container.Children[k] {
                                 JS_Syntax_Node::Token(t) => {
-                                    if t.Text == ";" { break; }
-                                    if t.Text == "?" {
+                                    if t.Text == ";" || t.Text == "," || t.Text == "{" || t.Text == "}" {
+                                        break;
+                                    }
+                                    if t.Text == ":" {
+                                        Depth += 1;
+                                    } else if t.Text == "?" {
                                         let NextIsCol = k + 1 < Container.Children.len() && match &Container.Children[k + 1] {
                                             JS_Syntax_Node::Token(nt) => nt.Text == ":",
                                             _ => false,
                                         };
-                                        if !NextIsCol { QuestionCount += 1; }
-                                    } else if t.Text == ":" {
-                                        ColonCount += 1;
+                                        if !NextIsCol {
+                                            if Depth == 0 {
+                                                Found = true;
+                                                break;
+                                            } else {
+                                                Depth -= 1;
+                                            }
+                                        }
                                     }
                                 }
                                 _ => {}
                             }
                         }
-                        QuestionCount > ColonCount
+                        Found
                     } else { false };
 
                     let IsPostfix = (T.Text == "++" || T.Text == "--")
@@ -2399,8 +2649,8 @@ impl <'a> JS_Emitter<'a>
                     };
 
                     let IsPunct = T.Text == ";" || T.Text == "," || T.Text == "." || (T.Text == ":" && !IsTernaryColon && ! self.Output.ends_with('`')) || T.Text == "?." || (!IsRelational && (T.Text == ">" || T.Text == "/>" || T.Text == "</")) || (T.Text == "?" && NextIsColon) || IsPostfix;
-                    let TemplateNeedsSpace = IsTemplateLit && (self.Output.ends_with('?') || self.Output.ends_with(':') || self.Output.ends_with('='));
-                    if ((PrevNeedsSpace && ! IsPunct && ! IsTemplateLit) || TemplateNeedsSpace || (IsTernaryColon && !self.Output.ends_with(' ')) || PrevWasRelational || IsRelational)
+                    let TemplateNeedsSpace = IsTemplateLit && (self.Output.ends_with('?') || self.Output.ends_with(':') || self.Output.ends_with('=') || self.Output.ends_with('{'));
+                    if ((PrevNeedsSpace && ! IsPunct) || TemplateNeedsSpace || (IsTernaryColon && !self.Output.ends_with(' ')) || PrevWasRelational || IsRelational)
                     && ! self.Output.ends_with('.')
                     && ! self.Output.ends_with("?.")
                     && ! self.Output.ends_with('(')
@@ -2436,6 +2686,10 @@ impl <'a> JS_Emitter<'a>
                 {
                     if Sub.Open_Token.Text == "${"
                     { self.EmitStringInterpolation(Sub, Level); PrevNeedsSpace = false; continue ; }
+                    if (Sub.Kind == Container_Kind::Bracket || Sub.Kind == Container_Kind::Brace) && self.Output.ends_with(':')
+                    {
+                        self.EmitSpace();
+                    }
                     let PrevIsIndexer = ChildIdx > 0 && matches!(&Container.Children[ChildIdx - 1], JS_Syntax_Node::Token(ref prev_t) if matches!(prev_t.Kind, Token_Kind::Identifier(_)) || matches!(prev_t.Text.as_str(), ")" | "]" | ">"));
                     if !IsAlloy && !PrevIsIndexer && PrevNeedsSpace && (Sub.Kind == Container_Kind::Brace || Sub.Kind == Container_Kind::Bracket) && ! self.Output.ends_with('<') { self.EmitSpace(); }
                     self.EmitMonolith(Sub, Level);
@@ -2450,7 +2704,7 @@ impl <'a> JS_Emitter<'a>
         for Glue in & Container.Tail_Glue { self.EmitRaw( & Glue.Text); }
     }
 
-    fn EmitGrouped( & mut self, Container: & JS_Container, Level: usize, NextTokenText: Option< & str>)
+    fn EmitGrouped( & mut self, Container: & JS_Container, Level: usize, NextTokenText: Option< & str>, NextIsReturnTypeColon: bool)
     {
         let Chain = Container.CollectChain();
         let OpenRun: String = Chain.iter().map( | C | C.Kind.OpenGlyph()).collect();
@@ -2474,7 +2728,7 @@ impl <'a> JS_Emitter<'a>
             self.EmitRaw( & CloseRun);
             if let Some(Outermost) = Chain.first()
             { for Glue in & Outermost.Tail_Glue { self.EmitRaw( & Glue.Text); } }
-            if NextTokenText == Some("=>")
+            if NextTokenText == Some("=>") || (Chain.first().map_or(false, |c| c.Kind == Container_Kind::Paren) && NextIsReturnTypeColon)
             {
                 if ! self.Output.ends_with(' ') { self.EmitSpace(); }
             }
@@ -2497,7 +2751,7 @@ impl <'a> JS_Emitter<'a>
         self.EmitRaw( & CloseRun);
 
         if let Some(Outermost) = Chain.first() { for Glue in & Outermost.Tail_Glue { self.EmitRaw( & Glue.Text); } }
-        if NextTokenText == Some("=>")
+        if NextTokenText == Some("=>") || (Chain.first().map_or(false, |c| c.Kind == Container_Kind::Paren) && NextIsReturnTypeColon)
         {
             if ! self.Output.ends_with(' ') { self.EmitSpace(); }
         }
@@ -2507,7 +2761,7 @@ impl <'a> JS_Emitter<'a>
         }
     }
 
-    fn EmitExpanded( & mut self, Container: & JS_Container, Level: usize, NextTokenText: Option< & str>)
+    fn EmitExpanded( & mut self, Container: & JS_Container, Level: usize, NextTokenText: Option< & str>, NextIsReturnTypeColon: bool)
     {
         if Container.Open_Token.Text == "${"
         { self.EmitStringInterpolation(Container, Level); return ; }
@@ -2575,9 +2829,9 @@ impl <'a> JS_Emitter<'a>
             else
             { self.WriteNewline(); }
         }
-        else if NextTokenText == Some("=>")
+        else if NextTokenText == Some("=>") || (Container.Kind == Container_Kind::Paren && NextIsReturnTypeColon)
         {
-            // do not write newline before `=>`
+            // do not write newline before `=>` or before `:` return type
         }
         else
         { self.WriteNewline(); }

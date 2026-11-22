@@ -330,10 +330,10 @@ fn Test_TSX_Brainrot_Format()
     assert_eq!(FormattedPass1, FormattedPass2, "TSX formatting must be 100% idempotent");
 
     // Invariant verifications
-    assert!(FormattedPass1.contains("data-node-name = { row.nodeName }"), "Hyphenated JSX attribute intact: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("data-node-name  = { row.nodeName }"), "Hyphenated JSX attribute intact: {}", FormattedPass1);
     assert!(FormattedPass1.contains("data-latency-ms = { row.latencyMs }"), "Hyphenated JSX attribute intact");
-    assert!(FormattedPass1.contains("data-tag-idx = { tagIdx }"), "Hyphenated JSX attribute intact");
-    assert!(FormattedPass1.contains("data-parent-idx = { rowIdx }"), "Hyphenated JSX attribute intact");
+    assert!(FormattedPass1.contains("data-tag-idx     = { tagIdx }"), "Hyphenated JSX attribute intact");
+    assert!(FormattedPass1.contains("data-parent-idx  = { rowIdx }"), "Hyphenated JSX attribute intact");
     assert!(FormattedPass1.contains("data-badge-color = \"#C77DFF\""), "Hyphenated JSX attribute intact");
     assert!(FormattedPass1.contains("i < count"), "Relational < spaced intact");
     assert!(FormattedPass1.contains("count > 0"), "Relational > spaced intact");
@@ -342,6 +342,10 @@ fn Test_TSX_Brainrot_Format()
     assert!(!FormattedPass1.contains("\n=>"), "Arrow operator => must never be on its own line");
     assert!(FormattedPass1.contains(")()"), "IIFE call invocation must remain attached as )()");
     assert!(!FormattedPass1.contains(")\n()"), "No detached IIFE call invocation");
+    assert!(FormattedPass1.contains("): JSX.Element\n{"), "Return type attached as suffix glue to )");
+    assert!(FormattedPass1.contains("criticalIds: [selectedRow.id]"), "Array after property colon has space");
+    assert!(FormattedPass1.contains("? '#FF1744' : '#FC6A03'"), "Ternary colon has space");
+    assert!(FormattedPass1.contains("label = { `OK: ${groupedCount.ok}` }"), "Template literal has symmetric space padding inside braces");
 }
 
 #[test]
@@ -676,7 +680,7 @@ fn Test_JSX_Multiline_Props()
     let FormattedPass1 = Source_Formatter::Format(Input, &Config).expect("Pass 1 failed");
     assert!(FormattedPass1.contains("    <div"), "div header must be at 4 spaces: {}", FormattedPass1);
     assert!(FormattedPass1.contains("        className = \"card-container\""), "prop must be indented 8 spaces: {}", FormattedPass1);
-    assert!(FormattedPass1.contains("        id = \"main-card\""), "prop must be indented 8 spaces: {}", FormattedPass1);
+    assert!(FormattedPass1.contains("        id        = \"main-card\""), "prop must be indented 8 spaces with aligned =: {}", FormattedPass1);
     assert!(FormattedPass1.contains("    >"), "header > must align with <div at 4 spaces: {}", FormattedPass1);
     assert!(FormattedPass1.contains("        <Component"), "Component must be at 8 spaces: {}", FormattedPass1);
     assert!(FormattedPass1.contains("            propA = \"val1\""), "Component prop must be at 12 spaces: {}", FormattedPass1);
@@ -736,4 +740,98 @@ fn Test_JSX_Text_Adjacent_Expressions()
     // Idempotence
     let FormattedPass2 = Source_Formatter::Format(&FormattedPass1, &Config).expect("Pass 2 failed");
     assert_eq!(FormattedPass1, FormattedPass2, "JSX text adjacent expressions must be 100% idempotent");
+}
+
+#[test]
+fn Test_TSX_Markdown_Snippet()
+{
+    let Input = r#"import React, { useState, useEffect, useMemo, useCallback } from 'react';
+
+export interface TelemetryRecord {
+    readonly id: string;
+    readonly label: string;
+    readonly latencyMs: number;
+    readonly isDegraded: boolean;
+    readonly tags: readonly string[];
+}
+
+export interface TelemetryGridProps<T extends TelemetryRecord> {
+    readonly clusterId: string;
+    readonly records: readonly T[];
+    readonly refreshIntervalMs?: number;
+    readonly onSelectRecord?: (record: T) => void;
+    readonly renderBadge?: (record: T) => React.ReactNode;
+}
+
+export const TelemetryGrid = <T extends TelemetryRecord>(props: TelemetryGridProps<T>): React.ReactElement => {
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [sortAscending, setSortAscending] = useState<boolean>(true);
+
+    const sortedRecords = useMemo(() => {
+        return [...props.records].sort((a, b) => {
+            if (sortAscending) {
+                return a.latencyMs - b.latencyMs;
+            } else {
+                return b.latencyMs - a.latencyMs;
+            }
+        });
+    }, [props.records, sortAscending]);
+
+    const handleSelect = useCallback((item: T) => {
+        setSelectedId(item.id);
+        if (props.onSelectRecord) {
+            props.onSelectRecord(item);
+        }
+    }, [props.onSelectRecord]);
+
+    return (
+        <section
+            className="TelemetryGridContainer"
+            data-cluster-id={props.clusterId}
+            data-record-count={props.records.length}>
+            <header className="TelemetryGridHeader">
+                <h2>Cluster Telemetry: {props.clusterId}</h2>
+                <button
+                    type="button"
+                    className="SortToggleBtn"
+                    onClick={() => { setSortAscending(!sortAscending); }}>
+                    Toggle Direction ({sortAscending ? 'ASC' : 'DESC'})
+                </button>
+            </header>
+            <div className="TelemetryCardList">
+                {sortedRecords.map((item, index) => {
+                    const isSelected = item.id === selectedId;
+                    return (
+                        <article
+                            key={item.id}
+                            className={`RecordCard ${isSelected ? 'selected' : ''}`}
+                            data-index={index}
+                            data-latency={item.latencyMs}
+                            onClick={() => { handleSelect(item); }}>
+                            <span className="RecordTitle">{item.label}</span>
+                            <span className="RecordLatency">{item.latencyMs}ms</span>
+                            {props.renderBadge ? props.renderBadge(item) : (
+                                <span className={`StatusPill ${item.isDegraded ? 'crit' : 'ok'}`}>
+                                    {item.isDegraded ? 'WARN' : 'NOMINAL'}
+                                </span>
+                            )}
+                        </article>
+                    );
+                })}
+            </div>
+        </section>
+    );
+};
+"#;
+
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Tsx;
+    Config.Canvas_Width = 160;
+
+    let Formatted = Source_Formatter::Format(Input, &Config);
+    match Formatted
+    {
+        Ok(res) => println!("Formatted:\n{}", res),
+        Err(e) => panic!("Error: {}", e),
+    }
 }

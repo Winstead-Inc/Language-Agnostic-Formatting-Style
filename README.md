@@ -1,6 +1,6 @@
 # LAFS Container Formatter
 
-A pure-Rust, high-performance container formatter implementing the **Language-Agnostic Formatting Style (LAFS)** for **C**, **C++**, **C#**, **Go**, **JavaScript**, **TypeScript**, **PHP**, **HTML**, and **CSS**.
+A high-performance, pure-Rust structural container formatter implementing the **Language-Agnostic Formatting Style (LAFS)** across systems languages, web applications, mobile platforms, scripting environments, configuration manifests, and technical documentation.
 
 Official Universal AI Agent Skill: [lafs-formatting](https://github.com/Winstead-Inc/lafs-formatting)
 
@@ -8,7 +8,7 @@ Official Universal AI Agent Skill: [lafs-formatting](https://github.com/Winstead
 
 > [!IMPORTANT]
 > **This Repository is NOT a Cesspool of ugly, improperly formatted K&R Brain Rot & Slop.**
-> Trailing delimiter/container attachments (`fn() {`, `if (Condition) {`), asymmetrical diagonal vector tracking, and compressed scope exit clusters (`}}});`) are strictly banned across all languages, files, templates, scripts, and documentation. Delimiters are load-bearing architectural columns, not sentence punctuation.
+> Trailing delimiter and container attachments (`fn() {`, `if (Condition) {`), asymmetrical diagonal vector tracking, and compressed scope exit clusters (`}}});`) are strictly banned across all languages, files, templates, scripts, and documentation. Delimiters are load-bearing architectural columns, not sentence punctuation.
 
 ---
 
@@ -20,35 +20,56 @@ Official Universal AI Agent Skill: [lafs-formatting](https://github.com/Winstead
 
 ## Architectural Principles
 
-LAFS treats code containers (`()`, `{}`, `[]`, `<>`) as structural rooms whose boundaries form load-bearing columns. Every container is evaluated against a deterministic three-tier escalation hierarchy:
+LAFS treats code containers (`()`, `{}`, `[]`, `<>`) as structural rooms whose boundaries form load-bearing columns. Every delimiter pair is evaluated against a deterministic three-tier escalation hierarchy:
 
-1. **State 1 - The Monolith (Horizontal Density)**:
-   - When expressions, simple signatures, or atomic blocks fit within the Canvas width (default: 120 columns) and contain zero internal line breaks or comments, they are preserved as single-line horizontal units (`Foo(A, B)`, `int Add(int A, int B) { return A + B; }`).
-2. **State 2 - Brace Grouping / Simplified Symmetry (Compound Delimiters)**:
-   - When containers form a **Sole-Child Chain** without intervening logic (such as `[{( ... )}]` or `({ ... })`), their delimiters fuse into compound boundaries on a single line at the base indent, with mirrored closing runs (`)}];`).
-3. **State 3 - Expanded Symmetry / Hierarchical Architecture (Load-Bearing Columns)**:
+1. **State 1 — The Monolith (Horizontal Density)**:
+   - When expressions, parameter lists, or atomic blocks fit within the Canvas width (default: 160 columns, configurable via `-c` / `--canvas-width`) and satisfy the Complexity Budget (at most 4 statements, nesting depth at most 2, zero internal line breaks or comments), they reside on a single horizontal line (`Foo(A, B)`, `int Add(int A, int B) { return A + B; }`).
+2. **State 2 — Container Grouping / Simplified Symmetry (Compound Delimiters)**:
+   - When nested containers form a **Sole-Child Chain** without intervening statements or expressions (such as `[{( ... )}]` or `({ ... })`), consecutive opening delimiters collapse horizontally into a compound boundary at the base indentation level, with mirrored closing runs on a dedicated line (`)}]`).
+3. **State 3 — Expanded Symmetry / Hierarchical Architecture (Load-Bearing Columns)**:
    - When control flow, multi-line statements, or canvas breaches occur, delimiters decouple onto dedicated lines.
-   - **Zero End-of-Line Hugging**: Opening delimiters never hang at the end of a line (`FunctionName(` or `if (X) {` are strictly prohibited).
-   - **Translational Symmetry**: Opening and closing delimiters share the exact same column coordinate.
+   - **Zero End-of-Line Hugging**: Opening delimiters never hang at the end of a statement line (`FunctionName(` or `if (X) {` are strictly prohibited).
+   - **Translational Symmetry**: Opening and closing delimiters share the exact same column coordinate on the $X$-axis ($\text{Column}(\text{Bound}_{\text{Open}}) \equiv \text{Column}(\text{Bound}_{\text{Close}})$).
+4. **Column-Anchored Hybrid (Section 6.1)**:
+   - For language grammars where Automatic Semicolon Insertion (ASI) or compiler constraints penalize detached openers after control statements (`return (`, `throw (`, `yield (` in JavaScript/TypeScript, or Go control blocks), LAFS anchors the opening delimiter on the statement line while maintaining strict vertical closure symmetry on a dedicated line. Can be toggled via `--cah`.
 
 ---
 
-## Features
+## Supported Languages & File Types
 
-- **Full Multi-Language Support**:
-  - Handles **C / C++ / C# / Go / JS / TS / PHP / CSS**.
-  - **Polyglot Files**: Intelligently parses mixed-content files (e.g., HTML containing `<script>`, `<style>`, and `<?php ... ?>` blocks) and formats each language chunk individually without breaking the surrounding HTML.
-  - Preprocessor directives (`#include`, `#define`, `#if`, `#endif`, `#region`) preserved intact.
-  - String literals (standard `"..."`, C++ raw strings `R"(...)"`, C# verbatim `@"..."`, C# raw `"""..."""`, Go raw strings `` `...` ``, and character literals).
-  - Single-line comments (`//`) and multiline block comments (`/* ... */`) preserved without reformatting corruption.
-  - Template and generic angle brackets (`<T, U>`) disambiguated using follow-token and context rules.
-- **Safety Gate**:
-  - Automatically verifies non-whitespace token stream equivalence between input and output.
-  - Enforces idempotence (`Format(Format(Source)) == Format(Source)`).
-  - Fails open rather than corrupting source code.
-- **Zero External C Dependencies**:
-  - Implemented in 100% pure Rust.
-  - Builds instantly on Windows, Linux, and macOS without requiring MSVC or GCC build tools.
+LAFS provides native, AST/CST-level lexing, boundary pairing, and formatting across 16+ programming languages, configuration syntaxes, and markup formats:
+
+| Language Family             | File Extensions                                                                             | Key Capabilities & Highlights                                                                                                                                                                                                                                                                                                                |
+| :-------------------------- | :------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Rust**              | `Upd.rs`                                                                                  | Structs, enums, pattern matching, match guards, closures, raw strings (`r#"..."#`), byte literals, macros, attributes, HRTB lifetimes, turbofish `::<T>`, and Cargo manifests/lockfiles (`Cargo.toml`, `Cargo.lock`).                                                                                                                |
+| **TypeScript & TSX**  | `.ts`, `.tsx`, `.mts`, `.cts`                                                       | AST/CST disambiguation of `<const T,>` generic arrow parameters vs JSX opening tags, relational `<`/`>` operators vs JSX tags, multiline JSX elements with full HTML tree indentation, attribute `=` vertical column alignment (LAFS Section 6.3), alloyed style props `style={{ ... }}`, and Column-Anchored Hybrid `return (`. |
+| **JavaScript & JSX**  | `.js`, `.jsx`, `.mjs`, `.cjs`                                                       | ESNext features, JSX tree indentation, render-prop callbacks, IIFE invocation closure `)()`, object destructuring, and template literals.                                                                                                                                                                                                  |
+| **Dart & Flutter**    | `.dart`                                                                                   | Primary constructors, cascade notation `..`, switch expressions, records, single-element tuples `(x,)`, collection `if`/`for`, dot shorthands, and generic typedefs.                                                                                                                                                                 |
+| **Kotlin**            | `.kt`, `.kts`                                                                           | Two dedicated engines: Version 1 (Pure Allman style for all containers) and Version 2 (Official Kotlin compiler compatible / Brain K&R). Data classes, `when` expressions, trailing lambdas, backtick identifiers.                                                                                                                         |
+| **Markdown**          | `.md`, `.markdown`, `.mdown`, `.mkd`                                                | Extracts and formats embedded code snippets across all languages inside fenced code blocks (`` ``` `` or `~~~`), while preserving all non-code content (prose, non-code fences like mermaid/math, lists, tables, blockquotes) without artificial 80-column line breaks.                                                                    |
+| **C & C++**           | `.c`, `.h`, `.cpp`, `.hpp`, `.cc`, `.cxx`, `.hh`, `.hxx`, `.inl`, `.cu` | Preprocessor directives (`#include`, `#define`, `#if`, `#endif`), template classes, nested generic closer splitting (`>>` vs `> >`), namespaces, pointers/references, and raw string literals `R"(...)"`.                                                                                                                      |
+| **C#**                | `.cs`                                                                                     | Properties, lambda expressions, LINQ queries, pattern matching, records, verbatim strings `@"..."`, and raw strings `"""..."""`.                                                                                                                                                                                                         |
+| **Go**                | `.go`                                                                                     | Goroutines, select blocks, multiple return signatures, raw string literals `` `...` ``, and Column-Anchored Hybrid control blocks.                                                                                                                                                                                                           |
+| **Shell**             | `.sh`, `.bash`, `.zsh`, `.ksh`                                                      | Function declarations, conditional blocks `[[ ... ]]`, arithmetic expansions, subshells `(...)`, line continuations, and heredoc preservation.                                                                                                                                                                                           |
+| **HTML & Polyglot**   | `.html`, `.htm`, `.vue`, `.svelte`                                                  | Full HTML tree indentation, embedded `<script>` (JS/TS) and `<style>` (CSS) formatting without corrupting surrounding markup.                                                                                                                                                                                                            |
+| **PHP**               | `.php`, `.phtml`                                                                        | Standalone PHP code and mixed PHP embedded within HTML template structures.                                                                                                                                                                                                                                                                  |
+| **CSS / SCSS / LESS** | `.css`, `.scss`, `.less`                                                              | Rulesets, media queries `@media`, CSS custom properties (variables), nested rules, and uppercase hex color token enforcement (`#7100FF`).                                                                                                                                                                                                |
+| **JSON**              | `.json`, `.jsonc`, `.json5`                                                           | Pure Allman and Monolith formatting for nested objects and arrays with comments preservation.                                                                                                                                                                                                                                                |
+| **TOML & Lockfiles**  | `.toml`, `.lock`                                                                        | Key-value pairs, table arrays `[[...]]`, inline tables, multiline arrays, Allman brackets, and alloyed groupings.                                                                                                                                                                                                                          |
+| **Batch / CMD**       | `.bat`, `.cmd`                                                                          | Windows batch scripts, labels, loops, and commands.                                                                                                                                                                                                                                                                                          |
+
+---
+
+## Safety Gate & Verification
+
+Every formatting operation passes through a strict verification pipeline before being written:
+
+* **Token Stream Equivalence**: Verifies non-whitespace token stream equivalence between input and output to guarantee zero data loss, zero altered identifiers, and zero dropped expressions.
+* **Mathematical Idempotence**: Guarantees that formatting an already-formatted file yields the exact same content:
+  $$
+  \text{Format}(\text{Format}(\text{Source})) \equiv \text{Format}(\text{Source})
+  $$
+* **Fail-Safe Mechanism**: If any parse ambiguity, unbalanced container, or lexer error occurs, the formatter safely fails open, reports diagnostic context to `failed.txt` (or custom log path), and leaves the original file completely untouched.
 
 ---
 
@@ -56,14 +77,14 @@ LAFS treats code containers (`()`, `{}`, `[]`, `<>`) as structural rooms whose b
 
 Precompiled standalone binaries with zero external runtime dependencies are automatically published on [GitHub Releases](https://github.com/Winstead-Inc/Language-Agnostic-Formatting-Style/releases):
 
-| Platform | Binary Asset | Description |
-| :--- | :--- | :--- |
-| **Windows (x86_64)** | `LAFS.exe` | Native 64-bit Windows executable |
-| **Linux (Any Distro, x86_64)** | `LAFS-linux-x86_64` | Fully static `musl` binary. Zero glibc dependency; runs on Alpine, Ubuntu, Debian, RHEL, CentOS, Fedora, Arch, NixOS, Amazon Linux |
-| **Linux (ARM64 / aarch64)** | `LAFS-linux-aarch64` | Fully static `musl` binary for 64-bit ARM (Raspberry Pi 4/5, AWS Graviton, Apple Silicon VMs) |
-| **macOS (Universal 2)** | `LAFS-darwin` | Universal binary combining Apple Silicon (`arm64`) and Intel (`x86_64`) native code |
-| **macOS (Apple Silicon)** | `LAFS-darwin-arm64` | Standalone Apple Silicon M1/M2/M3/M4 binary |
-| **macOS (Intel)** | `LAFS-darwin-x86_64` | Standalone Intel Mac binary |
+| Platform                             | Binary Asset           | Description                                                                                                                          |
+| :----------------------------------- | :--------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| **Windows (x86_64)**           | `LAFS.exe`           | Native 64-bit Windows executable                                                                                                     |
+| **Linux (Any Distro, x86_64)** | `LAFS-linux-x86_64`  | Fully static `musl` binary. Zero glibc dependency; runs on Alpine, Ubuntu, Debian, RHEL, CentOS, Fedora, Arch, NixOS, Amazon Linux |
+| **Linux (ARM64 / aarch64)**    | `LAFS-linux-aarch64` | Fully static `musl` binary for 64-bit ARM (Raspberry Pi 4/5, AWS Graviton, Apple Silicon VMs)                                      |
+| **macOS (Universal 2)**        | `LAFS-darwin`        | Universal binary combining Apple Silicon (`arm64`) and Intel (`x86_64`) native code                                              |
+| **macOS (Apple Silicon)**      | `LAFS-darwin-arm64`  | Standalone Apple Silicon M1/M2/M3/M4 binary                                                                                          |
+| **macOS (Intel)**              | `LAFS-darwin-x86_64` | Standalone Intel Mac binary                                                                                                          |
 
 ### Quick Start (Linux / macOS)
 
@@ -74,7 +95,7 @@ chmod +x LAFS-linux-x86_64 # or LAFS-darwin
 # Move to your PATH
 mv LAFS-linux-x86_64 /usr/local/bin/lafs # or ~/.local/bin/lafs
 
-# Verify
+# Verify installation
 lafs --version
 ```
 
@@ -85,6 +106,180 @@ cargo build --release
 ```
 
 The compiled binary will be located at `target/release/Language-Agnostic-Formatting-Style` (or `target/release/LAFS.exe` on Windows).
+
+---
+
+## CLI Usage & Options
+
+### Complete CLI Options Reference
+
+```text
+lafs [OPTIONS] <FILES... | DIRECTORIES...>
+```
+
+| Flag                                                                | Argument      | Description                                                                                                                                   | Default                                        |
+| :------------------------------------------------------------------ | :------------ | :-------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------- |
+| **`-w`**, **`--write`**                             | None          | Overwrite files in-place with formatted output                                                                                                | Enabled by default                             |
+| **`-o`**, **`--output`**, **`--out`**       | `<PATH>`    | Output file or destination directory                                                                                                          | Appends `.formatted` if passed without value |
+| **`--out-dir`**, **`--output-dir`**                 | `<DIR>`     | Destination directory (replicates source directory tree)                                                                                      | None                                           |
+| **`--prefix`**                                              | `[PREFIX]`  | Prepend prefix to output filename stem                                                                                                        | `formatted_` (if flag passed without value)  |
+| **`--suffix`**                                              | `[SUFFIX]`  | Append suffix to output filename stem before extension                                                                                        | `.formatted` (if flag passed without value)  |
+| **`-f`**, **`--file`**, **`--folder`**      | `<PATH...>` | Format specified file(s) or folder(s) (comma-separated or repeated)                                                                           | None                                           |
+| **`-d`**, **`--dir`**, **`--directory`**    | `<DIR...>`  | Explicit directory target                                                                                                                     | None                                           |
+| **`-a`**, **`--all`**                               | None          | Format all eligible files in current directory and all subdirectories                                                                         | False                                          |
+| **`-e`**, **`--ext`**                               | `<EXT...>`  | Only format files with specific extension(s) (e.g. `-e rs,ts,md`)                                                                           | All supported extensions                       |
+| **`--all-types`**                                           | None          | Format all text files regardless of extension (excluding binary/docs)                                                                         | False                                          |
+| **`-x`**, **`--exclude`**                           | `<PATTERN>` | Exclude files or folders matching wildcard patterns (e.g. `-x target -x vendor`)                                                            | Default exclusions                             |
+| **`--cah`**                                                 | `<-1\|0\|1>`  | Enable (`1`) or disable (`-1`/`0`) Column-Anchored Hybrid (Section 6.1)                                                                 | `1` (Enabled)                                |
+| **`--unwrap-paragraphs`**, **`--no-abrupt-breaks`** | None          | Reflow Markdown paragraphs into continuous semantic blocks (strips archaic 80-col breaks)                                                     | False                                          |
+| **`--no-unwrap-paragraphs`**                                | None          | Preserve original line breaks in Markdown paragraphs                                                                                          | Active                                         |
+| **`--kotlin-version`**                                      | `<1\|2>`     | Kotlin formatting profile: Version 1 (Pure Allman) or Version 2 (Official)                                                                    | `1` (Version 1)                              |
+| **`--kotlin-style`**                                        | `<STYLE>`   | Kotlin style alias: `allman` (Version 1) or `official` (Version 2)                                                                        | `allman`                                     |
+| **`--allman-kotlin`**                                       | None          | Enforce Version 1 (Pure Allman style for all containers)                                                                                      | Active                                         |
+| **`--official-kotlin`**                                     | None          | Enforce Version 2 (Official Kotlin compiler compatible / Brain K&R)                                                                           | Inactive                                       |
+| **`-c`**, **`--canvas-width`**                      | `<WIDTH>`   | Maximum column width before vertical expansion                                                                                                | `160`                                        |
+| **`-i`**, **`--indent`**                            | `<SIZE>`    | Indentation size in spaces                                                                                                                    | `4`                                          |
+| **`-t`**, **`--tabs`**                              | None          | Use hard tabs instead of spaces for indentation                                                                                               | Spaces                                         |
+| **`-l`**, **`--language`**                          | `<LANG>`    | Force language mode (`c`, `cpp`, `cs`, `js`, `ts`, `jsx`, `tsx`, `sh`, `kt`, `dart`, `rust`, `md`, `html`, `css`) | Auto-detect                                    |
+| **`--preserve-empty-lines`**                                | `<0\|1>`     | Preserve existing empty lines (`1`) or strip them (`0`)                                                                                   | `1` (Preserve)                               |
+| **`--no-preserve-empty-lines`**                             | None          | Strip redundant empty lines                                                                                                                   | False                                          |
+| **`-mbl`**, **`--max-blank-lines`**                 | `<NUM>`     | Maximum consecutive blank lines to preserve                                                                                                   | `1`                                          |
+| **`--max-statements`**                                      | `<NUM>`     | Maximum statements permitted in a single-line monolith block                                                                                  | `4`                                          |
+| **`--check`**                                               | None          | Dry-run check: exits with `0` if clean, `1` if unformatted                                                                                | False                                          |
+| **`format failed`**                                         | None          | Re-run formatting only on files recorded in `failed.txt`                                                                                    | False                                          |
+| **`-of`**, **`--output-failed`**                    | `<FILE>`    | Custom path for logging unformatted or failed file paths                                                                                      | `failed.txt`                                 |
+| **`--no-log`**                                              | None          | Disable automatic timestamped session and error log files                                                                                     | False                                          |
+| **`-j`**, **`--threads`**                           | `<COUNT>`   | Worker thread count for parallel multi-file processing                                                                                        | Available CPU cores                            |
+| **`-y`**, **`--yes`**                               | None          | Skip interactive confirmation prompts                                                                                                         | False                                          |
+| **`--verbose`**                                             | None          | Display verbose status for clean (unchanged) files                                                                                            | False                                          |
+| **`--stdout`**                                              | None          | Emit formatted content directly to standard output                                                                                            | False                                          |
+| **`--stdin-filepath`**                                      | `<PATH>`    | Virtual filepath for language detection when formatting stdin                                                                                 | None                                           |
+| **`-h`**, **`--help`**                              | None          | Display usage information                                                                                                                     | None                                           |
+| **`-v`**, **`--version`**                           | None          | Display version information                                                                                                                   | None                                           |
+
+---
+
+### Usage Workflows & Examples
+
+#### 1. In-Place Formatting (Default)
+
+```bash
+# Format specific files in-place
+lafs -w src/main.rs src/lib.rs
+
+# Format an entire directory recursively
+lafs src -y
+
+# Format all files in current project
+lafs -a -y
+```
+
+#### 2. Outputting to Another File or Destination
+
+```bash
+# Output single formatted file to a specific destination file
+lafs input.rs -o output.rs
+
+# Replicate an entire directory tree into a destination directory
+lafs src -o dist -y
+# Structure replicated: src/a/b.rs -> dist/a/b.rs
+```
+
+#### 3. Non-Destructive Formatting with Prefix or Suffix
+
+```bash
+# Save formatted copy alongside original with suffix (original untouched)
+lafs src/main.rs --suffix
+# Outputs: src/main.formatted.rs
+
+# Save formatted copy with prefix
+lafs src/main.rs --prefix
+# Outputs: src/formatted_main.rs
+
+# Custom prefix and suffix combined with output directory
+lafs src -o dist --prefix f_ --suffix .lafs -y
+# Outputs: dist/models/f_user.lafs.rs
+```
+
+#### 4. Formatting Embedded Code in Markdown Files
+
+```bash
+# Format all code blocks inside a Markdown document
+lafs docs/README.md -o docs/README.clean.md
+
+# Format all Markdown files in a directory
+lafs docs/ -e md -y
+
+# Format Markdown and unwrap abrupt mid-paragraph line breaks into continuous prose
+lafs docs/README.md --unwrap-paragraphs
+```
+
+#### 5. Automated Changelog Generator (`lafs changelog`)
+
+```bash
+# Generate or update CHANGELOG.md from git commit history
+lafs changelog
+
+# Generate changelog with custom release version and custom destination
+lafs changelog -v 1.2.0 -o RELEASE_NOTES.md
+
+# Preview generated changelog to stdout without modifying files
+lafs changelog --stdout
+```
+
+#### 6. Controlling Column-Anchored Hybrid (CAH)
+
+```bash
+# Enforce pure Allman geometry everywhere (even on return / closures)
+lafs --cah -1 src/app.tsx
+
+# Enable Column-Anchored Hybrid for syntax-sensitive grammar edge cases (default)
+lafs --cah 1 src/app.tsx
+```
+
+#### 6. Kotlin Formatting Engine Selection
+
+```bash
+# Enforce Version 1 (Pure Allman style for all Kotlin containers)
+lafs --allman-kotlin src/App.kt
+
+# Enforce Version 2 (Official Kotlin compiler compatible / Brain K&R)
+lafs --official-kotlin src/App.kt
+```
+
+#### 7. Shallow vs. Recursive Directory Targeting
+
+```bash
+# Shallow / Non-recursive (trailing slash): formats ONLY files directly in scratch
+lafs -f "scratch/"
+
+# Recursive (no trailing slash): formats scratch and all its subdirectories
+lafs -f "scratch"
+```
+
+#### 8. Stdin / Stdout Streaming (Editor Integration)
+
+```bash
+# Stream code via pipe
+cat MyFile.cpp | lafs -
+
+# Format stdin with virtual path for language detection
+cat MySnippet.tsx | lafs --stdin-filepath app.tsx -
+```
+
+#### 9. CI/CD Automated Verification Gate
+
+```bash
+# Check if any repository file requires formatting (exits 1 on unformatted)
+lafs --check --no-log -a
+```
+
+#### 10. Retrying Failed Files
+
+```bash
+# Re-runs formatting on all files logged in failed.txt
+lafs format failed
+```
 
 ---
 
@@ -107,10 +302,10 @@ A custom, LAFS-compliant release binary of `cargo.exe` has been compiled and int
 
 #### Key Features:
 
-- **Pure LAFS Manifest Support:** Natively parses `Cargo.toml` and `.cargo/config.toml` containing monolithized delimiter blocks:
+- **Pure LAFS Manifest Support:** Natively parses `Cargo.toml` and `.cargo/config.toml` containing monolithized or symmetric delimiter blocks:
   ```toml
   [dependencies]
-  proc-macro2 = [ "1.0", ]
+  proc-macro2 = ["1.0",]
 
   quote = { version = "1.0", }
   ```
@@ -119,116 +314,10 @@ A custom, LAFS-compliant release binary of `cargo.exe` has been compiled and int
   [[package]]
   name = "quote"
   version = "1.0.47"
-  dependencies = [
-                     "proc-macro2",
-                 ]
+  dependencies = ["proc-macro2",]
   ```
-- **Global Operating System Integration:** Because the patch is installed at the binary level in the active toolchain:
+- **Global Operating System Integration:**
   - Works natively with **Antigravity IDE** and **VS Code**.
   - Works seamlessly with **`rust-analyzer`** in background language server diagnostics.
   - Works across all command shells (**PowerShell**, **CMD**, **Bash**, **Git Bash**).
   - Survives subprocess calls, build scripts, and Git hooks.
-
----
-
-## CLI Usage
-
-### Formatting Files In-Place
-
-```powershell
-lafs -w file.c file.cpp file.cs file.php index.html
-```
-
-### Formatting Specified Files or Folders (`-f`, `--file`, `--folder`, `-d`, `--dir`)
-
-Format specified file(s) or folder(s) directly:
-
-```powershell
-# Single file
-lafs -f file.c
-
-# Multiple files with comma separation
-lafs -f file.c,file.cpp
-
-# Multiple flags
-lafs -f file.c -f file.cs
-
-# User specified folder (shallow / non-recursive with trailing slash)
-lafs -f "E:\Typst\scratch\"
-
-# User specified folder (recursive across subdirectories without trailing slash)
-lafs -f "E:\Typst\scratch"
-
-# Positional folder path with specific language or extension filter
-lafs -e js "E:\Typst\scratch\"
-lafs -l js "E:\Typst\scratch"
-
-# Explicit directory flag (-d / --dir / --directory)
-lafs -d "E:\Typst\scratch\" -e js
-```
-
-> **Trailing Slash Differentiation for Folders**:
->
-> - Paths ending with a trailing slash (`/` or `\`, e.g. `"scratch\"` or `"scratch/"`) target only the files located **directly inside that folder** (shallow / non-recursive, without descending into subdirectories).
-> - Paths without a trailing slash (e.g. `"scratch"`) target the folder and **all its subdirectories recursively**.
-
-### Checking Files and Logging Failures
-
-Exits with code `0` if all files are clean, or `1` if any file requires formatting. Output failed and unformatted paths to a specific log file:
-
-```powershell
-lafs --check --output-failed failed.txt .
-```
-
-### Stdin / Stdout Streaming (Editor / Pipe Mode)
-
-```powershell
-type MyFile.cpp | lafs -
-```
-
-### Custom Canvas Width & Indentation
-
-```powershell
-lafs --canvas-width 160 --indent 4 -w MyFile.cs
-```
-
-### Retrying Failed Files (`lafs format failed`)
-
-Re-runs formatting on all files recorded in `failed.txt` (or custom `-of <FILE>`):
-
-```powershell
-lafs format failed
-```
-
-If all previously failed files succeed, `failed.txt` is automatically cleared.
-
-### Automated Terminal & Error Logs
-
-During execution, LAFS automatically logs all console output and errors with generation timestamps:
-
-- `lafs {YYYY-MM-DD HH-MM-SS}.log`: All console output produced during the session.
-- `lafs error {YYYY-MM-DD HH-MM-SS}.log`: Captured error diagnostics (generated whenever errors occur).
-
-To disable automatic file logging, supply `--no-log`:
-
-```powershell
-lafs --no-log -w .
-```
-
-### CLI Reference
-
-| Flag                                | Description                                                                      |
-| ----------------------------------- | -------------------------------------------------------------------------------- |
-| `-w`, `--write`                     | Overwrite files in-place with formatted output                                   |
-| `-f`, `--file <FILES>`              | Format only the specified file(s) (comma-separated or multiple)                  |
-| `--check`                           | Check if files are formatted (exit code 1 if unformatted)                        |
-| `format failed`                     | Reformat all files listed in `failed.txt`                                        |
-| `-of`, `--output-failed <FILE>`     | Log paths (with language and reason) of files that failed or require formatting  |
-| `--no-log`                          | Disable automatic log file generation                                            |
-| `-c`, `--canvas-width <WIDTH>`      | Maximum column width before vertical expansion (default: 160)                    |
-| `-i`, `--indent <SIZE>`             | Indentation size in spaces (default: 4)                                          |
-| `-t`, `--tabs`                      | Use tabs instead of spaces for indentation                                       |
-| `-l`, `--language <LANG>`           | Force language mode (`c`, `cpp`, `cs`, `go`, `php`, `html`, `css`)               |
-| `--stdin-filepath <PATH>`           | Virtual file path when formatting from stdin                                     |
-| `-h`, `--help`                      | Show usage help                                                                  |
-| `-v`, `--version`                   | Show version info                                                                |

@@ -21,7 +21,7 @@ export interface Virtual_Node
 export const Fragment = Symbol('Fragment');
 export function CreateElement(type: string | Function | symbol, props: Record<string, unknown> | null, ...children: unknown[]): Virtual_Node
 {
-    return { type: typeof type === 'symbol' ? 'Fragment': type, props: props ?? {}, children };
+    return { type: typeof type === 'symbol' ? 'Fragment' : type, props: props ?? {}, children };
 }
 
 declare global
@@ -46,7 +46,7 @@ export function StatusDotBadge(props: { readonly hex: Spectrum_Hex_Token; readon
     return (
                <span
                    className = "StatusDot"
-                   style = {{ backgroundColor: props.hex }}
+                   style     = {{ backgroundColor: props.hex }}
                >
                    { props.label }
                </span>
@@ -62,9 +62,7 @@ export function TelemetryDataGrid<TRow extends { readonly id: string; readonly a
         readonly onRowSelect?: (row: TRow, index: number) => void;
         readonly renderCell: (row: TRow, index: number) => JSX.Element;
     }
-)
-:
-JSX.Element
+): JSX.Element
 {
     // Single-Line Complexity Budget Breach (6 statements + 3 nesting depth on 1 line):
     const computeGridChecksum = (count: number): number =>
@@ -82,11 +80,11 @@ JSX.Element
     };
     return (
                <section className = "TelemetryGridShell"
-                   data-grid-title = { props.headerTitle }
-                   data-checksum = { computeGridChecksum(props.rows.length) }
+                   data-grid-title     = { props.headerTitle }
+                   data-checksum       = { computeGridChecksum(props.rows.length) }
                    data-accent-primary = "#7100FF"
-                   data-accent-alpha = "#7100FF22"
-                   style = {{ borderColor: '#7100FF', backgroundColor: '#7100FF22', padding: '16px' }}>
+                   data-accent-alpha   = "#7100FF22"
+                   style               = {{ borderColor: '#7100FF', backgroundColor: '#7100FF22', padding: '16px' }}>
                    <header className = "GridHeader"
                        data-count = { props.rows.length }>
                        <h2>{ props.headerTitle }</h2>
@@ -107,11 +105,11 @@ JSX.Element
                                    (row, idx) =>
                                    (
                                        <div key = { row.id }
-                                           className = "GridRowItem"
-                                           data-row-id = { row.id }
+                                           className      = "GridRowItem"
+                                           data-row-id    = { row.id }
                                            data-row-index = { idx }
-                                           data-row-hex = { row.accentHex }
-                                           onClick =
+                                           data-row-hex   = { row.accentHex }
+                                           onClick        =
                                            {
                                                () => { if (props.onRowSelect) { props.onRowSelect(row, idx); } }
                                            }
@@ -146,9 +144,7 @@ export function AbyssalTelemetryDashboard
             }
         ) => void;
     }
-)
-:
-JSX.Element
+): JSX.Element
 {
     // Uninterrupted Sole-Child Chain (Should fuse into `[({` and `)}]` in LAFS State 2!):
     const staticThemeMatrix =
@@ -173,24 +169,23 @@ JSX.Element
 --lafs-critical: #FF1744;
 --lafs-cluster-id: "${
     props.clusterId.trim().length > 0
-    ? props.clusterId.trim()
-    : 'UNKNOWN_CLUSTER'
+    ? props.clusterId.trim() : 'UNKNOWN_CLUSTER'
 }";`;
     return (
                <>
                    <main className = "DashboardViewport"
-                       id = {`Cluster_${props.clusterId}` }
-                       data-live-stream = { props.isLiveStreamActive ? 'ACTIVE' : 'PAUSED' }
+                       id                      = { `Cluster_${props.clusterId}` }
+                       data-live-stream        = { props.isLiveStreamActive ? 'ACTIVE' : 'PAUSED' }
                        data-theme-matrix-count = { staticThemeMatrix.length }
-                       data-css-vars = { inlineCssVariables } { ...props.extraAriaAttributes }>
+                       data-css-vars           = { inlineCssVariables } { ...props.extraAriaAttributes }>
                        <nav className = "TopControlRibbon"
-                           data-role = "Navigation"
+                           data-role   = "Navigation"
                            data-accent = "#3D5AFE">
                            <button type = "button"
-                               className = "EscalateButton"
-                               disabled = { !props.isLiveStreamActive }
+                               className      = "EscalateButton"
+                               disabled       = { !props.isLiveStreamActive }
                                data-alert-hex = "#FF1744"
-                               onClick =
+                               onClick        =
                                {
                                    () =>
                                    {
@@ -232,20 +227,20 @@ JSX.Element
                                                );
                                                return (
                                                           <aside className = "TelemetrySummaryStrip"
-                                                              data-ok-count = { groupedCount.ok }
+                                                              data-ok-count   = { groupedCount.ok }
                                                               data-warn-count = { groupedCount.warn }
                                                               data-crit-count = { groupedCount.crit }>
-                                                              <StatusDotBadge hex = "#00E676" label = {`OK: ${groupedCount.ok}` } />
-                                                              <StatusDotBadge hex = "#FC6A03" label = {`WARN: ${groupedCount.warn}` } />
-                                                              <StatusDotBadge hex = "#FF1744" label = {`CRIT: ${groupedCount.crit}` } />
+                                                              <StatusDotBadge hex = "#00E676" label = { `OK: ${groupedCount.ok}` } />
+                                                              <StatusDotBadge hex = "#FC6A03" label = { `WARN: ${groupedCount.warn}` } />
+                                                              <StatusDotBadge hex = "#FF1744" label = { `CRIT: ${groupedCount.crit}` } />
                                                           </aside>
                                                       );
                                            }
                                        )()
                                    }
                                    <TelemetryDataGrid<Telemetry_Row_Contract>
-                                       rows = { props.rows }
-                                       headerTitle = {`Cluster Telemetry [${props.clusterId}]` }
+                                       rows        = { props.rows }
+                                       headerTitle = { `Cluster Telemetry [${props.clusterId}]` }
                                        onRowSelect =
                                        {
                                            (selectedRow, selectedIndex) =>
@@ -255,20 +250,20 @@ JSX.Element
                                                    props.onEscalateCritical
                                                    ({
                                                        clusterId: props.clusterId,
-                                                       criticalIds:[selectedRow.id],
-                                                       alertHex: selectedIndex % 2 === 0 ? '#FF1744': '#FC6A03'
+                                                       criticalIds: [selectedRow.id],
+                                                       alertHex: selectedIndex % 2 === 0 ? '#FF1744' : '#FC6A03'
                                                    });
                                                }
                                            }
                                        }
-                                       renderCell =
+                                       renderCell  =
                                        {
                                            (row, rowIdx) =>
                                            (
                                                <article className = "RowCardContent"
-                                                   data-node-name = { row.nodeName }
+                                                   data-node-name  = { row.nodeName }
                                                    data-latency-ms = { row.latencyMs }
-                                                   style =
+                                                   style           =
                                                    {{
                                                        borderLeftColor: row.severity === 'CRITICAL'
                                                        ? '#FF1744'
@@ -293,9 +288,9 @@ JSX.Element
                                                                    (
                                                                        (tag, tagIdx) =>
                                                                        (
-                                                                           <li key = {`${row.id}_${tagIdx}` }
-                                                                               data-tag-idx = { tagIdx }
-                                                                               data-parent-idx = { rowIdx }
+                                                                           <li key = { `${row.id}_${tagIdx}` }
+                                                                               data-tag-idx     = { tagIdx }
+                                                                               data-parent-idx  = { rowIdx }
                                                                                data-badge-color = "#C77DFF">
                                                                                { wrapReadonlyTuple(tag, '#C77DFF') [0] }
                                                                            </li>

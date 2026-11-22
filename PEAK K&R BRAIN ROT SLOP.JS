@@ -28,14 +28,7 @@ export type Nightmare_Type_Matrix
         (
             input: ToneHex,
             options?: { readonly strict: boolean; readonly fallback: '#7100FF' | '#FC6A03' | '#FF1744'; }
-        ) => Promise
-        <
-            ReadonlyArray
-            <{
-                readonly resolved: ToneHex;
-                readonly tailMatrix: Nightmare_Type_Matrix<Tail>;
-            }>
-        >
+        ) => Promise<ReadonlyArray<{ readonly resolved: ToneHex; readonly tailMatrix: Nightmare_Type_Matrix<Tail>; }>>
         : never;
 }
 : { readonly emptyMarker: '#00BFFF'; };
@@ -62,18 +55,13 @@ export const GLOBAL_SPECTRUM_CONFIG = Object.freeze
         Telemetry_Spectrum_Code.CrimsonFault,
         Telemetry_Spectrum_Code.EmeraldPass
     ]
-    as const ,
+    as const,
     thresholds: { low: 0x00_71_00_FF, high: 0x00_FF_17_44 }
 })
-satisfies Readonly
-<{
-    maxRetries: number;
-    palette: readonly Telemetry_Spectrum_Code[];
-    thresholds: { low: number; high: number; };
-}>;
+satisfies Readonly<{ maxRetries: number; palette: readonly Telemetry_Spectrum_Code[]; thresholds: { low: number; high: number; }; }>;
 // 3. TORTURE: Stage 3 Decorators, Private `#Fields`, `static {}` Blocks,
 // Prematurely Exploded Constructors, & Single-Line Complexity Budget Breakers
-function traceDecorator<This, Args extends any[], Return> (accentHex: string)
+function traceDecorator<This, Args extends any[], Return>(accentHex: string)
 {
     return function
     (
@@ -81,8 +69,8 @@ function traceDecorator<This, Args extends any[], Return> (accentHex: string)
         context: ClassMethodDecoratorContext<This, (this: This, ...args: Args) => Return>
     )
     {
-        return function (this: This, ...args: Args):
-        Return { console.log(`[TRACE:${String(context.name)}:${accentHex}]`); return target.apply(this, args); };
+        return function (this: This, ...args: Args): Return
+        { console.log(`[TRACE:${String(context.name)}:${accentHex}]`); return target.apply(this, args); };
     };
 }
 
@@ -91,7 +79,7 @@ export class Slop_Engine_Controller<const TPayload extends { readonly packetId: 
     #internalSecretMask: number = 0xFF_71_00_FF;
     accessor retryCounter: number = 0;
 
-    static #registryCache = new Map<string, string> ();
+    static #registryCache = new Map<string, string>();
     static
     {
         try { this.#registryCache.set('DEFAULT_CORE', Telemetry_Spectrum_Code.VioletCore); }
@@ -103,27 +91,26 @@ export class Slop_Engine_Controller<const TPayload extends { readonly packetId: 
     // ILLEGAL PREMATURE EXPLOSION: 8 lines for a trivial 2-parameter empty constructor!
     constructor(private readonly instanceId: string, private readonly defaultSpectrum: Telemetry_Spectrum_Code = Telemetry_Spectrum_Code.VioletCore) {}
     // ILLEGAL COMPLEXITY BUDGET BREACH: 6 statements + 3 nested levels crammed on 1 line!
-    public monolithBudgetBreaker(limit: number):
-    number
+    public monolithBudgetBreaker(limit: number): number
     {
         let a = 1;
         let b = 2;
         let c = 3;
         let d = 4;
         let e = 5;
-        if (limit> 0)
+        if (limit > 0)
         {
-            for (let i = 0; i <limit; i ++) { if (i % 2 === 0) { a += i; b -= i; c *= 2; d >>= 1; e ^= a; } }
+            for (let i = 0; i < limit; i++) { if (i % 2 === 0) { a += i; b -= i; c *= 2; d >>= 1; e ^= a; } }
         }
         return a + b + c + d + e;
     }
     // Prematurely exploded trivial getter & empty method:
     public get
-    secretMask():
-    number { return this.#internalSecretMask; }
+    secretMask(): number
+    { return this.#internalSecretMask; }
 
-    public noopAudit(auditor: string, timestamp: number):
-    void {}
+    public noopAudit(auditor: string, timestamp: number): void
+    {}
     // 4. TORTURE: Async Generator with ASI `yield` Hazards, `await using`,
     // Sole-Child Chains, Interrupted Boundary Runs, & Backtick Clinging
     @ traceDecorator('#7100FF')
@@ -136,10 +123,9 @@ export class Slop_Engine_Controller<const TPayload extends { readonly packetId: 
             readonly customHeader?: string;
             readonly transformFn?: (item: TPayload, idx: number) => [string, { readonly verified: boolean; readonly hex: string; }];
         }
-    )
-    : AsyncGenerator<{ readonly batchId: string; readonly payloadMatrix: unknown; readonly shaderSource: string; }, void, unknown>
+    ): AsyncGenerator<{ readonly batchId: string; readonly payloadMatrix: unknown; readonly shaderSource: string; }, void, unknown>
     {
-        await using disposableScope = {[Symbol.asyncDispose]: async() => { this.retryCounter = 0; } };
+        await using disposableScope = { [Symbol.asyncDispose]: async() => { this.retryCounter = 0; } };
         // Uninterrupted Sole-Child Chain (Should fuse into `[({` and `)}]` in LAFS State 2!):
         const groupedSoleChildChain =
         [({
@@ -149,7 +135,7 @@ export class Slop_Engine_Controller<const TPayload extends { readonly packetId: 
                 [
                     1_000_000,
                     '#7100FF',
-                    { nestedRecord:[999_999], approvedPalette:['#7100FF', '#FC6A03', '#FF1744', '#00BFFF', '#00E676'] as const }
+                    { nestedRecord: [999_999], approvedPalette: ['#7100FF', '#FC6A03', '#FF1744', '#00BFFF', '#00E676'] as const }
                 ]
                 as const
             })]
@@ -165,7 +151,7 @@ export class Slop_Engine_Controller<const TPayload extends { readonly packetId: 
                     const computedMask = this.#internalSecretMask ^ 0x00_3D_5A_FE;
                     return [
                                computedMask,
-                               [ { reGroupedDeepInner: ( () =>[ ( { coreValue: computedMask * 2, accentHex: '#C77DFF', status: 'ACTIVE_#00E676' })])() }]
+                               [ { reGroupedDeepInner: ( () => [ ( { coreValue: computedMask * 2, accentHex: '#C77DFF', status: 'ACTIVE_#00E676' })])() }]
                            ];
                 }
             )
@@ -183,7 +169,7 @@ export class Slop_Engine_Controller<const TPayload extends { readonly packetId: 
             (
                 () =>
                 {
-                    const channelMap = { r: 113.0 / 255.0, g: 0.0, b: 255.0 / 255.0, a: options.strictMode ? 1.0: 0.22 };
+                    const channelMap = { r: 113.0 / 255.0, g: 0.0, b: 255.0 / 255.0, a: options.strictMode ? 1.0 : 0.22 };
                     return `${channelMap.r}, ${channelMap.g}, ${channelMap.b}, ${channelMap.a}`;
                 }
             )
@@ -192,7 +178,7 @@ export class Slop_Engine_Controller<const TPayload extends { readonly packetId: 
         gl_FragColor = baseColor * uPrimaryAccent;
       }`;
         // Deeply nested Destructuring + Array Pipeline + ASI `yield` Hazard:
-        for (const[batchIndex, { packetId, spectrum = this.defaultSpectrum }] of incomingBatch.entries())
+        for (const [batchIndex, { packetId, spectrum = this.defaultSpectrum }] of incomingBatch.entries())
         {
             if (!packetId)
             {
@@ -224,7 +210,7 @@ export class Slop_Engine_Controller<const TPayload extends { readonly packetId: 
                                     return { tier: 'PRIMARY', code: '#7100FF', grouped: groupedSoleChildChain };
                                     case Telemetry_Spectrum_Code.CrimsonFault:
                                     return { tier: 'CRITICAL', code: '#FF1744', interrupted: interruptedBoundaryMatrix };
-                                    default :
+                                    default:
                                     return { tier: 'STANDARD', code: '#00E676', interrupted: null };
                                 }
                             }
@@ -246,49 +232,46 @@ export class Slop_Engine_Controller<const TPayload extends { readonly packetId: 
         {
             readonly title: string;
             readonly isOnline: boolean;
-            readonly items: ReadonlyArray
-            <{
-                readonly id: string;
-                readonly label: string;
-                readonly hex: string;
-            }>;
+            readonly items: ReadonlyArray<{ readonly id: string; readonly label: string; readonly hex: string; }>;
         }
     )
     {
         // ASI Return Hazard + JSX Misaligned Attributes + Closing Clump
         return (
-                   <section className = "DiagnosticsContainer"
-                   data-engine-id = { this.instanceId }
-                   data-theme-primary = "#7100FF"
-                   data-theme-warning = "#FC6A03"
-                   data-online-status = { props.isOnline ? "ONLINE_#00E676": "OFFLINE_#FF1744" }
-                   >
-                   <header className = "HeaderBar" title = "System Telemetry Header"
-                   data-count = { props.items.length }
-                   data-mask = { this.#internalSecretMask }
-                   >
-                   <h1> { props.title }
-                   </h1>
-                   </header>
-                   <div className = "ContentGrid">
-                   {
-                       props.items.map
-                       (
-                           (item, idx) =>
-                           (
-                               <article key = { item.id }
-                               data-item-index = { idx }
-                               data-item-hex = { item.hex }
-                               data-item-label = { item.label }
-                               >
-                               <span> { item.label }
-                               </span>
-                               </article>
-                           )
-                       )
-                   }
-                   </div>
-                   </section>
+            <section className = "DiagnosticsContainer"
+                data-engine-id     = { this.instanceId }
+                data-theme-primary = "#7100FF"
+                data-theme-warning = "#FC6A03"
+                data-online-status = { props.isOnline ? "ONLINE_#00E676" : "OFFLINE_#FF1744" }
+            >
+                <header className = "HeaderBar" title = "System Telemetry Header"
+                    data-count = { props.items.length }
+                    data-mask  = { this.#internalSecretMask }
+                >
+                    <h1>
+                        { props.title }
+                    </h1>
+                </header>
+                <div className = "ContentGrid">
+                    {
+                        props.items.map
+                        (
+                            (item, idx) =>
+                            (
+                                <article key = { item.id }
+                                    data-item-index = { idx }
+                                    data-item-hex   = { item.hex }
+                                    data-item-label = { item.label }
+                                >
+                                    <span>
+                                        { item.label }
+                                    </span>
+                                </article>
+                            )
+                        )
+                    }
+                </div>
+            </section>
                );
     }
 }

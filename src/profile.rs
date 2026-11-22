@@ -110,6 +110,7 @@ impl Language_Profile
             Source_Language::Batch => & BATCH_PROFILE,
             Source_Language::Toml => & TOML_PROFILE,
             Source_Language::CargoLock => & CARGO_LOCK_PROFILE,
+            Source_Language::Markdown => & GENERIC_PROFILE,
             Source_Language::Generic => & GENERIC_PROFILE,
         }
     }

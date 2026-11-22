@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Absolute Allman Formatter</title>
+        <style>
+            body
+            {
+                font-family: monospace;
+                padding: 20px;
+                background: #000;
+                color: #00FF00;
+            }
+            textarea
+            {
+                width: 100%;
+                height: 150px;
+                background: #111;
+                color: #00FF00;
+                border: 1px solid #00FF00;
+                padding: 10px;
+            }
+            pre
+            {
+                border: 1px solid #333;
+                padding: 15px;
+                background: #050505;
+                white-space: pre;
+                line-height: 1.4;
+            }
+            button
+            {
+                margin: 15px 0;
+                padding: 10px 20px;
+                background: #00FF00;
+                color: #000;
+                font-weight: bold;
+                border: none;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Absolute Allman JSON</h1>
+        <textarea id="input" placeholder="Paste JSON here...">
+        </textarea>
+        <br>
+        <button onclick="process()">
+            EXECUTE ALLMAN
+        </button>
+        <pre id="output">
+        </pre>
+        <script>
+            function FormatAllmanIterative(Input)
+            {
+                const Output = [];
+                const Stack = [];
+
+                function Indent(Level) { return "    ".repeat(Level); }
+
+                function PushFrame(Value, Depth, Key = null, IsLast = true)
+                {
+                    Stack.push( { Value: Value, Depth: Depth, Key: Key, IsLast: IsLast, Stage: 0, Keys: null, Index: 0 });
+                }
+
+                PushFrame(Input, 0);
+
+                while (Stack.length> 0)
+                {
+                    const Frame = Stack[Stack.length - 1];
+                    const Value = Frame.Value;
+                    const Depth = Frame.Depth;
+                    // PRIMITIVES
+                    if (typeof Value !== "object" || Value === null)
+                    {
+                        let Line = "";
+
+                        if (Frame.Key !== null) { Line += Indent(Depth) + '"' + Frame.Key + '": ' + JSON.stringify(Value); }
+                        else { Line += Indent(Depth) + JSON.stringify(Value); }
+
+                        if (!Frame.IsLast) { Line += ","; }
+
+                        Output.push(Line);
+                        Stack.pop();
+                        continue;
+                    }
+                    // ARRAY
+                    if (Array.isArray(Value))
+                    {
+                        if (Frame.Stage === 0)
+                        {
+                            let Line = "";
+
+                            if (Frame.Key !== null) { Line += Indent(Depth) + '"' + Frame.Key + '":'; }
+                            else { Line += Indent(Depth); }
+
+                            Output.push(Line);
+                            Output.push(Indent(Depth) + "[");
+
+                            Frame.Stage = 1;
+                            Frame.Index = 0;
+                            continue;
+                        }
+
+                        if (Frame.Stage === 1)
+                        {
+                            if (Frame.Index >= Value.length)
+                            {
+                                Output.push(Indent(Depth) + "]" + (Frame.IsLast ? "": ","));
+                                Stack.pop();
+                                continue;
+                            }
+
+                            const Item = Value[Frame.Index];
+
+                            PushFrame(Item, Depth + 1, null, Frame.Index === Value.length - 1);
+
+                            Frame.Index ++;
+                            continue;
+                        }
+                    }
+                    // OBJECT
+                    if (Frame.Stage === 0)
+                    {
+                        Frame.Keys = Object.keys(Value);
+
+                        let Line = "";
+
+                        if (Frame.Key !== null) { Line += Indent(Depth) + '"' + Frame.Key + '":'; }
+                        else { Line += Indent(Depth); }
+
+                        Output.push(Line);
+                        Output.push(Indent(Depth) + "{");
+
+                        Frame.Stage = 1;
+                        Frame.Index = 0;
+                        continue;
+                    }
+
+                    if (Frame.Stage === 1)
+                    {
+                        if (Frame.Index >= Frame.Keys.length)
+                        {
+                            Output.push(Indent(Depth) + "}" + (Frame.IsLast ? "": ","));
+                            Stack.pop();
+                            continue;
+                        }
+
+                        const Key = Frame.Keys[Frame.Index];
+                        const Val = Value[Key];
+
+                        PushFrame(Val, Depth + 1, Key, Frame.Index === Frame.Keys.length - 1);
+
+                        Frame.Index ++;
+                        continue;
+                    }
+                }
+
+                return Output.join("\n");
+            }
+
+            function Process()
+            {
+                const Raw = document.getElementById("input").value;
+                const Out = document.getElementById("output");
+
+                try
+                {
+                    // Size protection (prevents browser freeze)
+                    if (Raw.length> 5_000_000) { throw new Error("Input too large (5MB limit)"); }
+
+                    const Json = JSON.parse(Raw);
+
+                    const Result = FormatAllmanIterative(Json);
+
+                    Out.textContent = Result;
+                }
+                catch (Err) { console.error(Err); Out.textContent = "ERROR:\n" + Err.message; }
+            }
+        </script>
+    </body>
+</html>

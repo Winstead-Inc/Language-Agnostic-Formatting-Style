@@ -1,0 +1,4 @@
+File: E:\Typst\temp_showcase.typ
+Language: generic
+Reason: Requires formatting
+

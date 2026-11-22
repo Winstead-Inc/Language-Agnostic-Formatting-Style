@@ -38,8 +38,10 @@ impl Source_Formatter
             return crate::languages::polyglot::Polyglot_Formatter::Format(Source, Config);
         }
 
-        if Config.Language == crate::types::Source_Language::Css
-        { return crate::languages::css::CSS_Formatter::Format(Source, Config); }
+        if Config.Language.IsMarkdown()
+        {
+            return crate::languages::markdown::Markdown_Formatter::Format(Source, Config);
+        }
 
         if Config.Language == crate::types::Source_Language::Css
         { return crate::languages::css::CSS_Formatter::Format(Source, Config); }

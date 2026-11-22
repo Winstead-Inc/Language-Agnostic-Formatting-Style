@@ -1,6 +1,7 @@
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
 
 pub mod container_tree;
+pub mod changelog;
 pub mod emitter;
 pub mod formatter;
 pub mod languages;
@@ -17,6 +18,7 @@ pub use languages::dart;
 pub use languages::go;
 pub use languages::js_ts;
 pub use languages::kotlin;
+pub use languages::markdown;
 pub use languages::polyglot;
 pub use languages::shell;
 
@@ -25,6 +27,7 @@ pub use languages::dart::Dart_Formatter;
 pub use languages::go::Go_Formatter;
 pub use languages::js_ts::JS_TS_Formatter;
 pub use languages::kotlin::Kotlin_Formatter;
+pub use languages::markdown::Markdown_Formatter;
 pub use languages::polyglot::Polyglot_Formatter;
 pub use languages::shell::Shell_Formatter;
 

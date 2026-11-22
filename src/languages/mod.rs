@@ -6,6 +6,7 @@ pub mod dart;
 pub mod go;
 pub mod js_ts;
 pub mod kotlin;
+pub mod markdown;
 pub mod polyglot;
 pub mod shell;
 
@@ -15,5 +16,6 @@ pub use dart::Dart_Formatter;
 pub use go::Go_Formatter;
 pub use js_ts::JS_TS_Formatter;
 pub use kotlin::Kotlin_Formatter;
+pub use markdown::Markdown_Formatter;
 pub use polyglot::Polyglot_Formatter;
 pub use shell::Shell_Formatter;
