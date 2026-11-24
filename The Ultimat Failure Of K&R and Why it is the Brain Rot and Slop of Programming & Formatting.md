@@ -538,7 +538,7 @@ ${
     ApprovedPalette.Map((ColorHex) => "'$ColorHex'").Join(', ')
 }
 );
-'''; 
+''';
 ```
 
 ---
