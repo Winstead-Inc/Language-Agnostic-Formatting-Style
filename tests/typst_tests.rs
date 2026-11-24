@@ -145,10 +145,10 @@ fn Test_Typst_Labels()
     let Input = r#"#heading[Introduction] <sec:intro>
 Reference to @sec:intro."#;
 
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Typst;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Typst labels failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Typst labels failed");
     assert!(Formatted.contains("<sec:intro>"));
 }
 
@@ -162,11 +162,11 @@ fn Test_Typst_Content_Block_Single_Parens()
   let d = [}]
 }"#;
 
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Typst;
     Config.Canvas_Width = 160;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Typst single parens in content blocks failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Typst single parens in content blocks failed");
     assert!(Formatted.contains("[(]"), "Content block [(] must be preserved without mismatch error");
     assert!(Formatted.contains("[)]"), "Content block [)] must be preserved without mismatch error");
 }
@@ -178,11 +178,11 @@ fn Test_Typst_Prose_Parens_Not_Code_Delimiters()
 This is standard prose text (with normal parentheses) that should not be parsed as code.
 "#;
 
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Typst;
     Config.Canvas_Width = 160;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Typst prose parens failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Typst prose parens failed");
     assert!(Formatted.contains("(with normal parentheses)"));
 }
 
@@ -192,13 +192,13 @@ fn Test_Typst_Category_Pair_Stability()
     let Path = r"e:\Typst\docs\components\category.typ";
     if let Ok(Content) = std::fs::read_to_string(Path)
     {
-        let mut Config = Config_Settings::default();
+        let mut Config = Config_Settings:: default();
         Config.Language = Source_Language::Typst;
         Config.Canvas_Width = 160;
 
-        let Formatted = Source_Formatter::Format(&Content, &Config).expect("Category.typ formatting failed");
-        assert!(!Formatted.is_empty());
-        let ReFormatted = Source_Formatter::Format(&Formatted, &Config).expect("Category.typ idempotency check failed");
+        let Formatted = Source_Formatter::Format( & Content, & Config).expect("Category.typ formatting failed");
+        assert!( ! Formatted.is_empty());
+        let ReFormatted = Source_Formatter::Format( & Formatted, & Config).expect("Category.typ idempotency check failed");
         assert_eq!(Formatted, ReFormatted, "Formatting must be idempotent");
     }
 }
@@ -216,15 +216,21 @@ fn Test_Typst_Method_Chain_Indentation()
   }
 }"#;
 
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Typst;
     Config.Canvas_Width = 60;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Typst method chain failed");
-    assert!(!Formatted.contains("\n.map"), "Chained method .map must not be at column 0");
-    assert!(!Formatted.contains("\n.filter"), "Chained method .filter must not be at column 0");
-    assert!(!Formatted.contains("\n.flatten"), "Chained method .flatten must not be at column 0");
-    assert!(Formatted.contains("        groups\n            .map(g => g.definitions.values())\n            .filter(v => type(v) != function)\n            .flatten()\n        sub-categories.values()"));
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Typst method chain failed");
+    assert!( ! Formatted.contains("\n.map"), "Chained method .map must not be at column 0");
+    assert!( ! Formatted.contains("\n.filter"), "Chained method .filter must not be at column 0");
+    assert!( ! Formatted.contains("\n.flatten"), "Chained method .flatten must not be at column 0");
+    assert!
+    (
+        Formatted.contains
+        (
+            "        groups\n            .map(g => g.definitions.values())\n            .filter(v => type(v) != function)\n            .flatten()\n        sub-categories.values()"
+        )
+    );
 }
 
 #[test]
@@ -238,15 +244,15 @@ fn Test_Typst_Compound_Assignment_Operators()
     factor /= 4
 }
 "#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Typst;
     Config.Canvas_Width = 160;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Typst formatting failed");
-    assert!(!Formatted.contains("+ ="), "Operator '+=' must never be detached into '+ ='");
-    assert!(!Formatted.contains("- ="), "Operator '-=' must never be detached into '- ='");
-    assert!(!Formatted.contains("* ="), "Operator '*=' must never be detached into '* ='");
-    assert!(!Formatted.contains("/ ="), "Operator '/=' must never be detached into '/ ='");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Typst formatting failed");
+    assert!( ! Formatted.contains("+ ="), "Operator '+=' must never be detached into '+ ='");
+    assert!( ! Formatted.contains("- ="), "Operator '-=' must never be detached into '- ='");
+    assert!( ! Formatted.contains("* ="), "Operator '*=' must never be detached into '* ='");
+    assert!( ! Formatted.contains("/ ="), "Operator '/=' must never be detached into '/ ='");
     assert!(Formatted.contains("items += query("));
     assert!(Formatted.contains("count -= 1"));
     assert!(Formatted.contains("total *= 2"));
@@ -265,11 +271,11 @@ fn Test_Typst_Markup_Prose_And_Punctuation_Spacing()
     [That's the autocomplete panel. It can be very useful while you are writing your document: You can apply its suggestions by hitting the Return key or navigate to the desired completion with the arrow keys. The panel can be dismissed by hitting the Escape key and opened again by typing `#` or hitting #kbd("Ctrl") + #kbd("Space"). Use the autocomplete panel to discover the right arguments for functions. Most suggestions come with a small description of what they do.]
 }
 "#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Typst;
     Config.Canvas_Width = 300;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Typst markup spacing failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Typst markup spacing failed");
     assert!(Formatted.contains("[Requires the #raw(info.feature) feature]"));
     assert!(Formatted.contains("[ on #parent]"));
     assert!(Formatted.contains("with-tooltip[#heading-kinds #if nested { [ on #raw(parent)] }]"));
@@ -288,12 +294,15 @@ Your teaching assistant does not yet know that you are using a new typesetting s
 Wait, shouldn ' t all arguments of a function be specified within parentheses ?
 As seen above, that works.With the @ text function, we can adjust the font.
 "#;
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Typst;
     Config.Canvas_Width = 300;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Typst contraction repair failed");
-    assert!(Formatted.contains("Let's add a few more styles to our document. We want larger margins and a serif font. For the purposes of the example, we'll also set another page size."));
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Typst contraction repair failed");
+    assert!
+    (
+        Formatted.contains("Let's add a few more styles to our document. We want larger margins and a serif font. For the purposes of the example, we'll also set another page size.")
+    );
     assert!(Formatted.contains("student's submissions. In this chapter, we will see how to format your report using Typst's styling system."));
     assert!(Formatted.contains("Wait, shouldn't all arguments of a function be specified within parentheses?"));
     assert!(Formatted.contains("that works. With the @text function"));
@@ -335,16 +344,19 @@ This can be observed in parameter lists, function definitions, and @ reference: 
 You have handed in your report.Your supervisor was so happy with it that they want to adapt it into a conference paper !
 "#;
 
-    let mut Config = Config_Settings::default();
+    let mut Config = Config_Settings:: default();
     Config.Language = Source_Language::Typst;
     Config.Canvas_Width = 300;
 
-    let Formatted = Source_Formatter::Format(Input, &Config).expect("Typst tutorial formatting prose repair failed");
+    let Formatted = Source_Formatter::Format(Input, & Config).expect("Typst tutorial formatting prose repair failed");
     println!("--- FORMATTED OUTPUT ---\n{}\n--- END OUTPUT ---", Formatted);
     assert!(Formatted.contains("images. However, it still looks very plain. Your teaching assistant"));
     assert!(Formatted.contains("other student's submissions. In this chapter"));
     assert!(Formatted.contains("using Typst's styling system."));
-    assert!(Formatted.contains("content (e.g. the @image function) and others that _manipulate_ content that they received as arguments (e.g. the @align function). The first impulse"));
+    assert!
+    (
+        Formatted.contains("content (e.g. the @image function) and others that _manipulate_ content that they received as arguments (e.g. the @align function). The first impulse")
+    );
     assert!(Formatted.contains("Wait, shouldn't all arguments of a function be specified within parentheses? Why is there"));
     assert!(Formatted.contains("content _after_ the parentheses?"));
     assert!(Formatted.contains("shadow: false,)"));
@@ -353,11 +365,17 @@ You have handed in your report.Your supervisor was so happy with it that they wa
     assert!(Formatted.contains("`name`. We can now use"));
     assert!(Formatted.contains("that works. With the @text function, we can adjust the font for all text within it. However, wrapping"));
     assert!(Formatted.contains("solution. With _set rules,_ you can apply style properties to all occurrences of some kind of content. You write a set rule"));
-    assert!(Formatted.contains("or hitting #kbd(\"Ctrl\") + #kbd(\"Space\"). Use the autocomplete panel to discover the right arguments for functions. Most suggestions"));
+    assert!
+    (
+        Formatted.contains("or hitting #kbd(\"Ctrl\") + #kbd(\"Space\"). Use the autocomplete panel to discover the right arguments for functions. Most suggestions")
+    );
     assert!(Formatted.contains("to yield a 2D alignment."));
     assert!(Formatted.contains("numbering parameter. This tells Typst"));
     assert!(Formatted.contains("use @numbering[letters, roman numerals, and symbols] for our headings:"));
-    assert!(Formatted.contains("maybe @function:defining-functions[define a custom function] that always yields the logo with its image. However, there is an even easier way:"));
+    assert!
+    (
+        Formatted.contains("maybe @function:defining-functions[define a custom function] that always yields the logo with its image. However, there is an even easier way:")
+    );
     assert!(Formatted.contains("and @reference:scripting[code blocks]."));
     assert!(Formatted.contains("report. Your supervisor was so happy with it that they want to adapt it into a conference paper!"));
 }
@@ -368,11 +386,11 @@ fn Test_Typst_Tutorial_Template_File()
     let Path = "E:\\Typst\\docs\\content\\tutorial\\4-template.typ";
     if let Ok(Content) = std::fs::read_to_string(Path)
     {
-        let mut Config = Config_Settings::default();
+        let mut Config = Config_Settings:: default();
         Config.Language = Source_Language::Typst;
         Config.Canvas_Width = 160;
 
-        let Formatted = Source_Formatter::Format(&Content, &Config).expect("Formatting 4-template.typ failed");
-        assert!(!Formatted.is_empty());
+        let Formatted = Source_Formatter::Format( & Content, & Config).expect("Formatting 4-template.typ failed");
+        assert!( ! Formatted.is_empty());
     }
 }

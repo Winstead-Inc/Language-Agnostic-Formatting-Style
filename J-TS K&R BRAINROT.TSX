@@ -7,8 +7,7 @@
 /** @jsxRuntime classic */
 /** @jsx CreateElement */
 /** @jsxFrag Fragment */
-export type Spectrum_Hex_Token =
-| '#7100FF' | '#7100FF22' | '#FC6A03' | '#FF1744'
+export type Spectrum_Hex_Token = | '#7100FF' | '#7100FF22' | '#FC6A03' | '#FF1744'
 | '#00BFFF' | '#00E676' | '#C77DFF' | '#3D5AFE' | '#FFFFFF';
 
 export interface Virtual_Node

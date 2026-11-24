@@ -992,8 +992,7 @@ PlayerWrap.style.cssText =
     --ytd-watch-flexy-chat-max-height: 460px;
 `;
 
-const FragmentShader =
-`  
+const FragmentShader = `  
     precision mediump float;  
     varying vec2 vTextureCoord;  
     uniform sampler2D uSampler;  
