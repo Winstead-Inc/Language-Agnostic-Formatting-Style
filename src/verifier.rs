@@ -213,6 +213,8 @@ impl Safety_Verifier
         { let mut Scanner = crate::languages::kotlin::Kotlin_Lexer::New(Source); Scanner.TokenizeAll() }
         else if Language.IsShell()
         { let mut Scanner = crate::languages::shell::Shell_Lexer::New(Source); Scanner.TokenizeAll() }
+        else if Language.IsTypst()
+        { let mut Scanner = crate::languages::typst::Typst_Lexer::New(Source); Scanner.TokenizeAll() }
         else
         { let mut Scanner = Lexer_Scanner::New(Source, Language); Scanner.TokenizeAll() }
     }

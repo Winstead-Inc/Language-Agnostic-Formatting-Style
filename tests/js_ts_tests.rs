@@ -841,3 +841,36 @@ export const TelemetryGrid = <T extends TelemetryRecord>(props: TelemetryGridPro
     match Formatted
     { Ok(res) => println ! ("Formatted:\n{}", res), Err(e) => panic ! ("Error: {}", e), }
 }
+
+#[test]
+fn Test_JS_No_Unwanted_Newline_After_Assignment_Equals()
+{
+    let Input = r#"
+const codepoint =
+codepointText !== undefined ? parseInt(codepointText, 16) : null;
+"#;
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::JavaScript;
+    Config.Canvas_Width = 160;
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    assert!(!Formatted.contains("const codepoint =\n"), "There should be no unwanted newline immediately following '=' in variable declaration");
+    assert!(Formatted.contains("const codepoint = codepointText !== undefined ? parseInt(codepointText, 16) : null;"));
+}
+
+#[test]
+fn Test_JS_Less_Than_Or_Equal_Operator_Not_Detached()
+{
+    let Input = r#"
+for (let j = 0; j <= rightLength; j++) { current[j] = j * TAIL_INSERTION_COST; }
+const valid = 0 <= codepoint && codepoint <= 0x10ffff;
+"#;
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::JavaScript;
+    Config.Canvas_Width = 160;
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Formatting failed");
+    assert!(!Formatted.contains("< ="), "Operator '<=' must never be detached into '< ='");
+    assert!(Formatted.contains("j <= rightLength"));
+    assert!(Formatted.contains("0 <= codepoint && codepoint <= 0x10ffff"));
+}

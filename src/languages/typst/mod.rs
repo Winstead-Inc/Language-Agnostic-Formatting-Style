@@ -148,13 +148,71 @@ impl Typst_Container_Node
 // TYPST LEXER
 // ============================================================================
 
-pub struct Typst_Lexer<'a>
-{ Source: & 'a str, Chars: Vec<char>, Index: usize, Line: usize, Column: usize, }
-
-impl <'a> Typst_Lexer<'a>
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Typst_Lex_Mode
 {
-    pub fn New(Source: & 'a str) -> Self
-    { Typst_Lexer { Source, Chars: Source.chars().collect(), Index: 0, Line: 1, Column: 0, } }
+    Markup,
+    Code,
+}
+
+pub struct Typst_Lexer<'a>
+{
+    Source: &'a str,
+    Chars: Vec<char>,
+    Index: usize,
+    Line: usize,
+    Column: usize,
+    Mode_Stack: Vec<Typst_Lex_Mode>,
+    In_Hash_Statement: bool,
+    In_Hash_Code: bool,
+    Last_Non_Trivia_Text: String,
+}
+
+impl<'a> Typst_Lexer<'a>
+{
+    pub fn New(Source: &'a str) -> Self
+    {
+        Typst_Lexer
+        {
+            Source,
+            Chars: Source.chars().collect(),
+            Index: 0,
+            Line: 1,
+            Column: 0,
+            Mode_Stack: vec![Typst_Lex_Mode::Markup],
+            In_Hash_Statement: false,
+            In_Hash_Code: false,
+            Last_Non_Trivia_Text: String::new(),
+        }
+    }
+
+    fn CurrentMode(&self) -> Typst_Lex_Mode
+    {
+        *self.Mode_Stack.last().unwrap_or(&Typst_Lex_Mode::Markup)
+    }
+
+    fn PeekNextNonWhitespace(&self) -> Option<char>
+    {
+        let mut i = self.Index;
+        while i < self.Chars.len()
+        {
+            let c = self.Chars[i];
+            if c != ' ' && c != '\t' && c != '\r' && c != '\n'
+            {
+                return Some(c);
+            }
+            i += 1;
+        }
+        None
+    }
+
+    fn IsContinuationToken(Text: &str) -> bool
+    {
+        matches!(
+            Text,
+            "=" | "+=" | "-=" | "*=" | "/=" | ":" | "+" | "-" | "*" | "/" | "," | "." | "::" | ".." | "..=" | "..." | "=>" | "<=" | ">=" | "==" | "!="
+        )
+    }
 
     fn Peek( & self) -> Option<char>
     { if self.Index < self.Chars.len() { Some(self.Chars[self.Index]) } else { None } }
@@ -200,6 +258,16 @@ impl <'a> Typst_Lexer<'a>
                 PrecedingNewlines += 1;
                 AtLineStart = true;
                 CurrentLeadingWhitespace.clear();
+                if self.CurrentMode() == Typst_Lex_Mode::Markup
+                {
+                    let Continues = Self::IsContinuationToken(&self.Last_Non_Trivia_Text)
+                        || matches!(self.PeekNextNonWhitespace(), Some('(' | '{' | '[' | '=' | ':' | '.' | '+' | '-'));
+                    if !Continues
+                    {
+                        self.In_Hash_Statement = false;
+                        self.In_Hash_Code = false;
+                    }
+                }
                 continue;
             }
 
@@ -243,6 +311,7 @@ impl <'a> Typst_Lexer<'a>
             if Ch == '"'
             {
                 let StringText = self.ScanString();
+                self.Last_Non_Trivia_Text = StringText.clone();
                 RawTokens.push(Token_Info::NewWithIndent(Token_Kind::String_Lit(StringText.clone()), StringText, StartLine, StartCol, PrecedingNewlines, TokenIndent));
                 PrecedingNewlines = 0;
                 continue;
@@ -252,6 +321,7 @@ impl <'a> Typst_Lexer<'a>
             if Ch == '`'
             {
                 let RawText = self.ScanRawCode();
+                self.Last_Non_Trivia_Text = RawText.clone();
                 RawTokens.push(Token_Info::NewWithIndent(Token_Kind::String_Lit(RawText.clone()), RawText, StartLine, StartCol, PrecedingNewlines, TokenIndent));
                 PrecedingNewlines = 0;
                 continue;
@@ -262,6 +332,7 @@ impl <'a> Typst_Lexer<'a>
             {
                 if let Some(LabelText) = self.TryScanLabel()
                 {
+                    self.Last_Non_Trivia_Text = LabelText.clone();
                     RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Identifier(LabelText.clone()), LabelText, StartLine, StartCol, PrecedingNewlines, TokenIndent));
                     PrecedingNewlines = 0;
                     continue;
@@ -271,44 +342,104 @@ impl <'a> Typst_Lexer<'a>
             // 7. Containers / Delimiters: (), {}, []
             if Ch == '('
             {
+                let InCode = self.CurrentMode() == Typst_Lex_Mode::Code || self.In_Hash_Code;
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::NewWithIndent(Token_Kind::Open_Delim(Container_Kind::Paren), "(".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
-                );
+                self.Last_Non_Trivia_Text = "(".to_string();
+                if InCode
+                {
+                    self.In_Hash_Code = false;
+                    self.Mode_Stack.push(Typst_Lex_Mode::Code);
+                    RawTokens.push
+                    (
+                        Token_Info::NewWithIndent(Token_Kind::Open_Delim(Container_Kind::Paren), "(".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
+                    );
+                }
+                else
+                {
+                    RawTokens.push
+                    (
+                        Token_Info::NewWithIndent(Token_Kind::Punctuation('('), "(".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
+                    );
+                }
                 PrecedingNewlines = 0;
                 continue;
             }
 
             if Ch == ')'
             {
+                let InCode = self.CurrentMode() == Typst_Lex_Mode::Code;
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::NewWithIndent(Token_Kind::Close_Delim(Container_Kind::Paren), ")".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
-                );
+                self.Last_Non_Trivia_Text = ")".to_string();
+                if InCode
+                {
+                    if self.Mode_Stack.len() > 1
+                    {
+                        self.Mode_Stack.pop();
+                    }
+                    RawTokens.push
+                    (
+                        Token_Info::NewWithIndent(Token_Kind::Close_Delim(Container_Kind::Paren), ")".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
+                    );
+                }
+                else
+                {
+                    RawTokens.push
+                    (
+                        Token_Info::NewWithIndent(Token_Kind::Punctuation(')'), ")".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
+                    );
+                }
                 PrecedingNewlines = 0;
                 continue;
             }
 
             if Ch == '{'
             {
+                let InCode = self.CurrentMode() == Typst_Lex_Mode::Code || self.In_Hash_Code;
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::NewWithIndent(Token_Kind::Open_Delim(Container_Kind::Brace), "{".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
-                );
+                self.Last_Non_Trivia_Text = "{".to_string();
+                if InCode
+                {
+                    self.In_Hash_Code = false;
+                    self.Mode_Stack.push(Typst_Lex_Mode::Code);
+                    RawTokens.push
+                    (
+                        Token_Info::NewWithIndent(Token_Kind::Open_Delim(Container_Kind::Brace), "{".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
+                    );
+                }
+                else
+                {
+                    RawTokens.push
+                    (
+                        Token_Info::NewWithIndent(Token_Kind::Punctuation('{'), "{".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
+                    );
+                }
                 PrecedingNewlines = 0;
                 continue;
             }
 
             if Ch == '}'
             {
+                let InCode = self.CurrentMode() == Typst_Lex_Mode::Code;
                 self.Advance();
-                RawTokens.push
-                (
-                    Token_Info::NewWithIndent(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
-                );
+                self.Last_Non_Trivia_Text = "}".to_string();
+                if InCode
+                {
+                    if self.Mode_Stack.len() > 1
+                    {
+                        self.Mode_Stack.pop();
+                    }
+                    RawTokens.push
+                    (
+                        Token_Info::NewWithIndent(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
+                    );
+                }
+                else
+                {
+                    RawTokens.push
+                    (
+                        Token_Info::NewWithIndent(Token_Kind::Punctuation('}'), "}".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
+                    );
+                }
                 PrecedingNewlines = 0;
                 continue;
             }
@@ -316,6 +447,10 @@ impl <'a> Typst_Lexer<'a>
             if Ch == '['
             {
                 self.Advance();
+                self.In_Hash_Code = false;
+                self.In_Hash_Statement = false;
+                self.Mode_Stack.push(Typst_Lex_Mode::Markup);
+                self.Last_Non_Trivia_Text = "[".to_string();
                 RawTokens.push
                 (
                     Token_Info::NewWithIndent(Token_Kind::Open_Delim(Container_Kind::Bracket), "[".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
@@ -327,6 +462,11 @@ impl <'a> Typst_Lexer<'a>
             if Ch == ']'
             {
                 self.Advance();
+                if self.Mode_Stack.len() > 1
+                {
+                    self.Mode_Stack.pop();
+                }
+                self.Last_Non_Trivia_Text = "]".to_string();
                 RawTokens.push
                 (
                     Token_Info::NewWithIndent(Token_Kind::Close_Delim(Container_Kind::Bracket), "]".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
@@ -339,6 +479,7 @@ impl <'a> Typst_Lexer<'a>
             if Ch.is_ascii_digit() || (Ch == '.' && self.PeekAhead(1).map_or(false, | c | c.is_ascii_digit()))
             {
                 let NumText = self.ScanNumber();
+                self.Last_Non_Trivia_Text = NumText.clone();
                 RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Number(NumText.clone()), NumText, StartLine, StartCol, PrecedingNewlines, TokenIndent));
                 PrecedingNewlines = 0;
                 continue;
@@ -348,6 +489,11 @@ impl <'a> Typst_Lexer<'a>
             if Ch.is_alphabetic() || Ch == '_'
             {
                 let IdentText = self.ScanIdentifier();
+                self.Last_Non_Trivia_Text = IdentText.clone();
+                if self.In_Hash_Statement
+                {
+                    self.In_Hash_Code = true;
+                }
                 let Kind = if IsTypstKeyword( & IdentText)
                 { Token_Kind::Keyword(IdentText.clone()) }
                 else
@@ -361,6 +507,9 @@ impl <'a> Typst_Lexer<'a>
             if Ch == '#'
             {
                 self.Advance();
+                self.In_Hash_Statement = true;
+                self.In_Hash_Code = true;
+                self.Last_Non_Trivia_Text = "#".to_string();
                 RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator("#".to_string()), "#".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                 PrecedingNewlines = 0;
                 continue;
@@ -369,15 +518,38 @@ impl <'a> Typst_Lexer<'a>
             // 11. Punctuation
             if Ch == ';' || Ch == ',' || Ch == ':'
             {
+                if Ch == ';'
+                {
+                    self.Advance();
+                    if self.CurrentMode() == Typst_Lex_Mode::Markup
+                    {
+                        self.In_Hash_Statement = false;
+                        self.In_Hash_Code = false;
+                    }
+                    self.Last_Non_Trivia_Text = ";".to_string();
+                    RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Punctuation(';'), ";".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
+                    PrecedingNewlines = 0;
+                    continue;
+                }
                 if Ch == ':' && self.PeekAhead(1) == Some(':')
                 {
                     self.Advance();
                     self.Advance();
+                    if self.In_Hash_Statement
+                    {
+                        self.In_Hash_Code = true;
+                    }
+                    self.Last_Non_Trivia_Text = "::".to_string();
                     RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator("::".to_string()), "::".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                     PrecedingNewlines = 0;
                     continue;
                 }
                 self.Advance();
+                if self.In_Hash_Statement
+                {
+                    self.In_Hash_Code = true;
+                }
+                self.Last_Non_Trivia_Text = Ch.to_string();
                 RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Punctuation(Ch), Ch.to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                 PrecedingNewlines = 0;
                 continue;
@@ -392,6 +564,11 @@ impl <'a> Typst_Lexer<'a>
                         self.Advance();
                         self.Advance();
                         self.Advance();
+                        if self.In_Hash_Statement
+                        {
+                            self.In_Hash_Code = true;
+                        }
+                        self.Last_Non_Trivia_Text = "..=".to_string();
                         RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator("..=".to_string()), "..=".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                         PrecedingNewlines = 0;
                         continue;
@@ -401,17 +578,32 @@ impl <'a> Typst_Lexer<'a>
                         self.Advance();
                         self.Advance();
                         self.Advance();
+                        if self.In_Hash_Statement
+                        {
+                            self.In_Hash_Code = true;
+                        }
+                        self.Last_Non_Trivia_Text = "...".to_string();
                         RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator("...".to_string()), "...".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                         PrecedingNewlines = 0;
                         continue;
                     }
                     self.Advance();
                     self.Advance();
+                    if self.In_Hash_Statement
+                    {
+                        self.In_Hash_Code = true;
+                    }
+                    self.Last_Non_Trivia_Text = "..".to_string();
                     RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator("..".to_string()), "..".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                     PrecedingNewlines = 0;
                     continue;
                 }
                 self.Advance();
+                if self.In_Hash_Statement
+                {
+                    self.In_Hash_Code = true;
+                }
+                self.Last_Non_Trivia_Text = ".".to_string();
                 RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Punctuation('.'), ".".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                 PrecedingNewlines = 0;
                 continue;
@@ -419,6 +611,11 @@ impl <'a> Typst_Lexer<'a>
 
             // 12. Multi-character and single-character operators
             let OpText = self.ScanOperator();
+            if self.In_Hash_Statement
+            {
+                self.In_Hash_Code = true;
+            }
+            self.Last_Non_Trivia_Text = OpText.clone();
             RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator(OpText.clone()), OpText, StartLine, StartCol, PrecedingNewlines, TokenIndent));
             PrecedingNewlines = 0;
         }
@@ -616,10 +813,35 @@ impl <'a> Typst_Lexer<'a>
                 { ">".to_string() }
             }
             '-' =>
-            { if Next == Some('>') { self.Advance(); "->".to_string() } else { "-".to_string() } }
-            '+' => "+".to_string(),
-            '*' => "*".to_string(),
-            '/' => "/".to_string(),
+            {
+                if Next == Some('>')
+                { self.Advance(); "->".to_string() }
+                else if Next == Some('=')
+                { self.Advance(); "-=".to_string() }
+                else
+                { "-".to_string() }
+            }
+            '+' =>
+            {
+                if Next == Some('=')
+                { self.Advance(); "+=".to_string() }
+                else
+                { "+".to_string() }
+            }
+            '*' =>
+            {
+                if Next == Some('=')
+                { self.Advance(); "*=".to_string() }
+                else
+                { "*".to_string() }
+            }
+            '/' =>
+            {
+                if Next == Some('=')
+                { self.Advance(); "/=".to_string() }
+                else
+                { "/".to_string() }
+            }
             '\\' => "\\".to_string(),
             '&' =>
             { if Next == Some('&') { self.Advance(); "&&".to_string() } else { "&".to_string() } }
@@ -696,11 +918,9 @@ impl Typst_Container_Builder
                         }
                     }
 
-                    if matches!(Next.Kind, Token_Kind::Comment_Line(_) | Token_Kind::Comment_Block(_))
+                    if matches!(Next.Kind, Token_Kind::Comment_Line(_)) || Next.Text.contains('\n')
                     { Container.Has_Forced_Break = true; }
-                    if Next.Preceding_Newlines >= 1
-                    { Container.Has_Forced_Break = true; }
-                    if Next.Text == ";"
+                    if Next.Text == ";" || (Next.Preceding_Newlines >= 1 && Container.Kind == Container_Kind::Brace)
                     { Container.Statement_Count += 1; }
 
                     let ChildNode = self.ParseNode()?;
@@ -819,7 +1039,8 @@ impl <'a> Typst_Emitter<'a>
     fn DecideLayout( & self, Container: & Typst_Container_Node, CurrentIndentLevel: usize, CurrentColumn: usize) -> Layout_State
     {
         // 1. Monolith First
-        if ! Container.Has_Forced_Break && Container.Statement_Count <= self.Config.Max_Statements_In_Monolith
+        let MaxStatements = if Container.Kind == Container_Kind::Brace { 1 } else { self.Config.Max_Statements_In_Monolith };
+        if ! Container.Has_Forced_Break && Container.Statement_Count <= MaxStatements
         && Container.CalculateBlockDepth() <= self.Config.Max_Block_Depth
         && Container.CountTotalContainers() <= self.Config.Max_Containers_In_Monolith
         {
@@ -851,21 +1072,78 @@ impl <'a> Typst_Emitter<'a>
     {
         let Total = Nodes.len();
         let mut Index = 0;
+        let mut InContinuation = false;
 
         while Index < Total
         {
             let Node = & Nodes[Index];
 
+            let StartsOnNewline = match Node
+            {
+                Typst_Syntax_Node::Token(T) => T.Preceding_Newlines > 0 || ! self.Line_Has_Content,
+                Typst_Syntax_Node::Container(C) => C.Open_Token.Preceding_Newlines > 0 || ! self.Line_Has_Content,
+            };
+
+            if StartsOnNewline
+            {
+                match Node
+                {
+                    Typst_Syntax_Node::Token(T) =>
+                    {
+                        if T.Text == "."
+                        {
+                            InContinuation = true;
+                        }
+                        else if T.Text == ";" || T.Preceding_Newlines >= 2
+                        || matches!(T.Kind, Token_Kind::Keyword(_) | Token_Kind::Comment_Line(_))
+                        {
+                            InContinuation = false;
+                        }
+                        else
+                        {
+                            InContinuation = false;
+                        }
+                    }
+                    Typst_Syntax_Node::Container(_) =>
+                    {
+                        if Index > 0
+                        {
+                            let PrevIsInContinuation = match & Nodes[Index - 1]
+                            {
+                                Typst_Syntax_Node::Token(_) => InContinuation,
+                                _ => false,
+                            };
+                            if ! PrevIsInContinuation
+                            {
+                                InContinuation = false;
+                            }
+                        }
+                        else
+                        {
+                            InContinuation = false;
+                        }
+                    }
+                }
+            }
+
+            let CurrentLevel = if InContinuation { Level + 1 } else { Level };
+
             match Node
             {
                 Typst_Syntax_Node::Token(T) =>
-                { self.EmitSingleToken(T, Level); }
+                {
+                    self.EmitSingleToken(T, CurrentLevel);
+                    if T.Text == ";"
+                    {
+                        InContinuation = false;
+                    }
+                }
                 Typst_Syntax_Node::Container(C) =>
                 {
                     let IsPrecededByEquals = Index > 0 && match & Nodes[Index - 1]
                     { Typst_Syntax_Node::Token(PrevT) => PrevT.Text == "=", _ => false, };
 
-                    let Layout = self.DecideLayout(C, Level, self.Current_Line_Len);
+                    let Layout = self.DecideLayout(C, CurrentLevel, self.Current_Line_Len);
 
                     match Layout
                     {
@@ -877,20 +1155,25 @@ impl <'a> Typst_Emitter<'a>
                                 if C.Open_Token.Preceding_Newlines >= 2 && self.Config.Preserve_Empty_Lines
                                 { self.EnsureBlankLine(); }
                             }
-                            self.EmitMonolith(C, Level);
+                            self.EmitMonolith(C, CurrentLevel);
                         }
                         Layout_State::Grouped =>
                         {
                             if C.Open_Token.Preceding_Newlines >= 2 && self.Config.Preserve_Empty_Lines
                             { self.EnsureBlankLine(); }
-                            self.EmitGrouped(C, Level);
+                            self.EmitGrouped(C, CurrentLevel);
                         }
                         Layout_State::Expanded =>
                         {
                             if C.Open_Token.Preceding_Newlines >= 2 && self.Config.Preserve_Empty_Lines
                             { self.EnsureBlankLine(); }
-                            self.EmitExpanded(C, Level);
+                            self.EmitExpanded(C, CurrentLevel);
                         }
+                    }
+
+                    if C.Tail_Glue.iter().any( | G | G.Text == ";")
+                    {
+                        InContinuation = false;
                     }
                 }
             }
@@ -928,6 +1211,7 @@ impl <'a> Typst_Emitter<'a>
             return ;
         }
 
+        let WasLineEmpty = ! self.Line_Has_Content;
         if ! self.Line_Has_Content
         { self.EmitIndent(Level); }
 
@@ -935,29 +1219,41 @@ impl <'a> Typst_Emitter<'a>
         {
             Token_Kind::Punctuation(';') =>
             {
-                while self.Output.ends_with(' ')
-                { self.Output.pop(); self.Current_Line_Len -= 1; }
+                if ! WasLineEmpty
+                {
+                    while self.Output.ends_with(' ')
+                    { self.Output.pop(); self.Current_Line_Len -= 1; }
+                }
                 self.EmitRaw(";");
                 self.EmitSpace();
             }
             Token_Kind::Punctuation(',') =>
             {
-                while self.Output.ends_with(' ')
-                { self.Output.pop(); self.Current_Line_Len -= 1; }
+                if ! WasLineEmpty
+                {
+                    while self.Output.ends_with(' ')
+                    { self.Output.pop(); self.Current_Line_Len -= 1; }
+                }
                 self.EmitRaw(",");
                 self.EmitSpace();
             }
             Token_Kind::Punctuation(':') =>
             {
-                while self.Output.ends_with(' ')
-                { self.Output.pop(); self.Current_Line_Len -= 1; }
+                if ! WasLineEmpty
+                {
+                    while self.Output.ends_with(' ')
+                    { self.Output.pop(); self.Current_Line_Len -= 1; }
+                }
                 self.EmitRaw(":");
                 self.EmitSpace();
             }
             Token_Kind::Punctuation('.') =>
             {
-                while self.Output.ends_with(' ')
-                { self.Output.pop(); self.Current_Line_Len -= 1; }
+                if ! WasLineEmpty
+                {
+                    while self.Output.ends_with(' ')
+                    { self.Output.pop(); self.Current_Line_Len -= 1; }
+                }
                 self.EmitRaw(".");
             }
             Token_Kind::Operator(Op) =>
@@ -969,14 +1265,20 @@ impl <'a> Typst_Emitter<'a>
                 }
                 else if Op == ".." || Op == "..=" || Op == "..."
                 {
-                    while self.Output.ends_with(' ')
-                    { self.Output.pop(); self.Current_Line_Len -= 1; }
+                    if ! WasLineEmpty
+                    {
+                        while self.Output.ends_with(' ')
+                        { self.Output.pop(); self.Current_Line_Len -= 1; }
+                    }
                     self.EmitRaw(Op);
                 }
                 else if Op == "::"
                 {
-                    while self.Output.ends_with(' ')
-                    { self.Output.pop(); self.Current_Line_Len -= 1; }
+                    if ! WasLineEmpty
+                    {
+                        while self.Output.ends_with(' ')
+                        { self.Output.pop(); self.Current_Line_Len -= 1; }
+                    }
                     self.EmitRaw("::");
                 }
                 else if Op == "$"

@@ -409,6 +409,28 @@ impl <'a> JS_Lexer<'a>
             if Ch == '<'
             {
                 self.Advance();
+                if self.Peek() == Some('=')
+                {
+                    self.Advance();
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator("<=".to_string()), "<=".to_string(), StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                    self.Expects_Expression = true;
+                    continue;
+                }
+                if self.Peek() == Some('<')
+                {
+                    self.Advance();
+                    let mut Op = "<<".to_string();
+                    if self.Peek() == Some('=')
+                    {
+                        self.Advance();
+                        Op.push('=');
+                    }
+                    RawTokens.push(Token_Info::New(Token_Kind::Operator(Op.clone()), Op, StartLine, StartCol, PrecedingNewlines,));
+                    PrecedingNewlines = 0;
+                    self.Expects_Expression = true;
+                    continue;
+                }
                 if self.Peek() == Some('/')
                 {
                     self.Advance();
@@ -2037,8 +2059,18 @@ impl <'a> JS_Emitter<'a>
             { self.In_Function_Return_Type = false; }
         }
 
+        let PrecededByAssignment = Index > 0 && match & Nodes[Index - 1]
+        {
+            JS_Syntax_Node::Token(t) => matches!(t.Text.as_str(), "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "**=" | "??=" | "&&=" | "||="),
+            _ => false,
+        };
+
         if Token.Text == "=>"
         { if ! self.Output.ends_with(' ') { self.EmitSpace(); } }
+        else if PrecededByAssignment
+        {
+            if ! self.Output.ends_with(' ') { self.EmitSpace(); }
+        }
         else if Token.Preceding_Newlines > 0 && ! self.In_Function_Return_Type
         {
             self.EnsureNewline();

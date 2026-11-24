@@ -206,3 +206,83 @@ fn Test_Polyglot_Automatic_Detection()
     let FormattedCss = Source_Formatter::Format(CssInput, & Config).expect("Auto CSS failed");
     assert!(FormattedCss.contains("#7100FF"), "Auto-detected CSS formatted properly");
 }
+
+#[test]
+fn Test_CSS_Pseudo_Classes_And_Functional_Selectors()
+{
+    let Input = r#"
+h2, h3:not(:has(.pill)), h4:not(:has(.pill)) { gap: 8px; }
+.breadcrumbs .root:hover, .breadcrumbs .root:has(a:focus) { background: #E4E5EA; }
+.breadcrumbs .root:has(a:active) { background: #D7D9E0; }
+.catgrid li > *:not(:first-child) { margin-inline-start: 12px; }
+.arguments > :not(:last-child) { margin-block-end: 4px; }
+div[role="tooltip"]:not(.mobile)::after { content: ""; }
+.main-grid { grid-template-columns: minmax(auto, 184px) minmax(auto, 800px); }
+"#;
+
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Css;
+    Config.Canvas_Width = 160;
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("CSS formatting failed");
+    assert!(!Formatted.contains(": has("), "Pseudo-class :has() must never contain a space after ':', got:\n{}", Formatted);
+    assert!(!Formatted.contains("a: focus"), "Pseudo-class a:focus must never contain a space after ':', got:\n{}", Formatted);
+    assert!(!Formatted.contains("a: active"), "Pseudo-class a:active must never contain a space after ':', got:\n{}", Formatted);
+    assert!(!Formatted.contains(": first-child"), "Pseudo-class :first-child must never contain a space after ':', got:\n{}", Formatted);
+    assert!(!Formatted.contains(": last-child"), "Pseudo-class :last-child must never contain a space after ':', got:\n{}", Formatted);
+    assert!(Formatted.contains("h3:not(:has(.pill))"), "Expected h3:not(:has(.pill)), got:\n{}", Formatted);
+    assert!(Formatted.contains(".root:has(a:focus)"), "Expected .root:has(a:focus), got:\n{}", Formatted);
+    assert!(Formatted.contains(".root:has(a:active)"), "Expected .root:has(a:active), got:\n{}", Formatted);
+    assert!(Formatted.contains("*:not(:first-child)"), "Expected *:not(:first-child), got:\n{}", Formatted);
+    assert!(Formatted.contains("> :not(:last-child)") || Formatted.contains(">:not(:last-child)"), "Expected :not(:last-child), got:\n{}", Formatted);
+    assert!(Formatted.contains("minmax(auto, 184px)"), "Expected minmax(auto, 184px) without extra spaces, got:\n{}", Formatted);
+}
+
+#[test]
+fn Test_CSS_Multiline_Selector_Line_Breaks_Preserved()
+{
+    let Input = r#"
+h2,
+h3:not(:has(.pill)),
+h4:not(:has(.pill)),
+h5:not(:has(.pill)),
+h6:not(:has(.pill))
+{
+    gap: 8px;
+}
+"#;
+
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Css;
+    Config.Canvas_Width = 160;
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("CSS formatting failed");
+    assert!(Formatted.contains("h2,\nh3:not(:has(.pill)),\nh4:not(:has(.pill)),\nh5:not(:has(.pill)),\nh6:not(:has(.pill))"), "Multiline selector must preserve its line breaks, got:\n{}", Formatted);
+    assert!(Formatted.contains("{\n    gap: 8px;\n}\n"), "Multiline selector rule block must detach braces, got:\n{}", Formatted);
+}
+
+#[test]
+fn Test_CSS_Empty_Lines_Preserved()
+{
+    let Input = r#"/* Header Comment */
+
+.rule-one
+{
+    margin: 0;
+}
+
+.rule-two
+{
+    padding: 10px;
+}
+"#;
+
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Css;
+    Config.Canvas_Width = 160;
+    Config.Preserve_Empty_Lines = true;
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("CSS formatting failed");
+    assert!(Formatted.contains("/* Header Comment */\n\n.rule-one"), "Empty line between comment and rule must be preserved, got:\n{}", Formatted);
+    assert!(Formatted.contains("}\n\n.rule-two"), "Empty line between rules must be preserved, got:\n{}", Formatted);
+}
