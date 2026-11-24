@@ -252,3 +252,127 @@ fn Test_Typst_Compound_Assignment_Operators()
     assert!(Formatted.contains("total *= 2"));
     assert!(Formatted.contains("factor /= 4"));
 }
+
+#[test]
+fn Test_Typst_Markup_Prose_And_Punctuation_Spacing()
+{
+    let Input = r#"
+#let section() = {
+    [Requires the #raw(info.feature) feature]
+    [ on #parent]
+    with-tooltip[#heading-kinds #if nested { [ on #raw(parent)] }]
+    [Functions and types can have associated #sentence-kinds. These are accessed by specifying the function or type, followed by a period, and then the #sentence-kind ' s name.]
+    [That's the autocomplete panel. It can be very useful while you are writing your document: You can apply its suggestions by hitting the Return key or navigate to the desired completion with the arrow keys. The panel can be dismissed by hitting the Escape key and opened again by typing `#` or hitting #kbd("Ctrl") + #kbd("Space"). Use the autocomplete panel to discover the right arguments for functions. Most suggestions come with a small description of what they do.]
+}
+"#;
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Typst;
+    Config.Canvas_Width = 300;
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Typst markup spacing failed");
+    assert!(Formatted.contains("[Requires the #raw(info.feature) feature]"));
+    assert!(Formatted.contains("[ on #parent]"));
+    assert!(Formatted.contains("with-tooltip[#heading-kinds #if nested { [ on #raw(parent)] }]"));
+    assert!(Formatted.contains("associated #sentence-kinds. These are"));
+    assert!(Formatted.contains("and then the #sentence-kind's name."));
+    assert!(Formatted.contains("That's the autocomplete panel. It can"));
+    assert!(Formatted.contains("or hitting #kbd(\"Ctrl\") + #kbd(\"Space\"). Use"));
+}
+
+#[test]
+fn Test_Typst_Contractions_And_Prose_Punctuation_Repair()
+{
+    let Input = r#"
+Let ' s add a few more styles to our document.We want larger margins and a serif font.For the purposes of the example, we ' ll also set another page size.
+Your teaching assistant does not yet know that you are using a new typesetting system, and you want your report to fit in with the other student ' s submissions.In this chapter, we will see how to format your report using Typst ' s styling system.
+Wait, shouldn ' t all arguments of a function be specified within parentheses ?
+As seen above, that works.With the @ text function, we can adjust the font.
+"#;
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Typst;
+    Config.Canvas_Width = 300;
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Typst contraction repair failed");
+    assert!(Formatted.contains("Let's add a few more styles to our document. We want larger margins and a serif font. For the purposes of the example, we'll also set another page size."));
+    assert!(Formatted.contains("student's submissions. In this chapter, we will see how to format your report using Typst's styling system."));
+    assert!(Formatted.contains("Wait, shouldn't all arguments of a function be specified within parentheses?"));
+    assert!(Formatted.contains("that works. With the @text function"));
+}
+
+#[test]
+fn Test_Typst_Tutorial_Formatting_Prose_Repair()
+{
+    let Input = r#"
+So far, you have written a report with some text, a few equations and images.However, it still looks very plain.Your teaching assistant does not yet know that you are using a new typesetting system, and you want your report to fit in with the other student's submissions.In this chapter, we will see how to format your report using Typst ' s styling system.
+
+= Set rules <set-rules>
+As we have seen in the previous chapter, Typst has functions that _insert_ content(e.g.the @ image function) and others that _manipulate_ content that they received as arguments(e.g.the @ align function).The first impulse you might have when you want, for example, to change the font, could be to look for a function that does that and wrap the complete document in it.
+
+Wait, shouldn ' t all arguments of a function be specified within parentheses ? Why is there a second set of square brackets with content _after_ the parentheses ?
+
+#docs-figure("2-formatting-autocomplete.png", alt: "Autocomplete panel", shadow: false ,)
+
+As seen above, that works.With the @ text function, we can adjust the font for all text within it.However, wrapping the document in countless functions and applying styles selectively and in-situ can quickly become cumbersome.
+
+Fortunately, Typst has a more elegant solution.With _set rules, _ you can apply style properties to all occurrences of some kind of content.You write a set rule by entering the `{set}` keyword, followed by the name of the function whose properties you want to set, and a list of arguments in parentheses.
+
+Here, we set the font size to `{10pt}` and font family to `{"New Computer Modern"}`.The Typst app comes with many fonts that you can try for your document.
+
+Typst internally calls the `heading` function every time you write `[= Conclusion]`.In fact, the function call `[#heading[Conclusion]]` is equivalent to the heading markup above.
+
+Here, we called that argument `name`.We can now use the `name` variable in the function ' s body.
+
+The panel can be dismissed by hitting the Escape key and opened again by typing `#` or hitting#kbd("Ctrl") + #kbd("Space").Use the autocomplete panel to discover the right arguments for functions.Most suggestions come with a small description of what they do.
+
+Vertical and horizontal alignments can be combined with the `{+}` operator to yield a 2 D alignment.
+
+We specified the string `{"1."}` as the numbering parameter.This tells Typst to number the headings with arabic numerals and to put a dot between the number of each level.We can also use @ numbering[letters, roman numerals, and symbols] for our headings:
+
+Instead, you could maybe @ function: defining-functions[define a custom function] that always yields the logo with its image.However, there is an even easier way:
+
+This can be observed in parameter lists, function definitions, and @ reference: scripting[code blocks].
+
+You have handed in your report.Your supervisor was so happy with it that they want to adapt it into a conference paper !
+"#;
+
+    let mut Config = Config_Settings::default();
+    Config.Language = Source_Language::Typst;
+    Config.Canvas_Width = 300;
+
+    let Formatted = Source_Formatter::Format(Input, &Config).expect("Typst tutorial formatting prose repair failed");
+    println!("--- FORMATTED OUTPUT ---\n{}\n--- END OUTPUT ---", Formatted);
+    assert!(Formatted.contains("images. However, it still looks very plain. Your teaching assistant"));
+    assert!(Formatted.contains("other student's submissions. In this chapter"));
+    assert!(Formatted.contains("using Typst's styling system."));
+    assert!(Formatted.contains("content (e.g. the @image function) and others that _manipulate_ content that they received as arguments (e.g. the @align function). The first impulse"));
+    assert!(Formatted.contains("Wait, shouldn't all arguments of a function be specified within parentheses? Why is there"));
+    assert!(Formatted.contains("content _after_ the parentheses?"));
+    assert!(Formatted.contains("shadow: false,)"));
+    assert!(Formatted.contains("`{\"New Computer Modern\"}`. The Typst app"));
+    assert!(Formatted.contains("`[= Conclusion]`. In fact"));
+    assert!(Formatted.contains("`name`. We can now use"));
+    assert!(Formatted.contains("that works. With the @text function, we can adjust the font for all text within it. However, wrapping"));
+    assert!(Formatted.contains("solution. With _set rules,_ you can apply style properties to all occurrences of some kind of content. You write a set rule"));
+    assert!(Formatted.contains("or hitting #kbd(\"Ctrl\") + #kbd(\"Space\"). Use the autocomplete panel to discover the right arguments for functions. Most suggestions"));
+    assert!(Formatted.contains("to yield a 2D alignment."));
+    assert!(Formatted.contains("numbering parameter. This tells Typst"));
+    assert!(Formatted.contains("use @numbering[letters, roman numerals, and symbols] for our headings:"));
+    assert!(Formatted.contains("maybe @function:defining-functions[define a custom function] that always yields the logo with its image. However, there is an even easier way:"));
+    assert!(Formatted.contains("and @reference:scripting[code blocks]."));
+    assert!(Formatted.contains("report. Your supervisor was so happy with it that they want to adapt it into a conference paper!"));
+}
+
+#[test]
+fn Test_Typst_Tutorial_Template_File()
+{
+    let Path = "E:\\Typst\\docs\\content\\tutorial\\4-template.typ";
+    if let Ok(Content) = std::fs::read_to_string(Path)
+    {
+        let mut Config = Config_Settings::default();
+        Config.Language = Source_Language::Typst;
+        Config.Canvas_Width = 160;
+
+        let Formatted = Source_Formatter::Format(&Content, &Config).expect("Formatting 4-template.typ failed");
+        assert!(!Formatted.is_empty());
+    }
+}
