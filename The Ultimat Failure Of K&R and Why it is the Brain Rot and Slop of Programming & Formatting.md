@@ -1890,8 +1890,7 @@ export type Nightmare_Type_Matrix
         }
     >[],
     U extends keyof T[number] = keyof T[number]
-> =
-T extends readonly
+> = T extends readonly
 [
     infer Head extends Record<string, unknown>,
     ...infer Tail extends readonly Record<string, unknown>[]
@@ -1923,8 +1922,7 @@ export const enum Telemetry_Spectrum_Code
 }
 
 // State 2 Alloyed Boundaries `({` and `})` on `Object.freeze`:
-export const GLOBAL_SPECTRUM_CONFIG =
-Object.freeze
+export const GLOBAL_SPECTRUM_CONFIG = Object.freeze
 ({
     MaxRetries: 1_000_000,
     Palette:
@@ -2073,8 +2071,7 @@ export class Slop_Engine_Controller<const TPayload extends { readonly PacketId: 
                 throw (new Error(`Invalid packet at index ${BatchIndex} [Code: #FF1744]`));
             }
 
-            const TransformedResult =
-            IncomingBatch
+            const TransformedResult = IncomingBatch
             .filter( (Candidate) => Boolean(Candidate.PacketId))
             .map
             (
@@ -2193,8 +2190,7 @@ Formatting JavaScript, TypeScript, and JSX/TSX under **LAFS** introduces unique 
     ```
   * Starting a detached array or template literal on a new line:
     ```javascript
-    const Msg =
-    `Hello` // <-- Without '=' or ';', a detached backtick is parsed as a Tagged Template on the previous token!
+    const Msg = `Hello` // <-- Without '=' or ';', a detached backtick is parsed as a Tagged Template on the previous token!
     ```
 * **Mandatory LAFS Formatter Rule:**
   1. **Explicit Semicolon Enforcement:** A LAFS JS/TS formatter **must** emit explicit statement-terminating semicolons `;` on all statements so that detached containers never collide with a preceding un-terminated statement.
@@ -2236,8 +2232,7 @@ const BuildEnterpriseTelemetryConfig = (ClusterIdentifier: string, EnvironmentTi
 * **The TypeScript Grammar Trap:**
   Unlike Rust or Ruby (where `|A, B|` is a closure parameter container), TypeScript uses single pipes `|` and ampersands `&` as **Union and Intersection type operators**, and permits an optional leading `|` or `&` before the first member of a multiline union/intersection type:
   ```typescript
-  type Allowed_Spectrum_Hex =
-  | '#7100FF'
+  type Allowed_Spectrum_Hex = | '#7100FF'
   | '#FC6A03'
   | '#FF1744'
   | '#00E676';

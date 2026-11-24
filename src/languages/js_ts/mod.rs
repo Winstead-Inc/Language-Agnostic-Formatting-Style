@@ -422,10 +422,7 @@ impl <'a> JS_Lexer<'a>
                     self.Advance();
                     let mut Op = "<<".to_string();
                     if self.Peek() == Some('=')
-                    {
-                        self.Advance();
-                        Op.push('=');
-                    }
+                    { self.Advance(); Op.push('='); }
                     RawTokens.push(Token_Info::New(Token_Kind::Operator(Op.clone()), Op, StartLine, StartCol, PrecedingNewlines,));
                     PrecedingNewlines = 0;
                     self.Expects_Expression = true;
@@ -2060,17 +2057,12 @@ impl <'a> JS_Emitter<'a>
         }
 
         let PrecededByAssignment = Index > 0 && match & Nodes[Index - 1]
-        {
-            JS_Syntax_Node::Token(t) => matches!(t.Text.as_str(), "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "**=" | "??=" | "&&=" | "||="),
-            _ => false,
-        };
+        { JS_Syntax_Node::Token(t) => matches ! (t.Text.as_str(), "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "**=" | "??=" | "&&=" | "||="), _ => false, };
 
         if Token.Text == "=>"
         { if ! self.Output.ends_with(' ') { self.EmitSpace(); } }
         else if PrecededByAssignment
-        {
-            if ! self.Output.ends_with(' ') { self.EmitSpace(); }
-        }
+        { if ! self.Output.ends_with(' ') { self.EmitSpace(); } }
         else if Token.Preceding_Newlines > 0 && ! self.In_Function_Return_Type
         {
             self.EnsureNewline();

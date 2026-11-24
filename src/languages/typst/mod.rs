@@ -150,14 +150,11 @@ impl Typst_Container_Node
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Typst_Lex_Mode
-{
-    Markup,
-    Code,
-}
+{ Markup, Code, }
 
 pub struct Typst_Lexer<'a>
 {
-    Source: &'a str,
+    Source: & 'a str,
     Chars: Vec<char>,
     Index: usize,
     Line: usize,
@@ -168,9 +165,9 @@ pub struct Typst_Lexer<'a>
     Last_Non_Trivia_Text: String,
 }
 
-impl<'a> Typst_Lexer<'a>
+impl <'a> Typst_Lexer<'a>
 {
-    pub fn New(Source: &'a str) -> Self
+    pub fn New(Source: & 'a str) -> Self
     {
         Typst_Lexer
         {
@@ -182,36 +179,24 @@ impl<'a> Typst_Lexer<'a>
             Mode_Stack: vec![Typst_Lex_Mode::Markup],
             In_Hash_Statement: false,
             In_Hash_Code: false,
-            Last_Non_Trivia_Text: String::new(),
+            Last_Non_Trivia_Text: String:: new (),
         }
     }
 
-    fn CurrentMode(&self) -> Typst_Lex_Mode
-    {
-        *self.Mode_Stack.last().unwrap_or(&Typst_Lex_Mode::Markup)
-    }
+    fn CurrentMode( & self) -> Typst_Lex_Mode
+    { * self.Mode_Stack.last().unwrap_or( & Typst_Lex_Mode::Markup) }
 
-    fn PeekNextNonWhitespace(&self) -> Option<char>
+    fn PeekNextNonWhitespace( & self) -> Option<char>
     {
         let mut i = self.Index;
         while i < self.Chars.len()
-        {
-            let c = self.Chars[i];
-            if c != ' ' && c != '\t' && c != '\r' && c != '\n'
-            {
-                return Some(c);
-            }
-            i += 1;
-        }
+        { let c = self.Chars[i]; if c != ' ' && c != '\t' && c != '\r' && c != '\n' { return Some(c); } i += 1; }
         None
     }
 
-    fn IsContinuationToken(Text: &str) -> bool
+    fn IsContinuationToken(Text: & str) -> bool
     {
-        matches!(
-            Text,
-            "=" | "+=" | "-=" | "*=" | "/=" | ":" | "+" | "-" | "*" | "/" | "," | "." | "::" | ".." | "..=" | "..." | "=>" | "<=" | ">=" | "==" | "!="
-        )
+        matches!(Text, "=" | "+=" | "-=" | "*=" | "/=" | ":" | "+" | "-" | "*" | "/" | "," | "." | "::" | ".." | "..=" | "..." | "=>" | "<=" | ">=" | "==" | "!=")
     }
 
     fn Peek( & self) -> Option<char>
@@ -262,13 +247,10 @@ impl<'a> Typst_Lexer<'a>
                 CurrentLeadingWhitespace.clear();
                 if self.CurrentMode() == Typst_Lex_Mode::Markup
                 {
-                    let Continues = Self::IsContinuationToken(&self.Last_Non_Trivia_Text)
-                        || matches!(self.PeekNextNonWhitespace(), Some('(' | '{' | '[' | '=' | ':' | '.' | '+' | '-'));
-                    if !Continues
-                    {
-                        self.In_Hash_Statement = false;
-                        self.In_Hash_Code = false;
-                    }
+                    let Continues = Self::IsContinuationToken( & self.Last_Non_Trivia_Text)
+                    || matches!(self.PeekNextNonWhitespace(), Some('(' | '{' | '[' | '=' | ':' | '.' | '+' | '-'));
+                    if ! Continues
+                    { self.In_Hash_Statement = false; self.In_Hash_Code = false; }
                 }
                 continue;
             }
@@ -293,10 +275,7 @@ impl<'a> Typst_Lexer<'a>
                 Indent
             }
             else if HadWhitespaceOnLine
-            {
-                HadWhitespaceOnLine = false;
-                " ".to_string()
-            }
+            { HadWhitespaceOnLine = false; " ".to_string() }
             else
             { String::new () };
 
@@ -366,10 +345,7 @@ impl<'a> Typst_Lexer<'a>
                 }
                 else
                 {
-                    RawTokens.push
-                    (
-                        Token_Info::NewWithIndent(Token_Kind::Punctuation('('), "(".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
-                    );
+                    RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Punctuation('('), "(".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                 }
                 PrecedingNewlines = 0;
                 continue;
@@ -383,9 +359,7 @@ impl<'a> Typst_Lexer<'a>
                 if InCode
                 {
                     if self.Mode_Stack.len() > 1
-                    {
-                        self.Mode_Stack.pop();
-                    }
+                    { self.Mode_Stack.pop(); }
                     RawTokens.push
                     (
                         Token_Info::NewWithIndent(Token_Kind::Close_Delim(Container_Kind::Paren), ")".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
@@ -393,10 +367,7 @@ impl<'a> Typst_Lexer<'a>
                 }
                 else
                 {
-                    RawTokens.push
-                    (
-                        Token_Info::NewWithIndent(Token_Kind::Punctuation(')'), ")".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
-                    );
+                    RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Punctuation(')'), ")".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                 }
                 PrecedingNewlines = 0;
                 continue;
@@ -418,10 +389,7 @@ impl<'a> Typst_Lexer<'a>
                 }
                 else
                 {
-                    RawTokens.push
-                    (
-                        Token_Info::NewWithIndent(Token_Kind::Punctuation('{'), "{".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
-                    );
+                    RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Punctuation('{'), "{".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                 }
                 PrecedingNewlines = 0;
                 continue;
@@ -435,9 +403,7 @@ impl<'a> Typst_Lexer<'a>
                 if InCode
                 {
                     if self.Mode_Stack.len() > 1
-                    {
-                        self.Mode_Stack.pop();
-                    }
+                    { self.Mode_Stack.pop(); }
                     RawTokens.push
                     (
                         Token_Info::NewWithIndent(Token_Kind::Close_Delim(Container_Kind::Brace), "}".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
@@ -445,10 +411,7 @@ impl<'a> Typst_Lexer<'a>
                 }
                 else
                 {
-                    RawTokens.push
-                    (
-                        Token_Info::NewWithIndent(Token_Kind::Punctuation('}'), "}".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent)
-                    );
+                    RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Punctuation('}'), "}".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                 }
                 PrecedingNewlines = 0;
                 continue;
@@ -473,9 +436,7 @@ impl<'a> Typst_Lexer<'a>
             {
                 self.Advance();
                 if self.Mode_Stack.len() > 1
-                {
-                    self.Mode_Stack.pop();
-                }
+                { self.Mode_Stack.pop(); }
                 self.Last_Non_Trivia_Text = "]".to_string();
                 RawTokens.push
                 (
@@ -501,9 +462,7 @@ impl<'a> Typst_Lexer<'a>
                 let IdentText = self.ScanIdentifier();
                 self.Last_Non_Trivia_Text = IdentText.clone();
                 if self.In_Hash_Statement
-                {
-                    self.In_Hash_Code = true;
-                }
+                { self.In_Hash_Code = true; }
                 let Kind = if IsTypstKeyword( & IdentText)
                 { Token_Kind::Keyword(IdentText.clone()) }
                 else
@@ -532,10 +491,7 @@ impl<'a> Typst_Lexer<'a>
                 {
                     self.Advance();
                     if self.CurrentMode() == Typst_Lex_Mode::Markup
-                    {
-                        self.In_Hash_Statement = false;
-                        self.In_Hash_Code = false;
-                    }
+                    { self.In_Hash_Statement = false; self.In_Hash_Code = false; }
                     self.Last_Non_Trivia_Text = ";".to_string();
                     RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Punctuation(';'), ";".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                     PrecedingNewlines = 0;
@@ -546,9 +502,7 @@ impl<'a> Typst_Lexer<'a>
                     self.Advance();
                     self.Advance();
                     if self.In_Hash_Statement
-                    {
-                        self.In_Hash_Code = true;
-                    }
+                    { self.In_Hash_Code = true; }
                     self.Last_Non_Trivia_Text = "::".to_string();
                     RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator("::".to_string()), "::".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                     PrecedingNewlines = 0;
@@ -556,9 +510,7 @@ impl<'a> Typst_Lexer<'a>
                 }
                 self.Advance();
                 if self.In_Hash_Statement
-                {
-                    self.In_Hash_Code = true;
-                }
+                { self.In_Hash_Code = true; }
                 self.Last_Non_Trivia_Text = Ch.to_string();
                 RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Punctuation(Ch), Ch.to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                 PrecedingNewlines = 0;
@@ -575,9 +527,7 @@ impl<'a> Typst_Lexer<'a>
                         self.Advance();
                         self.Advance();
                         if self.In_Hash_Statement
-                        {
-                            self.In_Hash_Code = true;
-                        }
+                        { self.In_Hash_Code = true; }
                         self.Last_Non_Trivia_Text = "..=".to_string();
                         RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator("..=".to_string()), "..=".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                         PrecedingNewlines = 0;
@@ -589,9 +539,7 @@ impl<'a> Typst_Lexer<'a>
                         self.Advance();
                         self.Advance();
                         if self.In_Hash_Statement
-                        {
-                            self.In_Hash_Code = true;
-                        }
+                        { self.In_Hash_Code = true; }
                         self.Last_Non_Trivia_Text = "...".to_string();
                         RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator("...".to_string()), "...".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                         PrecedingNewlines = 0;
@@ -600,9 +548,7 @@ impl<'a> Typst_Lexer<'a>
                     self.Advance();
                     self.Advance();
                     if self.In_Hash_Statement
-                    {
-                        self.In_Hash_Code = true;
-                    }
+                    { self.In_Hash_Code = true; }
                     self.Last_Non_Trivia_Text = "..".to_string();
                     RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator("..".to_string()), "..".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                     PrecedingNewlines = 0;
@@ -610,9 +556,7 @@ impl<'a> Typst_Lexer<'a>
                 }
                 self.Advance();
                 if self.In_Hash_Statement
-                {
-                    self.In_Hash_Code = true;
-                }
+                { self.In_Hash_Code = true; }
                 self.Last_Non_Trivia_Text = ".".to_string();
                 RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Punctuation('.'), ".".to_string(), StartLine, StartCol, PrecedingNewlines, TokenIndent));
                 PrecedingNewlines = 0;
@@ -622,9 +566,7 @@ impl<'a> Typst_Lexer<'a>
             // 12. Multi-character and single-character operators
             let OpText = self.ScanOperator();
             if self.In_Hash_Statement
-            {
-                self.In_Hash_Code = true;
-            }
+            { self.In_Hash_Code = true; }
             self.Last_Non_Trivia_Text = OpText.clone();
             RawTokens.push(Token_Info::NewWithIndent(Token_Kind::Operator(OpText.clone()), OpText, StartLine, StartCol, PrecedingNewlines, TokenIndent));
             PrecedingNewlines = 0;
@@ -832,26 +774,11 @@ impl<'a> Typst_Lexer<'a>
                 { "-".to_string() }
             }
             '+' =>
-            {
-                if Next == Some('=')
-                { self.Advance(); "+=".to_string() }
-                else
-                { "+".to_string() }
-            }
+            { if Next == Some('=') { self.Advance(); "+=".to_string() } else { "+".to_string() } }
             '*' =>
-            {
-                if Next == Some('=')
-                { self.Advance(); "*=".to_string() }
-                else
-                { "*".to_string() }
-            }
+            { if Next == Some('=') { self.Advance(); "*=".to_string() } else { "*".to_string() } }
             '/' =>
-            {
-                if Next == Some('=')
-                { self.Advance(); "/=".to_string() }
-                else
-                { "/".to_string() }
-            }
+            { if Next == Some('=') { self.Advance(); "/=".to_string() } else { "/".to_string() } }
             '\\' => "\\".to_string(),
             '&' =>
             { if Next == Some('&') { self.Advance(); "&&".to_string() } else { "&".to_string() } }
@@ -863,22 +790,15 @@ impl<'a> Typst_Lexer<'a>
     }
 }
 
-fn IsPrecededByAtRefColon(Output: &str) -> bool
+fn IsPrecededByAtRefColon(Output: & str) -> bool
 {
     if Output.ends_with(':')
     {
-        let WithoutColon = &Output[..Output.len() - 1];
+        let WithoutColon = & Output[..Output.len() - 1];
         let mut Chars = WithoutColon.chars().rev();
         let mut HasIdent = false;
         while let Some(C) = Chars.next()
-        {
-            if C.is_alphanumeric() || C == '-' || C == '_'
-            { HasIdent = true; }
-            else if C == '@' && HasIdent
-            { return true; }
-            else
-            { break; }
-        }
+        { if C.is_alphanumeric() || C == '-' || C == '_' { HasIdent = true; } else if C == '@' && HasIdent { return true; } else { break ; } }
     }
     false
 }
@@ -1043,9 +963,7 @@ impl <'a> Typst_Emitter<'a>
             self.Output.push_str( & IndentStr);
             self.Current_Line_Len = IndentStr.len();
             if ! IndentStr.is_empty()
-            {
-                self.Line_Has_Content = true;
-            }
+            { self.Line_Has_Content = true; }
         }
     }
 
@@ -1125,37 +1043,24 @@ impl <'a> Typst_Emitter<'a>
                     Typst_Syntax_Node::Token(T) =>
                     {
                         if T.Text == "."
-                        {
-                            InContinuation = true;
-                        }
+                        { InContinuation = true; }
                         else if T.Text == ";" || T.Preceding_Newlines >= 2
                         || matches!(T.Kind, Token_Kind::Keyword(_) | Token_Kind::Comment_Line(_))
-                        {
-                            InContinuation = false;
-                        }
+                        { InContinuation = false; }
                         else
-                        {
-                            InContinuation = false;
-                        }
+                        { InContinuation = false; }
                     }
                     Typst_Syntax_Node::Container(_) =>
                     {
                         if Index > 0
                         {
                             let PrevIsInContinuation = match & Nodes[Index - 1]
-                            {
-                                Typst_Syntax_Node::Token(_) => InContinuation,
-                                _ => false,
-                            };
+                            { Typst_Syntax_Node::Token(_) => InContinuation, _ => false, };
                             if ! PrevIsInContinuation
-                            {
-                                InContinuation = false;
-                            }
+                            { InContinuation = false; }
                         }
                         else
-                        {
-                            InContinuation = false;
-                        }
+                        { InContinuation = false; }
                     }
                 }
             }
@@ -1165,13 +1070,7 @@ impl <'a> Typst_Emitter<'a>
             match Node
             {
                 Typst_Syntax_Node::Token(T) =>
-                {
-                    self.EmitSingleToken(T, CurrentLevel);
-                    if T.Text == ";"
-                    {
-                        InContinuation = false;
-                    }
-                }
+                { self.EmitSingleToken(T, CurrentLevel); if T.Text == ";" { InContinuation = false; } }
                 Typst_Syntax_Node::Container(C) =>
                 {
                     let IsPrecededByEquals = Index > 0 && match & Nodes[Index - 1]
@@ -1206,9 +1105,7 @@ impl <'a> Typst_Emitter<'a>
                     }
 
                     if C.Tail_Glue.iter().any( | G | G.Text == ";")
-                    {
-                        InContinuation = false;
-                    }
+                    { InContinuation = false; }
                 }
             }
             Index += 1;
@@ -1256,9 +1153,7 @@ impl <'a> Typst_Emitter<'a>
                 let PrecededByWord = self.Output.trim_end().chars().next_back().map_or(false, | c | c.is_alphanumeric());
                 if (Token.Leading_Whitespace == " " || PrecededByWord) && self.Line_Has_Content && ! self.Output.ends_with(' ')
                 && ! self.Output.ends_with('(') && ! self.Output.ends_with('[') && ! self.Output.ends_with('{')
-                {
-                    self.EmitSpace();
-                }
+                { self.EmitSpace(); }
                 self.EmitRaw("(");
             }
             Token_Kind::Punctuation(')') =>
@@ -1270,41 +1165,29 @@ impl <'a> Typst_Emitter<'a>
             Token_Kind::Punctuation(';') =>
             {
                 if ! WasLineEmpty
-                {
-                    while self.Output.ends_with(' ')
-                    { self.Output.pop(); self.Current_Line_Len -= 1; }
-                }
+                { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
                 self.EmitRaw(";");
                 self.EmitSpace();
             }
             Token_Kind::Punctuation(',') =>
             {
                 if ! WasLineEmpty
-                {
-                    while self.Output.ends_with(' ')
-                    { self.Output.pop(); self.Current_Line_Len -= 1; }
-                }
+                { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
                 self.EmitRaw(",");
                 self.EmitSpace();
             }
             Token_Kind::Punctuation(':') =>
             {
                 if ! WasLineEmpty
-                {
-                    while self.Output.ends_with(' ')
-                    { self.Output.pop(); self.Current_Line_Len -= 1; }
-                }
+                { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
                 self.EmitRaw(":");
-                if ! IsPrecededByAtRefColon(&self.Output)
+                if ! IsPrecededByAtRefColon( & self.Output)
                 { self.EmitSpace(); }
             }
             Token_Kind::Punctuation('.') =>
             {
                 if ! WasLineEmpty
-                {
-                    while self.Output.ends_with(' ')
-                    { self.Output.pop(); self.Current_Line_Len -= 1; }
-                }
+                { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
                 self.EmitRaw(".");
             }
             Token_Kind::Operator(Op) =>
@@ -1312,17 +1195,11 @@ impl <'a> Typst_Emitter<'a>
                 if Op == "#"
                 {
                     let NeedSpace = if self.Output.ends_with('(') || self.Output.ends_with('[') || self.Output.ends_with('{')
-                    {
-                        Token.Leading_Whitespace == " "
-                    }
+                    { Token.Leading_Whitespace == " " }
                     else if ! WasLineEmpty && self.Line_Has_Content && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
-                    {
-                        true
-                    }
+                    { true }
                     else
-                    {
-                        false
-                    };
+                    { false };
 
                     if NeedSpace
                     { self.EmitSpace(); }
@@ -1333,10 +1210,7 @@ impl <'a> Typst_Emitter<'a>
                     let Trimmed = self.Output.trim_end();
                     let PrecededByWord = Trimmed.chars().next_back().map_or(false, | c | c.is_alphabetic());
                     if PrecededByWord
-                    {
-                        while self.Output.ends_with(' ')
-                        { self.Output.pop(); self.Current_Line_Len -= 1; }
-                    }
+                    { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
                     else if Token.Leading_Whitespace == " " && self.Line_Has_Content && ! self.Output.ends_with(' ')
                     { self.EmitSpace(); }
                     self.EmitRaw("'");
@@ -1344,17 +1218,11 @@ impl <'a> Typst_Emitter<'a>
                 else if Op == "@"
                 {
                     let NeedSpace = if self.Output.ends_with('(') || self.Output.ends_with('[') || self.Output.ends_with('{')
-                    {
-                        Token.Leading_Whitespace == " "
-                    }
+                    { Token.Leading_Whitespace == " " }
                     else if ! WasLineEmpty && self.Line_Has_Content && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
-                    {
-                        true
-                    }
+                    { true }
                     else
-                    {
-                        false
-                    };
+                    { false };
 
                     if NeedSpace
                     { self.EmitSpace(); }
@@ -1371,36 +1239,25 @@ impl <'a> Typst_Emitter<'a>
                 {
                     let PrecedingChar = self.Output.trim_end().chars().next_back();
                     let IsClosingUnderscore = match PrecedingChar
-                    {
-                        Some(',') => true,
-                        Some(c) if c.is_alphabetic() => Token.Leading_Whitespace.is_empty(),
-                        _ => false,
-                    };
+                    { Some(',') => true, Some(c) if c.is_alphabetic() => Token.Leading_Whitespace.is_empty(), _ => false, };
                     if IsClosingUnderscore
-                    {
-                        while self.Output.ends_with(' ')
-                        { self.Output.pop(); self.Current_Line_Len -= 1; }
-                    }
+                    { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
                     else if (Token.Leading_Whitespace == " " || ! Token.Leading_Whitespace.is_empty()) && self.Line_Has_Content && ! self.Output.ends_with(' ')
-                    { self.EmitSpace(); }
+                    {
+                        self.EmitSpace();
+                    }
                     self.EmitRaw("_");
                 }
                 else if Op == ".." || Op == "..=" || Op == "..."
                 {
                     if ! WasLineEmpty
-                    {
-                        while self.Output.ends_with(' ')
-                        { self.Output.pop(); self.Current_Line_Len -= 1; }
-                    }
+                    { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
                     self.EmitRaw(Op);
                 }
                 else if Op == "::"
                 {
                     if ! WasLineEmpty
-                    {
-                        while self.Output.ends_with(' ')
-                        { self.Output.pop(); self.Current_Line_Len -= 1; }
-                    }
+                    { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
                     self.EmitRaw("::");
                 }
                 else if Op == "$"
@@ -1419,79 +1276,85 @@ impl <'a> Typst_Emitter<'a>
             Token_Kind::Keyword(K) =>
             {
                 let IsSentenceBreakAfterDot = self.Output.ends_with('.')
-                    && (Token.Leading_Whitespace == " "
-                        || (self.Output.len() >= 2
-                            && self.Output.chars().nth_back(1).map_or(false, | c | c.is_alphabetic() || c == ')' || c == ']' || c == '}' || c == '"' || c == '`')
-                            && K.chars().next().map_or(false, | c | c.is_ascii_uppercase())));
+                &&
+                (
+                    Token.Leading_Whitespace == " "
+                    ||
+                    (
+                        self.Output.len() >= 2
+                        && self.Output.chars().nth_back(1).map_or(false, | c | c.is_alphabetic() || c == ')' || c == ']' || c == '}' || c == '"' || c == '`')
+                        && K.chars().next().map_or(false, | c | c.is_ascii_uppercase())
+                    )
+                );
 
                 if self.Line_Has_Content && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
                 && ! self.Output.ends_with('#') && ! self.Output.ends_with('(') && ! self.Output.ends_with('[') && ! self.Output.ends_with('{')
-                && (! self.Output.ends_with('.') || IsSentenceBreakAfterDot)
-                {
-                    self.EmitSpace();
-                }
+                && ( ! self.Output.ends_with('.') || IsSentenceBreakAfterDot)
+                { self.EmitSpace(); }
                 self.EmitRaw(K);
                 self.EmitSpace();
             }
             Token_Kind::Identifier(Ident) =>
             {
                 let FollowsApostropheContraction = self.Output.ends_with('\'')
-                    && matches!(Ident.as_str(), "s" | "t" | "d" | "ll" | "re" | "ve" | "m");
+                && matches!(Ident.as_str(), "s" | "t" | "d" | "ll" | "re" | "ve" | "m");
 
                 let IsAbbreviationFollower = (self.Output.ends_with("e.g.") || self.Output.ends_with("a.k.a."))
-                    && (Ident == "the" || Ident == "leading" || Token.Leading_Whitespace == " ");
+                && (Ident == "the" || Ident == "leading" || Token.Leading_Whitespace == " ");
 
                 let IsDimensionSuffix = (Ident == "D" || Ident == "K")
-                    && (self.Output.ends_with('2') || self.Output.ends_with('3') || self.Output.ends_with('4'));
+                && (self.Output.ends_with('2') || self.Output.ends_with('3') || self.Output.ends_with('4'));
 
                 let IsSentenceBreakAfterDot = self.Output.ends_with('.')
-                    && (Token.Leading_Whitespace == " "
-                        || IsAbbreviationFollower
-                        || (self.Output.len() >= 2
-                            && self.Output.chars().nth_back(1).map_or(false, | c | c.is_alphabetic() || c == ')' || c == ']' || c == '}' || c == '"' || c == '`')
-                            && Ident.chars().next().map_or(false, | c | c.is_ascii_uppercase())));
+                &&
+                (
+                    Token.Leading_Whitespace == " "
+                    || IsAbbreviationFollower
+                    ||
+                    (
+                        self.Output.len() >= 2
+                        && self.Output.chars().nth_back(1).map_or(false, | c | c.is_alphabetic() || c == ')' || c == ']' || c == '}' || c == '"' || c == '`')
+                        && Ident.chars().next().map_or(false, | c | c.is_ascii_uppercase())
+                    )
+                );
 
                 let PrecedingChar = self.Output.trim_end().chars().next_back();
                 let IsClosingUnderscore = Ident == "_"
-                    && match PrecedingChar
-                    {
-                        Some(',') => true,
-                        Some(c) if c.is_alphabetic() => Token.Leading_Whitespace.is_empty(),
-                        _ => false,
-                    };
+                && match PrecedingChar
+                { Some(',') => true, Some(c) if c.is_alphabetic() => Token.Leading_Whitespace.is_empty(), _ => false, };
                 if IsClosingUnderscore || IsDimensionSuffix
-                {
-                    if self.Output.ends_with(' ')
-                    {
-                        self.Output.pop();
-                        self.Current_Line_Len -= 1;
-                    }
-                }
+                { if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
 
                 if self.Line_Has_Content && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
                 && ! self.Output.ends_with('#') && ! self.Output.ends_with("::")
                 && ! FollowsApostropheContraction && ! IsDimensionSuffix && ! IsClosingUnderscore
-                && (! self.Output.ends_with('.') || IsSentenceBreakAfterDot)
-                && (! self.Output.ends_with('\'') || Token.Leading_Whitespace == " ")
+                && ( ! self.Output.ends_with('.') || IsSentenceBreakAfterDot)
+                && ( ! self.Output.ends_with('\'') || Token.Leading_Whitespace == " ")
                 && ! self.Output.ends_with('(') && ! self.Output.ends_with('[') && ! self.Output.ends_with('{')
                 && ! self.Output.ends_with('$') && ! self.Output.ends_with('@')
-                && ! IsPrecededByAtRefColon(&self.Output)
+                && ! IsPrecededByAtRefColon( & self.Output)
                 { self.EmitSpace(); }
                 self.EmitRaw(Ident);
             }
             Token_Kind::Number(Num) =>
             {
                 let IsSentenceBreakAfterDot = self.Output.ends_with('.')
-                    && (Token.Leading_Whitespace == " "
-                        || (self.Output.len() >= 2
-                            && self.Output.chars().nth_back(1).map_or(false, | c | c.is_alphabetic())
-                            && Num.chars().next().map_or(false, | c | c.is_ascii_uppercase())));
+                &&
+                (
+                    Token.Leading_Whitespace == " "
+                    ||
+                    (
+                        self.Output.len() >= 2
+                        && self.Output.chars().nth_back(1).map_or(false, | c | c.is_alphabetic())
+                        && Num.chars().next().map_or(false, | c | c.is_ascii_uppercase())
+                    )
+                );
 
                 if self.Line_Has_Content && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
                 && ! self.Output.ends_with('(') && ! self.Output.ends_with('[') && ! self.Output.ends_with('{')
                 && ! self.Output.ends_with(':') && ! self.Output.ends_with('=') && ! self.Output.ends_with('+')
                 && ! self.Output.ends_with('-') && ! self.Output.ends_with('*') && ! self.Output.ends_with('/')
-                && (! self.Output.ends_with('.') || IsSentenceBreakAfterDot)
+                && ( ! self.Output.ends_with('.') || IsSentenceBreakAfterDot)
                 && ! self.Output.ends_with('$')
                 { self.EmitSpace(); }
                 self.EmitRaw(Num);
@@ -1515,16 +1378,14 @@ impl <'a> Typst_Emitter<'a>
         { self.EmitIndent(Level); }
 
         let HasLeadingSpace = Container.Open_Token.Leading_Whitespace == " "
-            || ! Container.Open_Token.Leading_Whitespace.is_empty()
-            || Container.Open_Token.Preceding_Newlines > 0;
+        || ! Container.Open_Token.Leading_Whitespace.is_empty()
+        || Container.Open_Token.Preceding_Newlines > 0;
 
         let NeedSpace = self.Line_Has_Content
         && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
         && ! self.Output.ends_with('#') && ! self.Output.ends_with('.') && ! self.Output.ends_with("::")
         && ! self.Output.ends_with('(') && ! self.Output.ends_with('[') && ! self.Output.ends_with('{')
-        && (HasLeadingSpace
-            || Container.Kind == Container_Kind::Brace
-            || (Container.Kind == Container_Kind::Bracket && self.Output.ends_with('=')));
+        && (HasLeadingSpace || Container.Kind == Container_Kind::Brace || (Container.Kind == Container_Kind::Bracket && self.Output.ends_with('=')));
 
         if NeedSpace
         { self.EmitSpace(); }
@@ -1559,8 +1420,10 @@ impl <'a> Typst_Emitter<'a>
                         while self.Output.ends_with(' ')
                         { self.Output.pop(); self.Current_Line_Len -= 1; }
                         self.EmitRaw(":");
-                        if ! IsPrecededByAtRefColon(&self.Output) && (Container.Kind != Container_Kind::Paren || Container.Children.len() > 1)
-                        { self.EmitSpace(); }
+                        if ! IsPrecededByAtRefColon( & self.Output) && (Container.Kind != Container_Kind::Paren || Container.Children.len() > 1)
+                        {
+                            self.EmitSpace();
+                        }
                     }
                     else if T.Text == "."
                     {
@@ -1571,17 +1434,11 @@ impl <'a> Typst_Emitter<'a>
                     else if T.Text == "#"
                     {
                         let NeedSpace = if self.Output.ends_with('(') || self.Output.ends_with('[') || self.Output.ends_with('{')
-                        {
-                            T.Leading_Whitespace == " "
-                        }
+                        { T.Leading_Whitespace == " " }
                         else if self.Line_Has_Content && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
-                        {
-                            true
-                        }
+                        { true }
                         else
-                        {
-                            false
-                        };
+                        { false };
 
                         if NeedSpace
                         { self.EmitSpace(); }
@@ -1592,10 +1449,7 @@ impl <'a> Typst_Emitter<'a>
                         let Trimmed = self.Output.trim_end();
                         let PrecededByWord = Trimmed.chars().next_back().map_or(false, | c | c.is_alphabetic());
                         if PrecededByWord
-                        {
-                            while self.Output.ends_with(' ')
-                            { self.Output.pop(); self.Current_Line_Len -= 1; }
-                        }
+                        { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
                         else if T.Leading_Whitespace == " " && self.Line_Has_Content && ! self.Output.ends_with(' ')
                         { self.EmitSpace(); }
                         self.EmitRaw("'");
@@ -1603,17 +1457,11 @@ impl <'a> Typst_Emitter<'a>
                     else if T.Text == "@"
                     {
                         let NeedSpace = if self.Output.ends_with('(') || self.Output.ends_with('[') || self.Output.ends_with('{')
-                        {
-                            T.Leading_Whitespace == " "
-                        }
+                        { T.Leading_Whitespace == " " }
                         else if self.Line_Has_Content && ! self.Output.ends_with(' ') && ! self.Output.ends_with('\n')
-                        {
-                            true
-                        }
+                        { true }
                         else
-                        {
-                            false
-                        };
+                        { false };
 
                         if NeedSpace
                         { self.EmitSpace(); }
@@ -1630,18 +1478,13 @@ impl <'a> Typst_Emitter<'a>
                     {
                         let PrecedingChar = self.Output.trim_end().chars().next_back();
                         let IsClosingUnderscore = match PrecedingChar
-                        {
-                            Some(',') => true,
-                            Some(c) if c.is_alphabetic() => T.Leading_Whitespace.is_empty(),
-                            _ => false,
-                        };
+                        { Some(',') => true, Some(c) if c.is_alphabetic() => T.Leading_Whitespace.is_empty(), _ => false, };
                         if IsClosingUnderscore
-                        {
-                            while self.Output.ends_with(' ')
-                            { self.Output.pop(); self.Current_Line_Len -= 1; }
-                        }
+                        { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
                         else if (T.Leading_Whitespace == " " || ! T.Leading_Whitespace.is_empty()) && self.Line_Has_Content && ! self.Output.ends_with(' ')
-                        { self.EmitSpace(); }
+                        {
+                            self.EmitSpace();
+                        }
                         self.EmitRaw("_");
                     }
                     else if T.Text == "("
@@ -1649,9 +1492,7 @@ impl <'a> Typst_Emitter<'a>
                         let PrecededByWord = self.Output.trim_end().chars().next_back().map_or(false, | c | c.is_alphanumeric());
                         if (T.Leading_Whitespace == " " || PrecededByWord) && self.Line_Has_Content && ! self.Output.ends_with(' ')
                         && ! self.Output.ends_with('(') && ! self.Output.ends_with('[') && ! self.Output.ends_with('{')
-                        {
-                            self.EmitSpace();
-                        }
+                        { self.EmitSpace(); }
                         self.EmitRaw("(");
                     }
                     else if T.Text == ")"
@@ -1674,48 +1515,42 @@ impl <'a> Typst_Emitter<'a>
                     else
                     {
                         let FollowsApostropheContraction = self.Output.ends_with('\'')
-                            && matches!(T.Text.as_str(), "s" | "t" | "d" | "ll" | "re" | "ve" | "m");
+                        && matches!(T.Text.as_str(), "s" | "t" | "d" | "ll" | "re" | "ve" | "m");
 
                         let IsAbbreviationFollower = (self.Output.ends_with("e.g.") || self.Output.ends_with("a.k.a."))
-                            && (T.Text == "the" || T.Text == "leading" || T.Leading_Whitespace == " ");
+                        && (T.Text == "the" || T.Text == "leading" || T.Leading_Whitespace == " ");
 
                         let IsDimensionSuffix = (T.Text == "D" || T.Text == "K")
-                            && (self.Output.ends_with('2') || self.Output.ends_with('3') || self.Output.ends_with('4'));
+                        && (self.Output.ends_with('2') || self.Output.ends_with('3') || self.Output.ends_with('4'));
 
                         let IsSentenceBreakAfterDot = self.Output.ends_with('.')
-                            && (T.Leading_Whitespace == " "
-                                || IsAbbreviationFollower
-                                || (self.Output.len() >= 2
-                                    && self.Output.chars().nth_back(1).map_or(false, | c | c.is_alphabetic() || c == ')' || c == ']' || c == '}' || c == '"' || c == '`')
-                                    && T.Text.chars().next().map_or(false, | c | c.is_ascii_uppercase())));
+                        &&
+                        (
+                            T.Leading_Whitespace == " "
+                            || IsAbbreviationFollower
+                            ||
+                            (
+                                self.Output.len() >= 2
+                                && self.Output.chars().nth_back(1).map_or(false, | c | c.is_alphabetic() || c == ')' || c == ']' || c == '}' || c == '"' || c == '`')
+                                && T.Text.chars().next().map_or(false, | c | c.is_ascii_uppercase())
+                            )
+                        );
 
                         let PrecedingChar = self.Output.trim_end().chars().next_back();
                         let IsClosingUnderscore = T.Text == "_"
-                            && match PrecedingChar
-                            {
-                                Some(',') => true,
-                                Some(c) if c.is_alphabetic() => T.Leading_Whitespace.is_empty(),
-                                _ => false,
-                            };
+                        && match PrecedingChar
+                        { Some(',') => true, Some(c) if c.is_alphabetic() => T.Leading_Whitespace.is_empty(), _ => false, };
                         if IsClosingUnderscore || IsDimensionSuffix
-                        {
-                            if self.Output.ends_with(' ')
-                            {
-                                self.Output.pop();
-                                self.Current_Line_Len -= 1;
-                            }
-                        }
+                        { if self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
 
                         let NeedInnerSpace = if self.Output.ends_with('(') || self.Output.ends_with('[') || self.Output.ends_with('{')
-                        {
-                            T.Leading_Whitespace == " "
-                        }
+                        { T.Leading_Whitespace == " " }
                         else if self.Output.ends_with(' ') || self.Output.ends_with('#') || self.Output.ends_with('@')
                         || (self.Output.ends_with('.') && ! IsSentenceBreakAfterDot)
                         || FollowsApostropheContraction
                         || IsDimensionSuffix
                         || IsClosingUnderscore
-                        || IsPrecededByAtRefColon(&self.Output)
+                        || IsPrecededByAtRefColon( & self.Output)
                         { false }
                         else
                         { true };
@@ -1742,13 +1577,7 @@ impl <'a> Typst_Emitter<'a>
         if Container.Close_Token.is_some()
         {
             if Container.Kind == Container_Kind::Paren || Container.Kind == Container_Kind::Bracket
-            {
-                while self.Output.ends_with(' ')
-                {
-                    self.Output.pop();
-                    self.Current_Line_Len -= 1;
-                }
-            }
+            { while self.Output.ends_with(' ') { self.Output.pop(); self.Current_Line_Len -= 1; } }
 
             self.EmitRaw(Container.Kind.CloseGlyph());
 
@@ -1853,12 +1682,24 @@ fn VerifyTypstTokenEquivalence(Source: & str, Formatted: & str) -> Result < (), 
         if CleanSource.len() > CleanFormatted.len()
         {
             let Extra = & CleanSource[MinLen];
-            return Err(format ! ("E_VERIFY: Token count mismatch: original has {} non-trivia tokens, formatted has {}. First missing token in formatted: '{}' (line {}, col {})", CleanSource.len(), CleanFormatted.len(), Extra.Text, Extra.Line, Extra.Column));
+            return Err
+            (
+                format!
+                (
+                    "E_VERIFY: Token count mismatch: original has {} non-trivia tokens, formatted has {}. First missing token in formatted: '{}' (line {}, col {})", CleanSource.len(), CleanFormatted.len(), Extra.Text, Extra.Line, Extra.Column
+                )
+            );
         }
         else
         {
             let Extra = & CleanFormatted[MinLen];
-            return Err(format ! ("E_VERIFY: Token count mismatch: original has {} non-trivia tokens, formatted has {}. First extra token in formatted: '{}' (line {}, col {})", CleanSource.len(), CleanFormatted.len(), Extra.Text, Extra.Line, Extra.Column));
+            return Err
+            (
+                format!
+                (
+                    "E_VERIFY: Token count mismatch: original has {} non-trivia tokens, formatted has {}. First extra token in formatted: '{}' (line {}, col {})", CleanSource.len(), CleanFormatted.len(), Extra.Text, Extra.Line, Extra.Column
+                )
+            );
         }
     }
 
